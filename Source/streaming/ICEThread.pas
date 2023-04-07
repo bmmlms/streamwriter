@@ -399,12 +399,14 @@ end;
 procedure TICEThread.DoConnecting;
 begin
   inherited;
+
   WriteLog(Format(_('Connecting to %s:%d...'), [Host, Port]), slInfo);
 end;
 
 procedure TICEThread.DoConnected;
 begin
   WriteLog(_('Connected'), slInfo);
+
   inherited;
 end;
 
@@ -414,11 +416,8 @@ begin
 
   WriteLog(_('Connection closed'), slInfo);
 
-  if FClosed then
-    if (FTypedStream.AudioType <> atNone) then
-      raise Exception.Create('');
-
-  Sleep(100);
+  if not Terminated then
+    Sleep(100);
 end;
 
 procedure TICEThread.DoEnded;
@@ -432,7 +431,7 @@ begin
 
   // Noch schön ausfaden lassen
   while FPlayer.Playing or FPlayer.Pausing or FPlayer.Stopping do
-    Sleep(100);
+    Sleep(20);
 
   if FTypedStream.StopAfterSong then
     if Assigned(FOnRecordingStopped) then

@@ -344,9 +344,9 @@ end;
 
 procedure TChartsTab.SearchCharts(Top, ShowMessages: Boolean);
 var
-  Tmp: string;
-  Abort: Boolean;
-  SL: TStringList;
+  Tmp, S: string;
+  Abort: Boolean = True;
+  Strings: TStringArray;
 begin
   if not HomeComm.CommunicationEstablished then
   begin
@@ -361,34 +361,21 @@ begin
     SetState(csSearching);
   end else
   begin
-    Abort := False;
-
     if FSearchPanel.FSearch.ItemIndex = -1 then
       Tmp := Trim(FSearchPanel.FSearch.Text)
     else
       Tmp := Trim(FSearchPanel.FSearch.ItemsEx[FSearchPanel.FSearch.ItemIndex].Caption);
 
-    if (Pos('"', Tmp) > 0) and (TFunctions.OccurenceCount('"', Tmp) mod 2 <> 0) then
-    begin
-      TFunctions.MsgBox(_('When using quotes every opening quote needs a closing quote.'), _('Info'), MB_ICONINFORMATION);
-      Exit;
-    end;
-
-    if not Abort then
-    begin
-      SL := TStringList.Create;
-      try
-        TFunctions.Explode(' ', Tmp, SL);
-
-        if SL.Count = 0 then
-          Abort := True;
-      finally
-        SL.Free;
+    Strings := Tmp.Split([' ']);
+    for S in Strings do
+      if S.Length >= 2 then
+      begin
+        Abort := False;
+        Break;
       end;
-    end;
 
     if Abort then
-      TFunctions.MsgBox(_('You need to specify at least one word to search for. Special chars (+-*()<>~'') are not allowed.'), _('Info'), MB_ICONINFORMATION)
+      TFunctions.MsgBox(_('You need to specify at least one word to search for.'), _('Info'), MB_ICONINFORMATION)
     else
     begin
       FSearchPanel.InsertSearchItem(Tmp);
