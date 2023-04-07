@@ -412,7 +412,7 @@ procedure TICEThread.DoDisconnected;
 begin
   inherited;
 
-  WriteLog(_('Disconnected'), slInfo);
+  WriteLog(_('Connection closed'), slInfo);
 
   if FClosed then
     if (FTypedStream.AudioType <> atNone) then
