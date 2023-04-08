@@ -74,8 +74,8 @@
           </CodeGeneration>
           <Linking>
             <Debugging>
-              <GenerateDebugInfo Value="False"/>
               <DebugInfoType Value="dsDwarf2Set"/>
+              <UseExternalDbgSyms Value="True"/>
             </Debugging>
             <LinkSmart Value="True"/>
             <Options>
@@ -122,7 +122,7 @@
         <PackageName Value="LCL"/>
       </Item6>
     </RequiredPackages>
-    <Units Count="110">
+    <Units Count="111">
       <Unit0>
         <Filename Value="streamwriter.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -641,6 +641,10 @@
         <Filename Value="Patches.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit109>
+      <Unit110>
+        <Filename Value="..\SubModules\fpc-common\ExceptionHandler.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit110>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

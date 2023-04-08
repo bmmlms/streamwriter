@@ -27,6 +27,7 @@ uses
   AppStartup,
   Classes,
   DynBass,
+  ExceptionHandler,
   Forms,
   Functions,
   Interfaces,
@@ -34,9 +35,9 @@ uses
   LanguageObjects,
   Main,
   MessageBus,
+  Patches,
   PlayerManager,
   SharedData,
-  Patches,
   Sockets,
   SplashThread,
   SysUtils,
@@ -55,31 +56,17 @@ uses
 {$R ..\SubModules\fpc-common\res\lang_icons.rc}
 {$R ..\SubModules\fpc-common\res\images.rc}
 
-procedure UnhandledException(Obj: TObject; Addr: Pointer; FrameCount: Longint; Frames: PPointer);
-var
-  i: LongInt;
-  Message: string;
-begin
-  Message := 'An unhandled exception occurred at %s'#13#10.Format([Trim(SysBacktraceStr(Addr))]);
-  if Obj is Exception then
-    Message += '%s: %s'#13#10.Format([Exception(Obj).ClassName, Exception(Obj).Message]);
-
-  Message += '  %s'.Format([StringReplace(Trim(BackTraceStrFunc(Addr)), '  ', ' ', [rfReplaceAll])]);
-  for i := 0 to FrameCount - 1 do
-    Message += #13#10'  %s'.Format([StringReplace(Trim(BackTraceStrFunc(Frames[i])), '  ', ' ', [rfReplaceAll])]);
-
-  TFunctions.MsgBox(Message, 'Error', MB_ICONERROR);
-end;
-
 var
   i: Integer;
   HideMain, Found: Boolean;
+  ExceptionHandler: TExceptionHandler;
   frmStreamWriterMain: TfrmStreamWriterMain;
 begin
   IsMultiThread := True;
 
-  ExceptProc := @UnhandledException;
   SetErrorMode(SEM_FAILCRITICALERRORS);
+
+  ExceptionHandler := TExceptionHandler.Create;
 
   Bass := nil;
   try
@@ -171,5 +158,6 @@ begin
     TSocketThread.FreeCertificates;
     if Bass <> nil then
       Bass.Free;
+    ExceptionHandler.Free;
   end;
 end.

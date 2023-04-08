@@ -806,7 +806,7 @@ begin
   if PaintInfo.Canvas.GetTextWidth(NewText) > MaxTextWidth then
     NewText := ShortenString(PaintInfo.Canvas.Handle, NewText, MaxTextWidth, 0);
 
-  inherited DoTextDrawing(PaintInfo, NewText, CellRect, DrawFormat);   // TODO: die ... werden zu früh gesetzt. außerdem passt was bei der itemheight nicht, man kann nicht bis nach ganz unten scrollen.
+  inherited DoTextDrawing(PaintInfo, NewText, CellRect, DrawFormat);
 end;
 
 procedure TMStreamTree.Paint;
