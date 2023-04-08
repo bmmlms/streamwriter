@@ -140,14 +140,14 @@ begin
 
     Application.CreateForm(TmodSharedData, modSharedData);
 
-    // Create the main form if everything is setup
-    if InitAppStageTwo(TfrmWizard) and AppGlobals.WasSetup then
-    begin
-      if AppGlobals.Tray and HideMain then
-        Application.ShowMainForm := False;
+    if (not InitAppStageTwo(TfrmWizard)) or (not AppGlobals.WasSetup) then
+      Exit;
 
-      Application.CreateForm(TfrmStreamWriterMain, frmStreamWriterMain);
-    end;
+    // Create the main form if everything is setup
+    if AppGlobals.Tray and HideMain then
+      Application.ShowMainForm := False;
+
+    Application.CreateForm(TfrmStreamWriterMain, frmStreamWriterMain);
 
     Application.Run;
 
