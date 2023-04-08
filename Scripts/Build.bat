@@ -64,7 +64,10 @@ goto end
   )
 
   cd "%OUTDIR%"
-  
+
+  for /f %%i in ('git rev-parse --short HEAD') do set GITSHA=%%i
+  move "%APPNAME%.dbg" "%APPNAME%_%GITSHA%.dbg"
+
   for %%f in (*.*) do (
     type "%%f" | "%PLINK%" -batch gaia osslsigncode-sign.sh > "%%f-signed"
     if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
