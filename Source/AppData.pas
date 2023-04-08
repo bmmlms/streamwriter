@@ -460,7 +460,7 @@ begin
   FProjectHelpLinkStreamSettings := 'https://streamwriter.org/wiki/artikel/streamsettings';
 
   FProjectForumLink := 'https://streamwriter.org/forum';
-  FProjectDonateLink := 'https://streamwriter.org/inhalt/donate';
+  FProjectDonateLink := 'https://streamwriter.org/inhalt/spenden';
 
   // Should multiple instances be allowed?
   CommandLine := TCommandLine.Create(GetCommandLine);

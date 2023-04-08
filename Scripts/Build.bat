@@ -12,7 +12,7 @@ SET "SOURCEDIR=%PROJECTDIR%\Source"
 SET "OUTDIR=%PROJECTDIR%\Build"
 SET "PUBLISHDIR=%PROJECTDIR%\Build\Publish"
 SET "ZIPFILES=%APPNAME%.exe"
-SET "UPLOADURL=https://streamwriter.org/de/downloads/svnbuild/?download=67&filename=%APPNAME%"
+SET "UPLOADURL=https://streamwriter.org/de/downloads/svnbuild?download=67&filename=%APPNAME%"
 
 call :main %1
 echo(
