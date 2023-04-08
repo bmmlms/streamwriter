@@ -12,7 +12,7 @@ SET "SOURCEDIR=%PROJECTDIR%\Source"
 SET "OUTDIR=%PROJECTDIR%\Build"
 SET "PUBLISHDIR=%PROJECTDIR%\Build\Publish"
 SET "ZIPFILES=%APPNAME%.exe"
-SET "UPLOADURL=https://streamwriter.org/downloads/svnbuild?download=67&filename=%APPNAME%"
+SET "UPLOADURL=https://streamwriter.org/de/downloads/svnbuild?download=67&filename=%APPNAME%"
 
 call :main %1
 echo(
@@ -65,7 +65,6 @@ goto end
 
   cd "%OUTDIR%"
 
-  for /f %%i in ('git rev-parse --short HEAD') do set GITSHA=%%i
   move "%APPNAME%.dbg" "%APPNAME%_%GITSHA%.dbg"
 
   for %%f in (*.*) do (
