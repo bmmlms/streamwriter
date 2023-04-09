@@ -462,19 +462,21 @@ end;
 
 destructor TfrmSettings.Destroy;
 var
-  i: Integer;
+  ListItem: TListItem;
+  Settings: TStreamSettings;
+  PostProcess: TPostProcessBase;
 begin
   FIgnoreFieldList.Free;
 
-  for i := 0 to lstAddons.Items.Count - 1 do
-    TAddonBase(lstAddons.Items[i].Data).Free;
+  for ListItem in lstAddons.Items do
+    TAddonBase(ListItem.Data).Free;
 
-  for i := 0 to FTemporaryPostProcessors.Count - 1 do
-    FTemporaryPostProcessors[i].Free;
+  for PostProcess in FTemporaryPostProcessors do
+    PostProcess.Free;
   FTemporaryPostProcessors.Free;
 
-  for i := 0 to Length(FStreamSettings) - 1 do
-    FStreamSettings[i].Free;
+  for Settings in FStreamSettings do
+    Settings.Free;
 
   inherited;
 end;
@@ -694,10 +696,11 @@ end;
 
 procedure TfrmSettings.Finish;
 var
-  i, k, n: Integer;
-  PostProcessor: TPostProcessBase;
+  i: Integer;
+  PostProcessor, TempPostProcessor: TPostProcessBase;
   EP: TExternalPostProcess;
-  Item: TListItem;
+  S: TStreamSettings;
+  Item: TListItem = nil;
   Colors: TVTColors;
 begin
   if Length(FStreamSettings) = 0 then
@@ -796,183 +799,179 @@ begin
     end;
   end;
 
-  for i := 0 to Length(FStreamSettings) - 1 do
+  for S in FStreamSettings do
   begin
     if FSettingsType = stAuto then
-      FStreamSettings[i].FilePattern := Trim(txtAutomaticFilePattern.Control.Text)
+      S.FilePattern := Trim(txtAutomaticFilePattern.Control.Text)
     else if FIgnoreFieldList.IndexOf(txtFilePattern) = -1 then
-      FStreamSettings[i].FilePattern := Trim(txtFilePattern.Control.Text);
+      S.FilePattern := Trim(txtFilePattern.Control.Text);
 
     if FIgnoreFieldList.IndexOf(txtIncompleteFilePattern) = -1 then
-      FStreamSettings[i].IncompleteFilePattern := Trim(txtIncompleteFilePattern.Control.Text);
+      S.IncompleteFilePattern := Trim(txtIncompleteFilePattern.Control.Text);
 
     if FIgnoreFieldList.IndexOf(txtStreamFilePattern) = -1 then
-      FStreamSettings[i].StreamFilePattern := Trim(txtStreamFilePattern.Control.Text);
+      S.StreamFilePattern := Trim(txtStreamFilePattern.Control.Text);
 
     if FIgnoreFieldList.IndexOf(txtFilePatternDecimals) = -1 then
-      FStreamSettings[i].FilePatternDecimals := txtFilePatternDecimals.Control.Value;
+      S.FilePatternDecimals := txtFilePatternDecimals.Control.Value;
 
     if FIgnoreFieldList.IndexOf(txtRemoveChars) = -1 then
-      FStreamSettings[i].RemoveChars := txtRemoveChars.Control.Text;
+      S.RemoveChars := txtRemoveChars.Control.Text;
 
     if FIgnoreFieldList.IndexOf(chkNormalizeVariables) = -1 then
-      FStreamSettings[i].NormalizeVariables := chkNormalizeVariables.Checked;
+      S.NormalizeVariables := chkNormalizeVariables.Checked;
 
     if FIgnoreFieldList.IndexOf(chkDeleteStreams) = -1 then
-      FStreamSettings[i].DeleteStreams := chkDeleteStreams.Checked and chkDeleteStreams.Enabled;
+      S.DeleteStreams := chkDeleteStreams.Checked and chkDeleteStreams.Enabled;
 
     if FSettingsType = stAuto then
-      FStreamSettings[i].AddSavedToIgnore := chkAutoTuneInAddToIgnore.Checked
+      S.AddSavedToIgnore := chkAutoTuneInAddToIgnore.Checked
     else if FIgnoreFieldList.IndexOf(chkAddSavedToIgnore) = -1 then
-      FStreamSettings[i].AddSavedToIgnore := chkAddSavedToIgnore.Checked;
+      S.AddSavedToIgnore := chkAddSavedToIgnore.Checked;
 
     if FIgnoreFieldList.IndexOf(chkAddSavedToStreamIgnore) = -1 then
-      FStreamSettings[i].AddSavedToStreamIgnore := chkAddSavedToStreamIgnore.Checked;
+      S.AddSavedToStreamIgnore := chkAddSavedToStreamIgnore.Checked;
 
     if FSettingsType = stAuto then
-      FStreamSettings[i].RemoveSavedFromWishlist := chkAutoRemoveSavedFromWishlist.Checked
+      S.RemoveSavedFromWishlist := chkAutoRemoveSavedFromWishlist.Checked
     else if FIgnoreFieldList.IndexOf(chkRemoveSavedFromWishlist) = -1 then
-      FStreamSettings[i].RemoveSavedFromWishlist := chkRemoveSavedFromWishlist.Checked;
+      S.RemoveSavedFromWishlist := chkRemoveSavedFromWishlist.Checked;
 
     if FIgnoreFieldList.IndexOf(chkOverwriteSmaller) = -1 then
-      FStreamSettings[i].OverwriteSmaller := chkOverwriteSmaller.Checked;
+      S.OverwriteSmaller := chkOverwriteSmaller.Checked;
 
     if FIgnoreFieldList.IndexOf(chkDiscardSmaller) = -1 then
-      FStreamSettings[i].DiscardSmaller := chkDiscardSmaller.Checked;
+      S.DiscardSmaller := chkDiscardSmaller.Checked;
 
     if FIgnoreFieldList.IndexOf(chkDiscardAlways) = -1 then
-      FStreamSettings[i].DiscardAlways := chkDiscardAlways.Checked;
+      S.DiscardAlways := chkDiscardAlways.Checked;
 
     if pnlCut.Tag = 0 then
     begin
       if FIgnoreFieldList.IndexOf(chkSkipShort) = -1 then
-        FStreamSettings[i].SkipShort := chkSkipShort.Checked;
+        S.SkipShort := chkSkipShort.Checked;
 
       if FIgnoreFieldList.IndexOf(txtSongBuffer) = -1 then
-        FStreamSettings[i].SongBuffer := txtSongBuffer.Control.Value;
+        S.SongBuffer := txtSongBuffer.Control.Value;
 
       if FIgnoreFieldList.IndexOf(txtShortLengthSeconds) = -1 then
-        FStreamSettings[i].ShortLengthSeconds := txtShortLengthSeconds.Control.Value;
+        S.ShortLengthSeconds := txtShortLengthSeconds.Control.Value;
 
       if FIgnoreFieldList.IndexOf(chkSearchSilence) = -1 then
-        FStreamSettings[i].SearchSilence := chkSearchSilence.Checked;
+        S.SearchSilence := chkSearchSilence.Checked;
 
       if FIgnoreFieldList.IndexOf(chkManualSilenceLevel) = -1 then
-        FStreamSettings[i].AutoDetectSilenceLevel := not chkManualSilenceLevel.Checked;
+        S.AutoDetectSilenceLevel := not chkManualSilenceLevel.Checked;
 
       if FIgnoreFieldList.IndexOf(txtSilenceLevel) = -1 then
-        FStreamSettings[i].SilenceLevel := txtSilenceLevel.Control.Value;
+        S.SilenceLevel := txtSilenceLevel.Control.Value;
 
       if FIgnoreFieldList.IndexOf(txtSilenceLength) = -1 then
-        FStreamSettings[i].SilenceLength := txtSilenceLength.Value;
+        S.SilenceLength := txtSilenceLength.Value;
 
       if FIgnoreFieldList.IndexOf(txtSilenceBufferSeconds) = -1 then
       begin
-        FStreamSettings[i].SilenceBufferSecondsStart := txtSilenceBufferSeconds.Value;
-        FStreamSettings[i].SilenceBufferSecondsEnd := txtSilenceBufferSeconds.Value;
+        S.SilenceBufferSecondsStart := txtSilenceBufferSeconds.Value;
+        S.SilenceBufferSecondsEnd := txtSilenceBufferSeconds.Value;
       end;
 
       if Length(FStreamSettings) > 0 then
       begin
         if FIgnoreFieldList.IndexOf(chkAdjustTrackOffset) = -1 then
-          FStreamSettings[i].AdjustTrackOffset := chkAdjustTrackOffset.Checked;
+          S.AdjustTrackOffset := chkAdjustTrackOffset.Checked;
 
         if FIgnoreFieldList.IndexOf(txtAdjustTrackOffset) = -1 then
-          FStreamSettings[i].AdjustTrackOffsetMS := txtAdjustTrackOffset.Value;
+          S.AdjustTrackOffsetMS := txtAdjustTrackOffset.Value;
 
         if FIgnoreFieldList.IndexOf(optAdjustBackward) = -1 then
           if optAdjustBackward.Checked then
-            FStreamSettings[i].AdjustTrackOffsetDirection := toBackward
+            S.AdjustTrackOffsetDirection := toBackward
           else
-            FStreamSettings[i].AdjustTrackOffsetDirection := toForward;
+            S.AdjustTrackOffsetDirection := toForward;
       end;
     end;
 
     if FIgnoreFieldList.IndexOf(txtMaxRetries) = -1 then
-      FStreamSettings[i].MaxRetries := txtMaxRetries.Control.Value;
+      S.MaxRetries := txtMaxRetries.Control.Value;
 
     if FIgnoreFieldList.IndexOf(txtRetryDelay) = -1 then
-      FStreamSettings[i].RetryDelay := txtRetryDelay.Control.Value;
+      S.RetryDelay := txtRetryDelay.Control.Value;
 
     if FIgnoreFieldList.IndexOf(lstDefaultFilter) = -1 then
-      FStreamSettings[i].Filter := TUseFilters(lstDefaultFilter.Control.ItemIndex);
+      S.Filter := TUseFilters(lstDefaultFilter.Control.ItemIndex);
 
     if FIgnoreFieldList.IndexOf(chkSeparateTracks) = -1 then
-      FStreamSettings[i].SeparateTracks := chkSeparateTracks.Checked and chkSeparateTracks.Enabled;
+      S.SeparateTracks := chkSeparateTracks.Checked and chkSeparateTracks.Enabled;
 
     if FIgnoreFieldList.IndexOf(chkSaveStreamsToDisk) = -1 then
-      FStreamSettings[i].SaveToMemory := not chkSaveStreamsToDisk.Checked;
+      S.SaveToMemory := not chkSaveStreamsToDisk.Checked;
 
     if FIgnoreFieldList.IndexOf(chkOnlySaveFull) = -1 then
-      FStreamSettings[i].OnlySaveFull := chkOnlySaveFull.Checked;
+      S.OnlySaveFull := chkOnlySaveFull.Checked;
 
     if (FIgnoreFieldList.IndexOf(lstRegExes) = -1) and (Length(FStreamSettings) > 0) then
     begin
-      FStreamSettings[i].RegExes.Clear;
-      for n := 0 to lstRegExes.Items.Count - 1 do
-        FStreamSettings[i].RegExes.Add(lstRegExes.Items[n].Caption);
+      S.RegExes.Clear;
+      for i := 0 to lstRegExes.Items.Count - 1 do
+        S.RegExes.Add(lstRegExes.Items[i].Caption);
     end;
 
     if (FIgnoreFieldList.IndexOf(lstIgnoreTitles) = -1) and (Length(FStreamSettings) > 0) then
     begin
-      FStreamSettings[i].IgnoreTrackChangePattern.Clear;
-      for n := 0 to lstIgnoreTitles.Items.Count - 1 do
-        FStreamSettings[i].IgnoreTrackChangePattern.Add(lstIgnoreTitles.Items[n].Caption);
+      S.IgnoreTrackChangePattern.Clear;
+      for i := 0 to lstIgnoreTitles.Items.Count - 1 do
+        S.IgnoreTrackChangePattern.Add(lstIgnoreTitles.Items[i].Caption);
     end;
 
     if FIgnoreFieldList.IndexOf(lstOutputFormat) = -1 then
-      FStreamSettings[i].OutputFormat := TAudioTypes(lstOutputFormat.Control.ItemIndex);
+      S.OutputFormat := TAudioTypes(lstOutputFormat.Control.ItemIndex);
 
     if FIgnoreFieldList.IndexOf(lstPostProcess) = -1 then
     begin
       // -----------------------------------------------------------
-      for k := 0 to FTemporaryPostProcessors.Count - 1 do
+      for TempPostProcessor in FTemporaryPostProcessors do
       begin
-        PostProcessor := FStreamSettings[i].PostProcessors.Find(FTemporaryPostProcessors[k]);
+        PostProcessor := S.PostProcessors.Find(TempPostProcessor);
 
-        if (PostProcessor = nil) or (FTemporaryPostProcessors[k].IsNew) then
+        if (PostProcessor = nil) or (TempPostProcessor.IsNew) then
         begin
           // Ein neuer PostProcessor kann nur TExternalPostProcessor sein.
-          PostProcessor := FTemporaryPostProcessors[k].Copy;
-          FStreamSettings[i].PostProcessors.Add(PostProcessor);
+          PostProcessor := TempPostProcessor.Copy;
+          S.PostProcessors.Add(PostProcessor);
         end;
 
-        Item := nil;
-        for n := 0 to lstPostProcess.Items.Count - 1 do
-          if lstPostProcess.Items[n].Data = FTemporaryPostProcessors[k] then
-          begin
-            Item := lstPostProcess.Items[n];
+        for Item in lstPostProcess.Items do
+          if Item.Data = TempPostProcessor then
             Break;
-          end;
 
-        PostProcessor.OnlyIfCut := FTemporaryPostProcessors[k].OnlyIfCut;
+        PostProcessor.OnlyIfCut := TempPostProcessor.OnlyIfCut;
         PostProcessor.Order := Item.Index;
         PostProcessor.Active := Item.Checked;
 
-        PostProcessor.Assign(FTemporaryPostProcessors[k]);
+        PostProcessor.Assign(TempPostProcessor);
       end;
 
       // Vom Benutzer entfernte PostProcessors aus den echten PostProcessors entfernen..
-      for k := FStreamSettings[i].PostProcessors.Count - 1 downto 0 do
+      for i := S.PostProcessors.Count - 1 downto 0 do
       begin
-        if FStreamSettings[i].PostProcessors[k] is TExternalPostProcess then
+        if S.PostProcessors[i] is TExternalPostProcess then
         begin
           EP := nil;
-          for n := 0 to FTemporaryPostProcessors.Count - 1 do
-            if FTemporaryPostProcessors[n] is TExternalPostProcess then
-              if TExternalPostProcess(FTemporaryPostProcessors[n]).Identifier = TExternalPostProcess(FStreamSettings[i].PostProcessors[k]).Identifier then
+          for TempPostProcessor in FTemporaryPostProcessors do
+            if TempPostProcessor is TExternalPostProcess then
+              if TExternalPostProcess(TempPostProcessor).Identifier = TExternalPostProcess(S.PostProcessors[i]).Identifier then
               begin
-                EP := TExternalPostProcess(FStreamSettings[i].PostProcessors[k]);
+                EP := TExternalPostProcess(S.PostProcessors[i]);
                 Break;
               end;
           if EP = nil then
           begin
-            FStreamSettings[i].PostProcessors[k].Free;
-            FStreamSettings[i].PostProcessors.Delete(k);
+            S.PostProcessors[i].Free;
+            S.PostProcessors.Delete(i);
             Continue;
           end;
         end;
-        FStreamSettings[i].PostProcessors[k].IsNew := False;
+        S.PostProcessors[i].IsNew := False;
       end;
       // -----------------------------------------------------------
     end;
@@ -1492,7 +1491,7 @@ begin
   S := FStreamSettings[0];
 
   F := False;
-  for i := 1 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if GetStringListHash(S.IgnoreTrackChangePattern) <> GetStringListHash(FStreamSettings[i].IgnoreTrackChangePattern) then
     begin
       F := True;
@@ -1503,7 +1502,7 @@ begin
     AddField(lstIgnoreTitles);
 
   F := False;
-  for i := 1 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if S.FilePattern <> FStreamSettings[i].FilePattern then
     begin
       F := True;
@@ -1514,7 +1513,7 @@ begin
     AddField(txtFilePattern.Control);
 
   F := False;
-  for i := 1 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if S.IncompleteFilePattern <> FStreamSettings[i].IncompleteFilePattern then
     begin
       F := True;
@@ -1525,7 +1524,7 @@ begin
     AddField(txtIncompleteFilePattern.Control);
 
   F := False;
-  for i := 1 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if S.StreamFilePattern <> FStreamSettings[i].StreamFilePattern then
     begin
       F := True;
@@ -1536,7 +1535,7 @@ begin
     AddField(txtStreamFilePattern.Control);
 
   F := False;
-  for i := 1 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if S.FilePatternDecimals <> FStreamSettings[i].FilePatternDecimals then
     begin
       F := True;
@@ -1547,7 +1546,7 @@ begin
     AddField(txtFilePatternDecimals.Control);
 
   F := False;
-  for i := 0 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if S.RemoveChars <> FStreamSettings[i].RemoveChars then
     begin
       F := True;
@@ -1558,7 +1557,7 @@ begin
     AddField(txtRemoveChars.Control);
 
   F := False;
-  for i := 0 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if S.NormalizeVariables <> FStreamSettings[i].NormalizeVariables then
     begin
       F := True;
@@ -1569,7 +1568,7 @@ begin
     AddField(chkNormalizeVariables);
 
   F := False;
-  for i := 1 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if S.DeleteStreams <> FStreamSettings[i].DeleteStreams then
     begin
       F := True;
@@ -1580,7 +1579,7 @@ begin
     AddField(chkDeleteStreams);
 
   F := False;
-  for i := 1 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if S.AddSavedToIgnore <> FStreamSettings[i].AddSavedToIgnore then
     begin
       F := True;
@@ -1591,7 +1590,7 @@ begin
     AddField(chkAddSavedToIgnore);
 
   F := False;
-  for i := 1 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if S.AddSavedToStreamIgnore <> FStreamSettings[i].AddSavedToStreamIgnore then
     begin
       F := True;
@@ -1602,7 +1601,7 @@ begin
     AddField(chkAddSavedToStreamIgnore);
 
   F := False;
-  for i := 1 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if S.RemoveSavedFromWishlist <> FStreamSettings[i].RemoveSavedFromWishlist then
     begin
       F := True;
@@ -1613,7 +1612,7 @@ begin
     AddField(chkRemoveSavedFromWishlist);
 
   F := False;
-  for i := 1 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if S.OverwriteSmaller <> FStreamSettings[i].OverwriteSmaller then
     begin
       F := True;
@@ -1624,7 +1623,7 @@ begin
     AddField(chkOverwriteSmaller);
 
   F := False;
-  for i := 1 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if S.DiscardSmaller <> FStreamSettings[i].DiscardSmaller then
     begin
       F := True;
@@ -1635,7 +1634,7 @@ begin
     AddField(chkDiscardSmaller);
 
   F := False;
-  for i := 1 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if S.DiscardAlways <> FStreamSettings[i].DiscardAlways then
     begin
       F := True;
@@ -1646,7 +1645,7 @@ begin
     AddField(chkDiscardAlways);
 
   F := False;
-  for i := 1 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if S.SkipShort <> FStreamSettings[i].SkipShort then
     begin
       F := True;
@@ -1657,7 +1656,7 @@ begin
     AddField(chkSkipShort);
 
   F := False;
-  for i := 1 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if GetStringListHash(S.RegExes) <> GetStringListHash(FStreamSettings[i].RegExes) then
     begin
       F := True;
@@ -1668,7 +1667,7 @@ begin
     AddField(lstRegExes);
 
   F := False;
-  for i := 1 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if S.SearchSilence <> FStreamSettings[i].SearchSilence then
     begin
       F := True;
@@ -1679,7 +1678,7 @@ begin
     AddField(chkSearchSilence);
 
   F := False;
-  for i := 1 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if S.AutoDetectSilenceLevel <> FStreamSettings[i].AutoDetectSilenceLevel then
     begin
       F := True;
@@ -1690,7 +1689,7 @@ begin
     AddField(chkManualSilenceLevel);
 
   F := False;
-  for i := 1 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if S.SilenceLevel <> FStreamSettings[i].SilenceLevel then
     begin
       F := True;
@@ -1701,7 +1700,7 @@ begin
     AddField(txtSilenceLevel.Control);
 
   F := False;
-  for i := 1 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if S.SilenceLength <> FStreamSettings[i].SilenceLength then
     begin
       F := True;
@@ -1712,7 +1711,7 @@ begin
     AddField(txtSilenceLength);
 
   F := False;
-  for i := 1 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if S.SilenceBufferSecondsStart <> FStreamSettings[i].SilenceBufferSecondsStart then
     begin
       F := True;
@@ -1723,7 +1722,7 @@ begin
     AddField(txtSilenceBufferSeconds);
 
   F := False;
-  for i := 1 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if S.ShortLengthSeconds <> FStreamSettings[i].ShortLengthSeconds then
     begin
       F := True;
@@ -1734,7 +1733,7 @@ begin
     AddField(txtShortLengthSeconds.Control);
 
   F := False;
-  for i := 1 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if S.SongBuffer <> FStreamSettings[i].SongBuffer then
     begin
       F := True;
@@ -1745,7 +1744,7 @@ begin
     AddField(txtSongBuffer.Control);
 
   F := False;
-  for i := 1 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if S.MaxRetries <> FStreamSettings[i].MaxRetries then
     begin
       F := True;
@@ -1756,7 +1755,7 @@ begin
     AddField(txtMaxRetries.Control);
 
   F := False;
-  for i := 1 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if S.RetryDelay <> FStreamSettings[i].RetryDelay then
     begin
       F := True;
@@ -1767,7 +1766,7 @@ begin
     AddField(txtRetryDelay.Control);
 
   F := False;
-  for i := 1 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if S.Filter <> FStreamSettings[i].Filter then
     begin
       F := True;
@@ -1778,7 +1777,7 @@ begin
     AddField(lstDefaultFilter.Control);
 
   F := False;
-  for i := 1 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if S.SeparateTracks <> FStreamSettings[i].SeparateTracks then
     begin
       F := True;
@@ -1789,7 +1788,7 @@ begin
     AddField(chkSeparateTracks);
 
   F := False;
-  for i := 1 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if S.SaveToMemory <> FStreamSettings[i].SaveToMemory then
     begin
       F := True;
@@ -1800,7 +1799,7 @@ begin
     AddField(chkSaveStreamsToDisk);
 
   F := False;
-  for i := 1 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if S.OnlySaveFull <> FStreamSettings[i].OnlySaveFull then
     begin
       F := True;
@@ -1811,7 +1810,7 @@ begin
     AddField(chkOnlySaveFull);
 
   F := False;
-  for i := 1 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if S.AdjustTrackOffset <> FStreamSettings[i].AdjustTrackOffset then
     begin
       F := True;
@@ -1822,7 +1821,7 @@ begin
     AddField(chkAdjustTrackOffset);
 
   F := False;
-  for i := 1 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if S.AdjustTrackOffsetMS <> FStreamSettings[i].AdjustTrackOffsetMS then
     begin
       F := True;
@@ -1833,7 +1832,7 @@ begin
     AddField(txtAdjustTrackOffset);
 
   F := False;
-  for i := 1 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if S.AdjustTrackOffsetDirection <> FStreamSettings[i].AdjustTrackOffsetDirection then
     begin
       F := True;
@@ -1847,7 +1846,7 @@ begin
   end;
 
   F := False;
-  for i := 1 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if S.OutputFormat <> FStreamSettings[i].OutputFormat then
     begin
       F := True;
@@ -1858,7 +1857,7 @@ begin
     AddField(lstOutputFormat.Control);
 
   F := False;
-  for i := 1 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if S.PostProcessors.Hash <> FStreamSettings[i].PostProcessors.Hash then
     begin
       F := True;
@@ -1869,7 +1868,7 @@ begin
     AddField(lstPostProcess);
 
   F := False;
-  for i := 1 to Length(FStreamSettings) - 1 do
+  for i := 1 to High(FStreamSettings) do
     if S.EncoderSettings.Hash <> FStreamSettings[i].EncoderSettings.Hash then
     begin
       F := True;
@@ -2826,15 +2825,15 @@ end;
 
 constructor TfrmSettings.Create(AOwner: TComponent; SettingsType: TSettingsTypes; StreamSettings: TStreamSettingsArray; BrowseDir: Boolean);
 var
-  i: Integer;
+  S: TStreamSettings;
 begin
   FSettingsType := SettingsType;
 
   FIgnoreFieldList := TList.Create;
 
-  SetLength(FStreamSettings, Length(StreamSettings));
-  for i := 0 to Length(StreamSettings) - 1 do
-    FStreamSettings[i] := StreamSettings[i].Copy;
+  FStreamSettings := [];
+  for S in StreamSettings do
+    FStreamSettings += [S.Copy];
 
   case SettingsType of
     stApp:

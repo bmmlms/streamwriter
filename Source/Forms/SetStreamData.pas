@@ -221,10 +221,7 @@ begin
       Exit;
 
   for i := 0 to lstRegExps.Items.Count - 1 do
-  begin
-    SetLength(RegExps, Length(RegExps) + 1);
-    RegExps[High(RegExps)] := lstRegExps.Items[i].Caption;
-  end;
+    RegExps += [lstRegExps.Items[i].Caption];
 
   if not HomeComm.SendSetStreamData(FStreamID, RegExps) then
     TFunctions.MsgBox(_('streamWriter is not connected to the server.'#13#10'Please make sure your internet connection is up.'), _('Info'), MB_ICONINFORMATION)

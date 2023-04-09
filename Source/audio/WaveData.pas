@@ -335,8 +335,7 @@ begin
       MS.A := i;
       MS.B := i + EntryCount;
       MS.Peak := Avg;
-      SetLength(MinSilence, Length(MinSilence) + 1);
-      MinSilence[High(MinSilence)] := MS;
+      MinSilence += [MS]
     end;
   end;
 

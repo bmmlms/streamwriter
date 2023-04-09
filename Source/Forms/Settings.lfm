@@ -2120,18 +2120,21 @@ inherited frmSettings: TfrmSettings
     end
   end
   object dlgOpen: TOpenDialog[6]
+    Title = 'Open file'
     Filter = 'Executable files (*.exe, *.bat)|*.exe;*.bat'
     Options = [ofHideReadOnly, ofEnableSizing, ofDontAddToRecent]
     Left = 548
     Top = 272
   end
   object dlgSave: TSaveDialog[7]
+    Title = 'Save file'
     Filter = 'Text files (*.txt)|*.txt'
     Options = [ofOverwritePrompt, ofHideReadOnly, ofPathMustExist, ofEnableSizing, ofDontAddToRecent]
     Left = 548
     Top = 320
   end
   object dlgColor: TColorDialog[8]
+    Title = 'Select color'
     Color = clBlack
     CustomColors.Strings = (
       'ColorA=000000'

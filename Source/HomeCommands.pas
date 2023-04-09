@@ -969,18 +969,17 @@ begin
   inherited;
 
   Stream.Read(Count, False);
-  for i := 0 to Count - 1 do
+  SetLength(FFoundTitles, Count);
+  for i := 0 to High(FFoundTitles) do
   begin
-    SetLength(FFoundTitles, Length(FFoundTitles) + 1);
-    Stream.Read(FFoundTitles[High(FFoundTitles)].Title, False);
-    Stream.Read(FFoundTitles[High(FFoundTitles)].Hash, False);
+    Stream.Read(FFoundTitles[i].Title, False);
+    Stream.Read(FFoundTitles[i].Hash, False);
   end;
+
   Stream.Read(Count, False);
-  for i := 0 to Count - 1 do
-  begin
-    SetLength(FNotFoundTitles, Length(FNotFoundTitles) + 1);
+  SetLength(FNotFoundTitles, Count);
+  for i := 0 to High(FNotFoundTitles) do
     Stream.Read(FNotFoundTitles[i], False);
-  end;
 end;
 
 { TCommandGetStreamData }
@@ -1023,23 +1022,19 @@ begin
   inherited;
 
   Stream.Read(Count, False);
-  for i := 0 to Count - 1 do
-  begin
-    SetLength(FLastTitles, Length(FLastTitles) + 1);
-    Stream.Read(FLastTitles[High(FLastTitles)], False);
-  end;
+  SetLength(FLastTitles, Count);
+  for i := 0 to High(FLastTitles) do
+    Stream.Read(FLastTitles[i], False);
+
   Stream.Read(Count, False);
-  for i := 0 to Count - 1 do
-  begin
-    SetLength(FOtherUserRegExps, Length(FOtherUserRegExps) + 1);
-    Stream.Read(FOtherUserRegExps[High(FOtherUserRegExps)], False);
-  end;
+  SetLength(FOtherUserRegExps, Count);
+  for i := 0 to High(FOtherUserRegExps) do
+    Stream.Read(FOtherUserRegExps[i], False);
+
   Stream.Read(Count, False);
-  for i := 0 to Count - 1 do
-  begin
-    SetLength(FUserRegExps, Length(FUserRegExps) + 1);
-    Stream.Read(FUserRegExps[High(FUserRegExps)], False);
-  end;
+  SetLength(FUserRegExps, Count);
+  for i := 0 to High(FUserRegExps) do
+    Stream.Read(FUserRegExps[i], False);
 end;
 
 end.

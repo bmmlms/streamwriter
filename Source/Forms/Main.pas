@@ -798,11 +798,11 @@ procedure TfrmStreamWriterMain.BuildMoveToCategoryMenu;
 
   function AllClientsInCat(Clients: TNodeArray; Cat: PVirtualNode): Boolean;
   var
-    i: Integer;
+    Node: PVirtualNode;
   begin
     Result := True;
-    for i := 0 to Length(Clients) - 1 do
-      if Clients[i].Parent <> Cat then
+    for Node in Clients do
+      if Node.Parent <> Cat then
       begin
         Result := False;
         Break;
@@ -1185,27 +1185,24 @@ procedure TfrmStreamWriterMain.Hotkey(var Msg: TWMHotKey);
 
   procedure StopPlay;
   var
-    i: Integer;
     Clients: TClientArray;
+    Client: TICEClient;
   begin
     Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, False));
-    for i := 0 to Length(Clients) - 1 do
-      Clients[i].StopPlay;
+    for Client in Clients do
+      Client.StopPlay;
   end;
 
 var
   i: Integer;
-  NextIsPlaying: Boolean;
+  NextIsPlaying: Boolean = False;
   Nodes: TNodeArray;
   NodeData: PClientNodeData;
   Clients: TClientArray;
-  PlayingClient: TICEClient;
-  StartPlayClient: TICEClient;
+  Client: TICEClient;
+  PlayingClient: TICEClient = nil;
+  StartPlayClient: TICEClient = nil;
 begin
-  NextIsPlaying := False;
-  PlayingClient := nil;
-  StartPlayClient := nil;
-
   case Msg.HotKey of
     0:
     begin
@@ -1235,25 +1232,26 @@ begin
     3:
     begin
       Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, False));
-      for i := 0 to Length(Clients) - 1 do
-        if Clients[i].Playing then
-          PlayingClient := Clients[i];
+      for Client in Clients do
+        if Client.Playing then
+          PlayingClient := Client;
+
       if PlayingClient <> nil then
       begin
-        for i := 0 to Length(Clients) - 1 do
+        for Client in Clients do
         begin
           if NextIsPlaying then
           begin
-            StartPlayClient := Clients[i];
+            StartPlayClient := Client;
             Break;
           end;
-          if Clients[i].Playing then
+          if Client.Playing then
             NextIsPlaying := True;
         end;
 
         if StartPlayClient = nil then
           if Length(Clients) > 0 then
-            StartPlayClient := Clients[0];
+            StartPlayClient := Client;
 
         if StartPlayClient <> PlayingClient then
         begin
@@ -1265,12 +1263,13 @@ begin
     4:
     begin
       Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, False));
-      for i := 0 to Length(Clients) - 1 do
-        if Clients[i].Playing then
-          PlayingClient := Clients[i];
+      for Client in Clients do
+        if Client.Playing then
+          PlayingClient := Client;
+
       if PlayingClient <> nil then
       begin
-        for i := Length(Clients) - 1 downto 0 do
+        for i := High(Clients) downto 0 do
         begin
           if NextIsPlaying then
           begin
@@ -1581,12 +1580,11 @@ end;
 
 procedure TfrmStreamWriterMain.SetCaptionAndTrayHint;
 var
-  NewCaption: string;
-  NewHint: string;
-  Artist, Title, Stream, Filename: string;
-  i, Recordings: Integer;
+  Artist, Title, Stream, Filename, NewCaption, NewHint: string;
+  Recordings: Integer;
   Nodes: TNodeArray;
   NodeData: PClientNodeData;
+  Node: PVirtualNode;
 begin
   if tabClients <> nil then
     Nodes := tabClients.ClientView.GetNodes(ntClient, False);
@@ -1631,9 +1629,9 @@ begin
 
   Recordings := 0;
   if tabClients <> nil then
-    for i := 0 to High(Nodes) do
+    for Node in Nodes do
     begin
-      NodeData := tabClients.ClientView.GetNodeData(Nodes[i]);
+      NodeData := tabClients.ClientView.GetNodeData(Node);
       if NodeData.Client.Recording then
         Inc(Recordings);
     end;
@@ -1686,7 +1684,8 @@ var
   i: Integer;
   S: TfrmSettings;
   OldMonitorCount, NewMonitorCount: Cardinal;
-  StreamSettings: TStreamSettingsArray;
+  StreamSettings: TStreamSettingsArray = [];
+  Client: TICEClient;
   Clients: TClientArray;
 begin
   if AppGlobals.SubmitStats and AppGlobals.MonitorMode then
@@ -1703,11 +1702,9 @@ begin
   begin
     Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClientNoAuto, True));
     if Length(Clients) > 0 then
-    begin
-      SetLength(StreamSettings, Length(Clients));
-      for i := 0 to Length(Clients) - 1 do
-        StreamSettings[i] := Clients[i].Entry.Settings;
-    end else
+      for Client in Clients do
+        StreamSettings += [Client.Entry.Settings]
+    else
       Exit;
   end else
     raise Exception.Create('SettingsType not allowed here');
@@ -1759,7 +1756,7 @@ begin
           HomeComm.SendSetSettings(AppGlobals.Data.SaveList.AnyAutomatic and AppGlobals.AutoTuneIn);
         end;
         stStream:
-          for i := 0 to Length(Clients) - 1 do
+          for i := 0 to High(Clients) do
             if not Clients[i].AutoRemove then
               Clients[i].Entry.Settings.Assign(S.StreamSettings[i]);
       end;
@@ -1979,20 +1976,21 @@ end;
 
 procedure TfrmStreamWriterMain.tabChartsAddToWishlist(Sender: TObject; Arr: TWishlistTitleInfoArray);
 var
-  i, n, NumChars: Integer;
+  NumChars: Integer;
   Hash: Cardinal;
   Hashes: TSyncWishlistRecordArray = [];
   Found: Boolean;
   T: TTitleInfo;
+  WishlistTitle: TWishlistTitleInfo;
 begin
-  for i := 0 to High(Arr) do
+  for WishlistTitle in Arr do
   begin
-    TFunctions.BuildPattern(Arr[i].Title, Hash, NumChars, True);
+    TFunctions.BuildPattern(WishlistTitle.Title, Hash, NumChars, True);
     Found := False;
 
-    for n := 0 to AppGlobals.Data.SaveList.Count - 1 do
-      if ((Arr[i].Hash = 0) and (AppGlobals.Data.SaveList[n].ServerHash = 0) and (AppGlobals.Data.SaveList[n].Hash = Hash)) or ((Arr[i].Hash > 0) and Arr[i].IsArtist and
-        (AppGlobals.Data.SaveList[n].ServerArtistHash = Arr[i].Hash)) or ((Arr[i].Hash > 0) and (not Arr[i].IsArtist) and (AppGlobals.Data.SaveList[n].ServerHash = Arr[i].Hash)) then
+    for T in AppGlobals.Data.SaveList do
+      if ((WishlistTitle.Hash = 0) and (T.ServerHash = 0) and (T.Hash = Hash)) or ((WishlistTitle.Hash > 0) and WishlistTitle.IsArtist and
+        (T.ServerArtistHash = WishlistTitle.Hash)) or ((WishlistTitle.Hash > 0) and (not WishlistTitle.IsArtist) and (T.ServerHash = WishlistTitle.Hash)) then
       begin
         Found := True;
         Break;
@@ -2000,23 +1998,20 @@ begin
 
     if not Found then
     begin
-      if Arr[i].Hash > 0 then
+      if WishlistTitle.Hash > 0 then
       begin
-        if Arr[i].IsArtist then
-          T := TTitleInfo.Create(0, Arr[i].Hash, Arr[i].Title)
+        if WishlistTitle.IsArtist then
+          T := TTitleInfo.Create(0, WishlistTitle.Hash, WishlistTitle.Title)
         else
-          T := TTitleInfo.Create(Arr[i].Hash, 0, Arr[i].Title);
+          T := TTitleInfo.Create(WishlistTitle.Hash, 0, WishlistTitle.Title);
       end else
-        T := TTitleInfo.Create(0, 0, Arr[i].Title);
+        T := TTitleInfo.Create(0, 0, WishlistTitle.Title);
 
       AppGlobals.Data.SaveList.Add(T);
       tabLists.AddTitle(nil, ltSave, T);
 
-      if Arr[i].Hash > 0 then
-      begin
-        SetLength(Hashes, Length(Hashes) + 1);
-        Hashes[High(Hashes)] := TSyncWishlistRecord.Create(Arr[i].Hash, Arr[i].IsArtist);
-      end;
+      if WishlistTitle.Hash > 0 then
+        Hashes += [TSyncWishlistRecord.Create(WishlistTitle.Hash, WishlistTitle.IsArtist)];
     end;
   end;
 
@@ -2052,8 +2047,7 @@ begin
         tabLists.RemoveTitle(nil, ltSave, AppGlobals.Data.SaveList[i]);
         AppGlobals.Data.SaveList.Delete(i);
 
-        SetLength(Hashes, Length(Hashes) + 1);
-        Hashes[High(Hashes)] := TSyncWishlistRecord.Create(Arr[n].Hash, False);
+        Hashes += [TSyncWishlistRecord.Create(Arr[n].Hash, False)];
       end;
 
   if Length(Hashes) > 0 then
@@ -2369,6 +2363,7 @@ var
   Clients, AllClients: TClientArray;
   Client: TICEClient;
   CatNodes: TNodeArray;
+  Node: PVirtualNode;
 begin
   // Enabled und so wird hier immer nur gesetzt, wenn sich der Status geändert hat.
   // Das hilft gut gegen flackern, wenn das Popup aufgeklappt ist, während das hier
@@ -2390,8 +2385,8 @@ begin
   OnlyAutomatedCatsSelected := Length(CatNodes) > 0;
   OneHasTitle := False;
 
-  for i := 0 to High(CatNodes) do
-    if not PClientNodeData(tabClients.ClientView.GetNodeData(CatNodes[i])).Category.IsAuto then
+  for Node in CatNodes do
+    if not PClientNodeData(tabClients.ClientView.GetNodeData(Node)).Category.IsAuto then
     begin
       OnlyAutomatedCatsSelected := False;
       Break;
@@ -2427,8 +2422,8 @@ begin
       OnePaused := True;
   end;
 
-  for i := 0 to Length(CatNodes) - 1 do
-    if not PClientNodeData(tabClients.ClientView.GetNodeData(CatNodes[i])).Category.IsAuto then
+  for Node in CatNodes do
+    if not PClientNodeData(tabClients.ClientView.GetNodeData(Node)).Category.IsAuto then
     begin
       OnlyAutomatedSelected := False;
       Break;

@@ -127,7 +127,7 @@ var
 begin
   Patterns := 'fatlusndi';
   SetLength(Arr, Length(Patterns));
-  for i := 0 to Length(Patterns) - 1 do
+  for i := 0 to High(Patterns) do
   begin
     Arr[i].C := Patterns[i + 1];
     C := Arr[i].C[1];

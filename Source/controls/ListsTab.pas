@@ -311,8 +311,7 @@ begin
     AppGlobals.Data.SaveList.Add(Title);
     AddTitle(nil, ltSave, Title);
 
-    SetLength(Hashes, Length(Hashes) + 1);
-    Hashes[High(Hashes)] := TSyncWishlistRecord.Create(FoundTitles[i].Hash, False);
+    Hashes += [TSyncWishlistRecord.Create(FoundTitles[i].Hash, False)];
   end;
 
   if Length(Hashes) > 0 then
@@ -467,14 +466,9 @@ begin
           begin
             AppGlobals.Data.SaveList.Remove(NodeData.Title);
             if NodeData.Title.ServerHash > 0 then
-            begin
-              SetLength(Hashes, Length(Hashes) + 1);
-              Hashes[High(Hashes)] := TSyncWishlistRecord.Create(NodeData.Title.ServerHash, False);
-            end else if NodeData.Title.ServerArtistHash > 0 then
-            begin
-              SetLength(Hashes, Length(Hashes) + 1);
-              Hashes[High(Hashes)] := TSyncWishlistRecord.Create(NodeData.Title.ServerArtistHash, True);
-            end;
+              Hashes += [TSyncWishlistRecord.Create(NodeData.Title.ServerHash, False)]
+            else if NodeData.Title.ServerArtistHash > 0 then
+              Hashes += [TSyncWishlistRecord.Create(NodeData.Title.ServerArtistHash, True)];
           end;
           ntIgnore:
             if NodeData.Stream = nil then
@@ -609,6 +603,7 @@ begin
 
     Dlg := TSaveDialog.Create(Self);
     try
+      Dlg.Title := _('Save file');
       Dlg.Filter := _('Text files') + ' (*.txt)|*.txt';
       Dlg.Options := Dlg.Options + [ofOverwritePrompt];
       Dlg.DefaultExt := '.txt';
@@ -722,6 +717,7 @@ begin
   ImportData := TList<TImportListEntry>.Create;
   Dlg := TOpenDialog.Create(Self);
   try
+    Dlg.Title := _('Open file');
     Dlg.Filter := _('All supported types') + ' (*.txt, *.m3u, *.pls)|*.txt;*.m3u;*.pls|' + _('Text files') + ' (*.txt)|*.txt|' + _('M3U playlists') + ' (*.m3u)|*.m3u|' + _('PLS playlists') + ' (*.pls)|*.pls';
 
     if Dlg.Execute then
@@ -974,13 +970,11 @@ begin
         else if ImportData[i].IsArtist then
         begin
           Title := TTitleInfo.Create(0, ImportData[i].Hash, ImportData[i].Title);
-          SetLength(Hashes, Length(Hashes) + 1);
-          Hashes[High(Hashes)] := TSyncWishlistRecord.Create(ImportData[i].Hash, True);
+          Hashes += [TSyncWishlistRecord.Create(ImportData[i].Hash, True)];
         end else
         begin
           Title := TTitleInfo.Create(ImportData[i].Hash, 0, ImportData[i].Title);
-          SetLength(Hashes, Length(Hashes) + 1);
-          Hashes[High(Hashes)] := TSyncWishlistRecord.Create(ImportData[i].Hash, False);
+          Hashes += [TSyncWishlistRecord.Create(ImportData[i].Hash, False)];
         end;
 
         List.Add(Title);
@@ -1303,14 +1297,9 @@ begin
 
     if NodeData.Title <> nil then
       if NodeData.Title.ServerHash = 0 then
-      begin
-        SetLength(ArtistHashes, Length(ArtistHashes) + 1);
-        ArtistHashes[High(ArtistHashes)] := NodeData.Title.ServerArtistHash;
-      end else
-      begin
-        SetLength(TitleHashes, Length(TitleHashes) + 1);
-        TitleHashes[High(TitleHashes)] := NodeData.Title.ServerHash;
-      end;
+        ArtistHashes += [NodeData.Title.ServerArtistHash]
+      else
+        TitleHashes += [NodeData.Title.ServerHash];
   end;
 
   if (Length(TitleHashes) > 0) or (Length(ArtistHashes) > 0) then
@@ -1465,13 +1454,13 @@ var
 
   function TypeCount(NodeType: TNodeType): Integer;
   var
-    i: Integer;
     NodeData: PTitleNodeData;
+    Node: PVirtualNode;
   begin
     Result := 0;
-    for i := 0 to Length(SelectedNodes) - 1 do
+    for Node in SelectedNodes do
     begin
-      NodeData := FTree.GetNodeData(SelectedNodes[i]);
+      NodeData := FTree.GetNodeData(Node);
       if NodeData.NodeType = NodeType then
         Inc(Result);
     end;
@@ -1824,8 +1813,8 @@ begin
       Continue;
     end;
 
-    SetLength(Result, Length(Result) + 1);
-    Result[Length(Result) - 1] := Node;
+    Result += [Node];
+
     Node := GetNext(Node);
   end;
 end;
@@ -1852,7 +1841,7 @@ var
   Data: PTitleNodeData;
 begin
   SetLength(Result, Length(Nodes));
-  for i := 0 to Length(Nodes) - 1 do
+  for i := 0 to High(Nodes) do
   begin
     Data := GetNodeData(Nodes[i]);
     Result[i] := Data;

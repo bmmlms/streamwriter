@@ -29,6 +29,7 @@ uses
   AudioFunctions,
   Buttons,
   Classes,
+  ComboEx,
   ClientAddressBar,
   ClientManager,
   ClientView,
@@ -721,13 +722,13 @@ end;
 procedure TClientTab.DebugClear(Sender: TObject);
 var
   Clients: TNodeDataArray;
-  i: Integer;
+  Client: PClientNodeData;
 begin
   Clients := FClientView.NodesToData(FClientView.GetNodes(ntClient, False));
-  for i := 0 to Length(Clients) - 1 do
-    if Clients[i].Client = FSideBar.FDebugView.DebugView.Client then
+  for Client in Clients do
+    if Client.Client = FSideBar.FDebugView.DebugView.Client then
     begin
-      Clients[i].Client.DebugLog.Clear;
+      Client.Client.DebugLog.Clear;
       Break;
     end;
 end;
@@ -1414,13 +1415,13 @@ var
   s: string;
   Entries: TPlaylistEntryArray;
   Arr: TStartStreamingInfoArray;
+  Stream: TStreamData;
 begin
   if Action in [oaPlayExternal, oaSave] then
   begin
-    SetLength(Entries, 0);
-    for i := 0 to Length(Streams) - 1 do
+    SetLength(Entries, Length(Streams));
+    for i := 0 to High(Streams) do
     begin
-      SetLength(Entries, Length(Entries) + 1);
       Entries[i].Name := Streams[i].Name;
       Entries[i].URL := Streams[i].URL;
     end;
@@ -1428,12 +1429,9 @@ begin
 
   if Action in [oaStart, oaPlay, oaAdd] then
   begin
-    SetLength(Arr, 0);
-    for i := 0 to Length(Streams) - 1 do
-    begin
-      SetLength(Arr, Length(Arr) + 1);
-      Arr[High(Arr)] := TStartStreamingInfo.Create(Streams[i].ID, Streams[i].Bitrate, Streams[i].Name, Streams[i].URL, Streams[i].URLs, Streams[i].RegExes, Streams[i].IgnoreTitles);
-    end;
+    SetLength(Arr, Length(Streams));
+    for i := 0 to High(Streams) do
+      Arr[i] := TStartStreamingInfo.Create(Streams[i].ID, Streams[i].Bitrate, Streams[i].Name, Streams[i].URL, Streams[i].URLs, Streams[i].RegExes, Streams[i].IgnoreTitles);
     StartStreaming(Arr, Action, nil, amNoWhere);
     Exit;
   end;
@@ -1442,18 +1440,18 @@ begin
     oaPlayExternal:
       SavePlaylist(Entries, True);
     oaOpenWebsite:
-      for i := 0 to Length(Streams) - 1 do
-        TFunctions.ShellExecute(Handle, 'open', Streams[i].Website);
+      for Stream in Streams do
+        TFunctions.ShellExecute(Handle, 'open', Stream.Website);
     oaBlacklist:
-      for i := 0 to Length(Streams) - 1 do
-        if Streams[i].Name <> '' then
-          if AppGlobals.Data.StreamBlacklist.IndexOf(Streams[i].Name) = -1 then
-            AppGlobals.Data.StreamBlacklist.Add(Streams[i].Name);
+      for Stream in Streams do
+        if Stream.Name <> '' then
+          if AppGlobals.Data.StreamBlacklist.IndexOf(Stream.Name) = -1 then
+            AppGlobals.Data.StreamBlacklist.Add(Stream.Name);
     oaCopy:
     begin
       s := '';
-      for i := 0 to Length(Streams) - 1 do
-        s := s + Streams[i].URL + #13#10;
+      for Stream in Streams do
+        s := s + Stream.URL + #13#10;
       s := Trim(s);
       Clipboard.AsText := s;
     end;
@@ -1516,68 +1514,69 @@ end;
 
 procedure TClientTab.UpdateStreams;
 var
-  i: Integer;
+  CatIdx: Integer;
   Nodes: TNodeArray;
   NodeData: PClientNodeData;
-  E: TStreamEntry;
-  C: TListCategory;
-  CatIdx: Integer;
+  Node: PVirtualNode;
+  StreamEntry: TStreamEntry;
+  RecentEntry: TRecentEntry;
+  CategoryEntry: TListCategory;
   OldCategories: TListCategoryList;
+  ComboItem: TCollectionItem;
 begin
   CatIdx := 0;
 
-  for i := 0 to AppGlobals.Data.StreamList.Count - 1 do
-    AppGlobals.Data.StreamList[i].Free;
+  for StreamEntry in AppGlobals.Data.StreamList do
+    StreamEntry.Free;
   AppGlobals.Data.StreamList.Clear;
 
-  for i := 0 to AppGlobals.Data.RecentList.Count - 1 do
-    AppGlobals.Data.RecentList[i].Free;
+  for RecentEntry in AppGlobals.Data.RecentList do
+    RecentEntry.Free;
   AppGlobals.Data.RecentList.Clear;
 
-
-  for i := 0 to FAddressBar.Stations.ItemsEx.Count - 1 do
-    AppGlobals.Data.RecentList.Add(TRecentEntry(FAddressBar.Stations.ItemsEx[i].Data).Copy);
+  for ComboItem in FAddressBar.Stations.ItemsEx do
+    AppGlobals.Data.RecentList.Add(TRecentEntry(TComboExItem(ComboItem).Data).Copy);
 
   OldCategories := TListCategoryList.Create;
   try
-    for i := 0 to AppGlobals.Data.CategoryList.Count - 1 do
-      OldCategories.Add(AppGlobals.Data.CategoryList[i]);
+    for CategoryEntry in AppGlobals.Data.CategoryList do
+      OldCategories.Add(CategoryEntry);
 
     Nodes := FClientView.GetNodes(ntAll, False);
-    for i := 0 to Length(Nodes) - 1 do
+    for Node in Nodes do
     begin
-      NodeData := FClientView.GetNodeData(Nodes[i]);
+      NodeData := FClientView.GetNodeData(Node);
 
       if NodeData.Client <> nil then
       begin
         if NodeData.Client.AutoRemove then
           Continue;
 
-        E := NodeData.Client.Entry.Copy;
-        E.Index := Nodes[i].Index;
-        E.CategoryIndex := 0;
-        if Nodes[i].Parent <> FClientView.RootNode then
-          E.CategoryIndex := CatIdx;
-        AppGlobals.Data.StreamList.Add(E);
+        StreamEntry := NodeData.Client.Entry.Copy;
+        StreamEntry.Index := Node.Index;
+        StreamEntry.CategoryIndex := 0;
+        if Node.Parent <> FClientView.RootNode then
+          StreamEntry.CategoryIndex := CatIdx;
+        AppGlobals.Data.StreamList.Add(StreamEntry);
       end else
       begin
-        CatIdx := Nodes[i].Index + 1;
-        C := TListCategory.Create(NodeData.Category.Name, CatIdx);
-        C.Expanded := FClientView.Expanded[Nodes[i]];
-        C.IsAuto := NodeData.Category.IsAuto;
-        AppGlobals.Data.CategoryList.Add(C);
+        CatIdx := Node.Index + 1;
+        CategoryEntry := TListCategory.Create(NodeData.Category.Name, CatIdx);
+        CategoryEntry.Expanded := FClientView.Expanded[Node];
+        CategoryEntry.IsAuto := NodeData.Category.IsAuto;
+        AppGlobals.Data.CategoryList.Add(CategoryEntry);
 
         // Weil hier nicht mit Kopien gearbeitet wird Referenz ändern
-        NodeData.Category := C;
+        NodeData.Category := CategoryEntry;
       end;
     end;
 
     // Alte Kategorien erst hier löschen, weil ich an der Stelle
     // nicht wie bei den StreamEntries mit Kopien arbeite.
-    for i := 0 to OldCategories.Count - 1 do
+    for CategoryEntry in OldCategories do
     begin
-      AppGlobals.Data.CategoryList.Remove(OldCategories[i]);
-      OldCategories[i].Free;
+      AppGlobals.Data.CategoryList.Remove(CategoryEntry);
+      CategoryEntry.Free;
     end;
   finally
     OldCategories.Free;

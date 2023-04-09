@@ -386,10 +386,11 @@ end;
 
 procedure TMClientView.DoHeaderClick(HitInfo: TVTHeaderHitInfo);
 var
-  i: Integer;
   Nodes: TNodeArray;
+  Node: PVirtualNode;
 begin
   inherited;
+
   if HitInfo.Button = mbLeft then
   begin
     if Header.SortColumn <> HitInfo.Column then
@@ -405,8 +406,8 @@ begin
       Header.SortDirection := sdAscending;
     Sort(nil, HitInfo.Column, Header.SortDirection);
     Nodes := GetNodes(ntCategory, False);
-    for i := 0 to Length(Nodes) - 1 do
-      Sort(Nodes[i], Header.SortColumn, Header.SortDirection);
+    for Node in Nodes do
+      Sort(Node, Header.SortColumn, Header.SortDirection);
   end;
 end;
 
@@ -522,9 +523,8 @@ end;
 
 function TMClientView.DoDragOver(Source: TObject; Shift: TShiftState; State: TDragState; const Pt: TPoint; Mode: TDropMode; var Effect: LongWord): Boolean;
 var
-  i, n: Integer;
-  Children: TNodeArray;
-  HitNode: PVirtualNode;
+  Nodes: TNodeArray;
+  HitNode, DragNode, Node: PVirtualNode;
   NodeData, ParentNodeData: PClientNodeData;
   s: string;
   URLs: TStringArray;
@@ -567,14 +567,14 @@ begin
 
     // Drop darf nur erlaubt sein, wenn Ziel-Node nicht in gedraggten
     // Nodes vorkommt und Ziel-Node kein Kind von Drag-Node ist
-    for i := 0 to Length(FDragNodes) - 1 do
+    for DragNode in FDragNodes do
     begin
-      if HitNode = FDragNodes[i] then
+      if HitNode = DragNode then
         Exit(False);
 
-      Children := GetNodes(ntClient, False);
-      for n := 0 to Length(Children) - 1 do
-        if (Children[n] = HitNode) and (HitNode.Parent = FDragNodes[i]) then
+      Nodes := GetNodes(ntClient, False);
+      for Node in Nodes do
+        if (Node = HitNode) and (HitNode.Parent = DragNode) then
           Exit(False);
     end;
   end;
@@ -667,10 +667,8 @@ begin
   while Node <> nil do
   begin
     if Node.Parent = Parent then
-    begin
-      SetLength(Result, Length(Result) + 1);
-      Result[Length(Result) - 1] := Node;
-    end;
+      Result += [Node];
+
     Node := GetNext(Node);
   end;
 end;
@@ -699,8 +697,8 @@ begin
       Continue;
     end;
 
-    SetLength(Result, Length(Result) + 1);
-    Result[Length(Result) - 1] := Node;
+    Result += [Node];
+
     Node := GetNext(Node);
   end;
 end;
@@ -766,53 +764,53 @@ end;
 
 function TMClientView.RefreshClient(Client: TICEClient): Boolean;
 var
-  i: Integer;
   Nodes: TNodeArray;
   NodeData: PClientNodeData;
+  Node: PVirtualNode;
 begin
   Result := False;
   Nodes := GetNodes(ntClient, False);
-  for i := 0 to Length(Nodes) - 1 do
+  for Node in Nodes do
   begin
-    NodeData := GetNodeData(Nodes[i]);
-    if NodeData.Client = Client then
-    begin
-      Result := True;
-      InvalidateNode(Nodes[i]);
-      if (Nodes[i].Parent <> nil) and (Nodes[i].Parent <> RootNode) then
-        InvalidateNode(Nodes[i].Parent);
-      Break;
-    end;
+    NodeData := GetNodeData(Node);
+    if NodeData.Client <> Client then
+      Continue;
+
+    Result := True;
+    InvalidateNode(Node);
+    if (Node.Parent <> nil) and (Node.Parent <> RootNode) then
+      InvalidateNode(Node.Parent);
+    Exit;
   end;
 end;
 
 procedure TMClientView.RemoveClient(Client: TICEClient);
 var
-  i: Integer;
   Nodes: TNodeArray;
   NodeData: PClientNodeData;
+  Node: PVirtualNode;
 begin
   Nodes := GetNodes(ntClient, False);
-  for i := Length(Nodes) - 1 downto 0 do
+  for Node in Nodes do
   begin
-    NodeData := GetNodeData(Nodes[i]);
-    if NodeData.Client = Client then
-    begin
-      DeleteNode(Nodes[i]);
-      Break;
-    end;
+    NodeData := GetNodeData(Node);
+    if NodeData.Client <> Client then
+      Continue;
+
+    DeleteNode(Node);
+    Exit;
   end;
 end;
 
 procedure TMClientView.SortItems;
 var
-  i: Integer;
   Nodes: TNodeArray;
+  Node: PVirtualNode;
 begin
   Sort(nil, -1, sdAscending);
   Nodes := GetNodes(ntCategory, False);
-  for i := 0 to Length(Nodes) - 1 do
-    Sort(Nodes[i], -1, sdAscending);
+  for Node in Nodes do
+    Sort(Node, -1, sdAscending);
   FInitialSorted := True;
 end;
 
@@ -838,14 +836,14 @@ end;
 
 function TMClientView.NodesToData(Nodes: TNodeArray): TNodeDataArray;
 var
-  i: Integer;
   Data: PClientNodeData;
+  Node: PVirtualNode;
 begin
-  SetLength(Result, Length(Nodes));
-  for i := 0 to Length(Nodes) - 1 do
+  Result := [];
+  for Node in Nodes do
   begin
-    Data := GetNodeData(Nodes[i]);
-    Result[i] := Data;
+    Data := GetNodeData(Node);
+    Result += [Data];
   end;
 end;
 
@@ -863,14 +861,14 @@ end;
 
 function TMClientView.NodesToClients(Nodes: TNodeArray): TClientArray;
 var
-  i: Integer;
   Data: PClientNodeData;
+  Node: PVirtualNode;
 begin
-  SetLength(Result, Length(Nodes));
-  for i := 0 to Length(Nodes) - 1 do
+  Result := [];
+  for Node in Nodes do
   begin
-    Data := GetNodeData(Nodes[i]);
-    Result[i] := Data.Client;
+    Data := GetNodeData(Node);
+    Result += [Data.Client];
   end;
 end;
 
@@ -941,10 +939,11 @@ procedure TMClientView.DoDragDrop(Source: TObject; DataObject: IDataObject; Form
 
 var
   Attachmode: TVTNodeAttachMode = amInsertAfter;
-  i: Integer;
   S: string;
   URLs: TStringArray;
   HitNodeData, DragNodeData: PClientNodeData;
+  StreamData: TStreamData;
+  Node: PVirtualNode;
   HI: THitInfo;
   R: TRect;
 begin
@@ -974,13 +973,13 @@ begin
     begin
       if (HitNodeData.Client = nil) and (((Attachmode = amInsertAfter) and Expanded[HI.HitNode]) or (Attachmode = amNoWhere)) then
       begin
-        for i := 0 to Length(FDragNodes) - 1 do
+        for Node in FDragNodes do
         begin
-          DragNodeData := GetNodeData(FDragNodes[i]);
+          DragNodeData := GetNodeData(Node);
           if DragNodeData.Category = nil then
-            MoveTo(FDragNodes[i], HI.HitNode, amAddChildLast, False)
+            MoveTo(Node, HI.HitNode, amAddChildLast, False)
           else
-            MoveTo(FDragNodes[i], HI.HitNode, amInsertAfter, False);
+            MoveTo(Node, HI.HitNode, amInsertAfter, False);
           UnkillCategory(HI.HitNode);
         end;
       end else
@@ -989,46 +988,40 @@ begin
           Attachmode := amAddChildLast;
         if AttachMode = amNoWhere then
           AttachMode := amInsertAfter;
-        for i := 0 to Length(FDragNodes) - 1 do
+        for Node in FDragNodes do
         begin
-          DragNodeData := GetNodeData(FDragNodes[i]);
+          DragNodeData := GetNodeData(Node);
           if (DragNodeData.Category <> nil) then
             if GetNodeLevel(HI.HitNode) > 0 then
             begin
               HI.HitNode := HI.HitNode.Parent;
               Attachmode := amInsertAfter;
             end;
-          MoveTo(FDragNodes[i], HI.HitNode, Attachmode, False);
+          MoveTo(Node, HI.HitNode, Attachmode, False);
           UnkillCategory(HI.HitNode);
         end;
       end;
     end else
       // Nodes ins "nichts" gedraggt
-      for i := 0 to Length(FDragNodes) - 1 do
-        MoveTo(FDragNodes[i], RootNode, amAddChildLast, False);
+      for Node in FDragNodes do
+        MoveTo(Node, RootNode, amAddChildLast, False);
   end else if Length(FBrowser.DraggedStreams) > 0 then
   begin
-    for i := 0 to High(FBrowser.DraggedStreams) do
+    for StreamData in FBrowser.DraggedStreams do
     begin
       // Das hier ist das selbe wie hier drunter, nur mit anderer URL/RegEx...
       if ((HI.HitNode <> nil) and (HitNodeData.Client = nil) and (Attachmode = amInsertAfter) and Expanded[HI.HitNode]) or (Attachmode = amNoWhere) then
         if (HitNodeData <> nil) and (HitNodeData.Client <> nil) then
-          OnStartStreaming(Self, FBrowser.DraggedStreams[i].ID, FBrowser.DraggedStreams[i].Bitrate, FBrowser.DraggedStreams[i].Name,
-            FBrowser.DraggedStreams[i].URL, FBrowser.DraggedStreams[i].URLs, FBrowser.DraggedStreams[i].RegExes, FBrowser.DraggedStreams[i].IgnoreTitles,
-            HI.HitNode, amInsertAfter)
+          OnStartStreaming(Self, StreamData.ID, StreamData.Bitrate, StreamData.Name, StreamData.URL, StreamData.URLs, StreamData.RegExes, StreamData.IgnoreTitles, HI.HitNode, amInsertAfter)
         else
-          OnStartStreaming(Self, FBrowser.DraggedStreams[i].ID, FBrowser.DraggedStreams[i].Bitrate, FBrowser.DraggedStreams[i].Name,
-            FBrowser.DraggedStreams[i].URL, FBrowser.DraggedStreams[i].URLs, FBrowser.DraggedStreams[i].RegExes, FBrowser.DraggedStreams[i].IgnoreTitles,
-            HI.HitNode, amAddChildLast)
+          OnStartStreaming(Self, StreamData.ID, StreamData.Bitrate, StreamData.Name, StreamData.URL, StreamData.URLs, StreamData.RegExes, StreamData.IgnoreTitles, HI.HitNode, amAddChildLast)
       else
       begin
         if (HI.HitNode <> nil) and Expanded[HI.HitNode] and (Attachmode <> amInsertBefore) then
           Attachmode := amAddChildLast;
         if AttachMode = amNoWhere then
           AttachMode := amInsertAfter;
-        OnStartStreaming(Self, FBrowser.DraggedStreams[i].ID, FBrowser.DraggedStreams[i].Bitrate, FBrowser.DraggedStreams[i].Name,
-          FBrowser.DraggedStreams[i].URL, FBrowser.DraggedStreams[i].URLs, FBrowser.DraggedStreams[i].RegExes, FBrowser.DraggedStreams[i].IgnoreTitles,
-          HI.HitNode, Attachmode);
+        OnStartStreaming(Self, StreamData.ID, StreamData.Bitrate, StreamData.Name, StreamData.URL, StreamData.URLs, StreamData.RegExes, StreamData.IgnoreTitles, HI.HitNode, Attachmode);
       end;
       UnkillCategory(HI.HitNode);
     end;
@@ -1052,8 +1045,8 @@ end;
 
 procedure TMClientView.DoDragging(P: TPoint);
 var
-  i: Integer;
   Entries: TPlaylistEntryArray = [];
+  Entry: TPlaylistEntry;
   Client: TICEClient;
   Clients: TClientArray;
   Node: PVirtualNode;
@@ -1076,8 +1069,8 @@ begin
     begin
       if Client.AutoRemove then
         Exit;
-      SetLength(FDragNodes, Length(FDragNodes) + 1);
-      FDragNodes[High(FDragNodes)] := GetClientNode(Client);
+
+      FDragNodes += [GetClientNode(Client)];
     end;
 
     case AppGlobals.DefaultAction of
@@ -1088,8 +1081,8 @@ begin
     if Length(Entries) = 0 then
       Entries := GetEntries(etStream);
 
-    for i := 0 to Length(Entries) - 1 do
-      FDragSource.Files.Add(SecureSWURLToInsecure(Entries[i].URL));
+    for Entry in Entries do
+      FDragSource.Files.Add(SecureSWURLToInsecure(Entry.URL));
 
     if FDragSource.Files.Count = 0 then
       Exit;
@@ -1097,10 +1090,7 @@ begin
   begin
     Nodes := GetNodes(ntCategory, True);
     for Node in Nodes do
-    begin
-      SetLength(FDragNodes, Length(FDragNodes) + 1);
-      FDragNodes[High(FDragNodes)] := Node;
-    end;
+      FDragNodes += [Node];
   end;
 
   DoStateChange([], [tsOLEDragPending, tsOLEDragging, tsClearPending]);

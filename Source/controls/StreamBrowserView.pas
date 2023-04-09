@@ -635,18 +635,14 @@ begin
     Node := GetFirst;
     while Node <> nil do
     begin
-      SetLength(Result, Length(Result) + 1);
-      Result[Length(Result) - 1] := Node;
+      Result += [Node];
       Node := GetNext(Node);
     end;
   end else
   begin
     Nodes := GetSortedSelection(True);
-    for i := 0 to Length(Nodes) - 1 do
-    begin
-      SetLength(Result, Length(Result) + 1);
-      Result[Length(Result) - 1] := Nodes[i];
-    end;
+    for Node in Nodes do
+      Result += [Node];
   end;
 end;
 
@@ -656,24 +652,23 @@ var
   Nodes: TNodeArray;
   NodeData: PStreamNodeData;
 begin
-  Result := [];
   Nodes := GetNodes(True);
-  for i := 0 to Length(Nodes) - 1 do
+  SetLength(Result, Length(Nodes));
+  for i := 0 to High(Nodes) do
   begin
     NodeData := GetNodeData(Nodes[i]);
 
-    SetLength(Result, Length(Result) + 1);
-    Result[High(Result)].ID := NodeData.Data.ID;
-    Result[High(Result)].Bitrate := NodeData.Data.Bitrate;
-    Result[High(Result)].Name := NodeData.Data.Name;
-    Result[High(Result)].URL := NodeData.Data.URL;
-    Result[High(Result)].URLs := NodeData.Data.URLs;
-    Result[High(Result)].Website := NodeData.Data.Website;
-    Result[High(Result)].Rating := NodeData.Data.Rating;
-    Result[High(Result)].RegExes := NodeData.Data.RegExes;
-    Result[High(Result)].RecordingOkay := NodeData.Data.RecordingOkay;
-    Result[High(Result)].IgnoreTitles := NodeData.Data.IgnoreTitles;
-    Result[High(Result)].CanSetRegExps := NodeData.Data.CanSetRegExps;
+    Result[i].ID := NodeData.Data.ID;
+    Result[i].Bitrate := NodeData.Data.Bitrate;
+    Result[i].Name := NodeData.Data.Name;
+    Result[i].URL := NodeData.Data.URL;
+    Result[i].URLs := NodeData.Data.URLs;
+    Result[i].Website := NodeData.Data.Website;
+    Result[i].Rating := NodeData.Data.Rating;
+    Result[i].RegExes := NodeData.Data.RegExes;
+    Result[i].RecordingOkay := NodeData.Data.RecordingOkay;
+    Result[i].IgnoreTitles := NodeData.Data.IgnoreTitles;
+    Result[i].CanSetRegExps := NodeData.Data.CanSetRegExps;
   end;
 end;
 
@@ -1010,16 +1005,16 @@ end;
 
 procedure TMStreamTree.DoDragging(P: TPoint);
 var
-  i: Integer;
   Entries: TStreamDataArray;
+  StreamData: TStreamData;
 begin
   if FDragSource.DragInProgress then
     Exit;
 
   FDragSource.Files.Clear;
   Entries := GetSelected;
-  for i := 0 to Length(Entries) - 1 do
-    FDragSource.Files.Add(Entries[i].URL);
+  for StreamData in Entries do
+    FDragSource.Files.Add(StreamData.URL);
 
   if FDragSource.Files.Count = 0 then
     Exit;

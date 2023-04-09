@@ -889,13 +889,14 @@ end;
 
 procedure TChartsTree.ExecDefaultAction;
 var
-  i: Integer;
   AllOnWishlist: Boolean;
   P: TControl;
   Nodes: TNodeArray;
   NodesData: TChartDataArray;
   Titles: TWishlistTitleInfoArray = [];
   Info: TStartStreamingInfoArray = [];
+  NodeData: PChartNodeData;
+  Node: PVirtualNode;
 begin
   P := Parent;
   while not (P.ClassType = TChartsTab) do
@@ -905,19 +906,16 @@ begin
   Nodes := GetNodes(ntAll, True);
   NodesData := NodesToData(Nodes);
 
-  for i := 0 to Length(NodesData) - 1 do
-    if NodesData[i].Chart <> nil then
+  for NodeData in NodesData do
+    if NodeData.Chart <> nil then
     begin
-      if not NodesData[i].IsOnWishlist then
+      if not NodeData.IsOnWishlist then
         AllOnWishlist := False;
 
-      SetLength(Titles, Length(Titles) + 1);
-      Titles[High(Titles)] := TWishlistTitleInfo.Create(NodesData[i].Chart.ServerHash, NodesData[i].Chart.Name, False);
-    end else if NodesData[i].Stream <> nil then
+      Titles += [TWishlistTitleInfo.Create(NodeData.Chart.ServerHash, NodeData.Chart.Name, False)];
+    end else if NodeData.Stream <> nil then
     begin
-      SetLength(Info, Length(Info) + 1);
-      Info[High(Info)] := TStartStreamingInfo.Create(NodesData[i].Stream.ID, NodesData[i].Stream.Stream.Bitrate, NodesData[i].Stream.Stream.Name, NodesData[i].Stream.Stream.URL,
-        NodesData[i].Stream.Stream.URLs, NodesData[i].Stream.Stream.RegExes, NodesData[i].Stream.Stream.IgnoreTitles);
+      Info += [TStartStreamingInfo.Create(NodeData.Stream.ID, NodeData.Stream.Stream.Bitrate, NodeData.Stream.Stream.Name, NodeData.Stream.Stream.URL, NodeData.Stream.Stream.URLs, NodeData.Stream.Stream.RegExes, NodeData.Stream.Stream.IgnoreTitles)];
     end;
 
   case AppGlobals.DefaultActionNewStream of
@@ -937,8 +935,8 @@ begin
     else
       TChartsTab(P).FOnAddToWishlist(Self, Titles);
 
-  for i := 0 to Length(Nodes) - 1 do
-    InvalidateNode(Nodes[i]);
+  for Node in Nodes do
+    InvalidateNode(Node);
 end;
 
 procedure TChartsTree.FitColumns;
@@ -1019,8 +1017,8 @@ begin
       Continue;
     end;
 
-    SetLength(Result, Length(Result) + 1);
-    Result[Length(Result) - 1] := Node;
+    Result += [Node];
+
     Node := GetNext(Node);
   end;
 end;
@@ -1031,7 +1029,7 @@ var
   Data: PChartNodeData;
 begin
   SetLength(Result, Length(Nodes));
-  for i := 0 to Length(Nodes) - 1 do
+  for i := 0 to High(Nodes) do
   begin
     Data := GetNodeData(Nodes[i]);
     Result[i] := Data;
@@ -1195,12 +1193,12 @@ end;
 
 procedure TChartsTree.PopupMenuClick(Sender: TObject);
 var
-  i: Integer;
   Nodes: TChartDataArray;
   Titles: TWishlistTitleInfoArray = [];
   P: TControl;
   F: TfrmChartsTabAdjustTitleName;
   Info: TStartStreamingInfoArray = [];
+  Node: PChartNodeData;
 begin
   P := Parent;
   while not (P.ClassType = TChartsTab) do
@@ -1209,41 +1207,29 @@ begin
   Nodes := NodesToData(GetNodes(ntAll, True));
 
   try
-    for i := 0 to Length(Nodes) - 1 do
-      if Nodes[i].Chart <> nil then
+    for Node in Nodes do
+      if Node.Chart <> nil then
       begin
         if (Sender = FPopupMenu.ItemAddToWishlist) or (Sender = FPopupMenu.ItemRemoveFromWishlist) then
+          Titles += [TWishlistTitleInfo.Create(Node.Chart.ServerHash, Node.Chart.Name, False)]
+        else if Sender = FPopupMenu.ItemAddArtistToWishlist then
         begin
-          SetLength(Titles, Length(Titles) + 1);
-          Titles[High(Titles)] := TWishlistTitleInfo.Create(Nodes[i].Chart.ServerHash, Nodes[i].Chart.Name, False);
-        end else if Sender = FPopupMenu.ItemAddArtistToWishlist then
-        begin
-          if Nodes[i].Chart.ServerArtistHash > 0 then
-          begin
-            SetLength(Titles, Length(Titles) + 1);
-            Titles[High(Titles)] := TWishlistTitleInfo.Create(Nodes[i].Chart.ServerArtistHash, Nodes[i].Chart.Artist, True);
-          end;
+          if Node.Chart.ServerArtistHash > 0 then
+            Titles += [TWishlistTitleInfo.Create(Node.Chart.ServerArtistHash, Node.Chart.Artist, True)];
         end else if Sender = FPopupMenu.ItemEditAndAddToWishlist then
         begin
-          F := TfrmChartsTabAdjustTitleName.Create(GetParentForm(Self), Nodes[i].Chart.Name);
+          F := TfrmChartsTabAdjustTitleName.Create(GetParentForm(Self), Node.Chart.Name);
           try
             F.ShowModal;
 
             if F.Okay then
-            begin
-              SetLength(Titles, Length(Titles) + 1);
-              Titles[High(Titles)] := TWishlistTitleInfo.Create(0, F.TitleName, False);
-            end;
+              Titles += [TWishlistTitleInfo.Create(0, F.TitleName, False)];
           finally
             F.Free;
           end;
         end;
       end else
-      begin
-        SetLength(Info, Length(Info) + 1);
-        Info[High(Info)] := TStartStreamingInfo.Create(Nodes[i].Stream.ID, Nodes[i].Stream.Stream.Bitrate, Nodes[i].Stream.Stream.Name, Nodes[i].Stream.Stream.URL, Nodes[i].Stream.Stream.URLs,
-          Nodes[i].Stream.Stream.RegExes, Nodes[i].Stream.Stream.IgnoreTitles);
-      end;
+        Info += [TStartStreamingInfo.Create(Node.Stream.ID, Node.Stream.Stream.Bitrate, Node.Stream.Stream.Name, Node.Stream.Stream.URL, Node.Stream.Stream.URLs, Node.Stream.Stream.RegExes, Node.Stream.Stream.IgnoreTitles)];
 
     if Sender = FPopupMenu.ItemStartStreaming then
       TChartsTab(P).FOnAddStreams(Self, Info, oaStart)

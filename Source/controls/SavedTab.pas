@@ -924,13 +924,14 @@ end;
 
 procedure TSavedTab.SavedTreeAction(Sender: TObject; Action: TTrackActions; Tracks: TTrackInfoArray);
 var
-  i, n: Integer;
+  i: Integer;
   Error, AllFinalized: Boolean;
   LowerDir, Dir: string;
   EditTags: TfrmEditTags;
   KnownFiles: TStringList;
   Dlg: TOpenDialog;
   Tracks2: TTrackInfoArray;
+  Track, Track2: TTrackInfo;
 begin
   case Action of
     taRefresh:
@@ -938,8 +939,8 @@ begin
         FOnRefresh(Self);
     taCutSong:
       if Assigned(FOnCut) then
-        for i := 0 to Length(Tracks) - 1 do
-          FOnCut(nil, Tracks[i]);
+        for Track in Tracks do
+          FOnCut(nil, Track);
     taEditTags:
     begin
       EditTags := TfrmEditTags.Create(GetParentForm(Self));
@@ -949,10 +950,10 @@ begin
         // Es könnte sein, dass inzwischen Files gelöscht wurden oder so. Also nochmal Nodes
         // holen und Änderungen aus Formular anwenden.
         Tracks2 := FSavedTree.GetSelected;
-        for i := 0 to High(EditTags.Tracks) do
-          for n := 0 to High(Tracks2) do
-            if EditTags.Tracks[i].Filename = Tracks2[n].Filename then
-              Tracks2[n].Streamname := EditTags.Tracks[i].Streamname;
+        for Track in EditTags.Tracks do
+          for Track2 in Tracks do
+            if Track.Filename = Track2.Filename then
+              Track2.Streamname := Track.Streamname;
       finally
         EditTags.Free;
       end;
@@ -960,41 +961,43 @@ begin
     taFinalized:
     begin
       AllFinalized := True;
-      for i := 0 to Length(Tracks) - 1 do
-        if not Tracks[i].Finalized then
+
+      for Track in Tracks do
+        if not Track.Finalized then
         begin
           AllFinalized := False;
           Break;
         end;
-      for i := 0 to Length(Tracks) - 1 do
-        Tracks[i].Finalized := not AllFinalized;
+
+      for Track in Tracks do
+        Track.Finalized := not AllFinalized;
     end;
     taAddToWishlist:
-      for i := 0 to Length(Tracks) - 1 do
-        FOnAddTitleToWishlist(Self, Tracks[i].ParsedTitle, Tracks[i].ServerTitleHash);
+      for Track in Tracks do
+        FOnAddTitleToWishlist(Self, Track.ParsedTitle, Track.ServerTitleHash);
     taRemoveFromWishlist:
-      for i := 0 to Length(Tracks) - 1 do
-        FOnRemoveTitleFromWishlist(Self, Tracks[i].ParsedTitle, Tracks[i].ServerTitleHash);
+      for Track in Tracks do
+        FOnRemoveTitleFromWishlist(Self, Track.ParsedTitle, Track.ServerTitleHash);
     taAddToIgnorelist:
-      for i := 0 to Length(Tracks) - 1 do
-        FOnAddTitleToIgnorelist(Self, Tracks[i].ParsedTitle, 0);
+      for Track in Tracks do
+        FOnAddTitleToIgnorelist(Self, Track.ParsedTitle, 0);
     taRemoveFromIgnorelist:
-      for i := 0 to Length(Tracks) - 1 do
-        FOnRemoveTitleFromIgnorelist(Self, Tracks[i].ParsedTitle, 0);
+      for Track in Tracks do
+        FOnRemoveTitleFromIgnorelist(Self, Track.ParsedTitle, 0);
     taRemove:
       FSavedTree.RemoveTracks(Tracks);
     taRecycle:
-      for i := 0 to Length(Tracks) - 1 do
+      for Track in Tracks do
       begin
-        MsgBus.SendMessage(TFileModifyMsg.Create(Tracks[i].Filename));
+        MsgBus.SendMessage(TFileModifyMsg.Create(Track.Filename));
 
-        if TFunctions.Recycle(Handle, Tracks[i].Filename) then
+        if TFunctions.Recycle(Handle, Track.Filename) then
         begin
-          LowerDir := LowerCase(ExtractFileDir(Tracks[i].Filename));
+          LowerDir := LowerCase(ExtractFileDir(Track.Filename));
           if (LowerDir <> LowerCase(ExcludeTrailingPathDelimiter(AppGlobals.Dir))) and (LowerDir <> LowerCase(ExcludeTrailingPathDelimiter(AppGlobals.DirAuto))) then
-            RemoveDir(ExtractFileDir(Tracks[i].Filename));
+            RemoveDir(ExtractFileDir(Track.Filename));
 
-          FSavedTree.RemoveTracks([Tracks[i]]);
+          FSavedTree.RemoveTracks([Track]);
         end;
       end;
     taDelete:
@@ -1009,20 +1012,20 @@ begin
       Error := False;
       FSavedTree.BeginUpdate;
       try
-        for i := 0 to Length(Tracks) - 1 do
+        for Track in Tracks do
         begin
-          MsgBus.SendMessage(TFileModifyMsg.Create(Tracks[i].Filename));
+          MsgBus.SendMessage(TFileModifyMsg.Create(Track.Filename));
 
-          if FileExists(Tracks[i].Filename) then
-            Error := not SysUtils.DeleteFile(Tracks[i].Filename);
+          if FileExists(Track.Filename) then
+            Error := not SysUtils.DeleteFile(Track.Filename);
 
           if not Error then
           begin
-            LowerDir := LowerCase(ExtractFileDir(Tracks[i].Filename));
+            LowerDir := LowerCase(ExtractFileDir(Track.Filename));
             if not ((LowerDir = LowerCase(ExcludeTrailingPathDelimiter(AppGlobals.Dir))) and (LowerDir = LowerCase(ExcludeTrailingPathDelimiter(AppGlobals.DirAuto)))) then
-              RemoveDir(ExtractFileDir(Tracks[i].Filename));
+              RemoveDir(ExtractFileDir(Track.Filename));
 
-            FSavedTree.RemoveTracks([Tracks[i]]);
+            FSavedTree.RemoveTracks([Track]);
           end;
         end;
       finally
@@ -1039,6 +1042,7 @@ begin
     begin
       Dlg := TOpenDialog.Create(GetParentForm(Self));
       try
+        Dlg.Title := _('Open file');
         Dlg.Options := [ofAllowMultiSelect, ofFileMustExist];
         Dlg.Filter := _('Audio files|*.mp3;*.ogg;*.aac;*.m4a');
         if Dlg.Execute and (Dlg.Files.Count > 0) then
@@ -1046,11 +1050,12 @@ begin
           for i := Dlg.Files.Count - 1 downto 0 do
             if FilenameToFormat(Dlg.Files[i]) = atNone then
               Dlg.Files.Delete(i);
+
           if Dlg.Files.Count > 0 then
           begin
             KnownFiles := TStringList.Create;
-            for i := 0 to AppGlobals.Data.TrackList.Count - 1 do
-              KnownFiles.Add(AppGlobals.Data.TrackList[i].Filename);
+            for Track in AppGlobals.Data.TrackList do
+              KnownFiles.Add(Track.Filename);
 
             FImportThread := TImportFilesThread.Create(Dlg.Files, KnownFiles);
             FImportThread.OnTerminate := ImportThreadTerminate;
@@ -1077,8 +1082,8 @@ begin
       if Dir <> '' then
       begin
         KnownFiles := TStringList.Create;
-        for i := 0 to AppGlobals.Data.TrackList.Count - 1 do
-          KnownFiles.Add(AppGlobals.Data.TrackList[i].Filename);
+        for Track in AppGlobals.Data.TrackList do
+          KnownFiles.Add(Track.Filename);
 
         FImportThread := TImportFilesThread.Create(Dir, KnownFiles);
         FImportThread.OnTerminate := ImportThreadTerminate;
@@ -1425,13 +1430,13 @@ end;
 
 procedure TSavedTree.CutCopy(Cut: Boolean);
 var
-  i: Integer;
   Tracks: TTrackInfoArray;
+  Track: TTrackInfo;
 begin
   FDragSource.Files.Clear;
   Tracks := GetSelected;
-  for i := 0 to Length(Tracks) - 1 do
-    FDragSource.Files.Add(Tracks[i].Filename);
+  for Track in Tracks do
+    FDragSource.Files.Add(Track.Filename);
 
   if FDragSource.Files.Count > 0 then
     if Cut then
@@ -1506,7 +1511,6 @@ end;
 
 function TSavedTree.GetNodes(SelectedOnly: Boolean): TNodeArray;
 var
-  i: Integer;
   Node: PVirtualNode;
   Nodes: TNodeArray;
 begin
@@ -1517,40 +1521,31 @@ begin
     while Node <> nil do
     begin
       if PSavedNodeData(GetNodeData(Node)).Track <> nil then
-      begin
-        SetLength(Result, Length(Result) + 1);
-        Result[Length(Result) - 1] := Node;
-      end;
+        Result += [Node];
       Node := GetNext(Node);
     end;
   end else
   begin
     Nodes := GetSortedSelection(False);
-    for i := 0 to Length(Nodes) - 1 do
-      if PSavedNodeData(GetNodeData(Nodes[i])).Track <> nil then
-      begin
-        SetLength(Result, Length(Result) + 1);
-        Result[Length(Result) - 1] := Nodes[i];
-      end;
+    for Node in Nodes do
+      if PSavedNodeData(GetNodeData(Node)).Track <> nil then
+        Result += [Node];
   end;
 end;
 
 function TSavedTree.GetSelected: TTrackInfoArray;
 var
-  i: Integer;
   Nodes: TNodeArray;
   NodeData: PSavedNodeData;
+  Node: PVirtualNode;
 begin
   Result := [];
   Nodes := GetNodes(True);
-  for i := 0 to Length(Nodes) - 1 do
+  for Node in Nodes do
   begin
-    NodeData := GetNodeData(Nodes[i]);
+    NodeData := GetNodeData(Node);
     if NodeData.Track <> nil then
-    begin
-      SetLength(Result, Length(Result) + 1);
-      Result[High(Result)] := NodeData.Track;
-    end;
+      Result += [NodeData.Track];
   end;
 end;
 
@@ -1685,7 +1680,7 @@ begin
   end else
   begin
     Nodes := GetNodes(False);
-    for i := 0 to Length(Nodes) - 1 do
+    for i := 0 to High(Nodes) do
     begin
       NodeData := GetNodeData(Nodes[i]);
       if LowerCase(NodeData.Track.Filename) = LowerCase(FPlayer.Filename) then
@@ -1724,10 +1719,7 @@ function TSavedTree.NextPlayingTrack(ConsiderRnd: Boolean; AddToPlayerList: Bool
     begin
       NodeData := GetNodeData(Node);
       if (NodeData.Track <> nil) and (NodeData.Track.Filename <> ExceptFilename) then
-      begin
-        SetLength(Nodes, Length(Nodes) + 1);
-        Nodes[High(Nodes)] := Node;
-      end;
+        Nodes += [Node];
 
       Node := GetNextSibling(Node);
     end;
@@ -1792,7 +1784,7 @@ begin
   end else
   begin
     Nodes := GetNodes(False);
-    for i := 0 to Length(Nodes) - 1 do
+    for i := 0 to High(Nodes) do
     begin
       NodeData := GetNodeData(Nodes[i]);
       if LowerCase(NodeData.Track.Filename) = LowerCase(FPlayer.Filename) then
@@ -2395,10 +2387,7 @@ begin
             if FTrackList[i].ServerTitleHash = ServerTitleHashes[n] then
             begin
               AddTrack(FTrackList[i], False, True);
-
-              SetLength(TitleHashesAdded, Length(TitleHashesAdded) + 1);
-              TitleHashesAdded[High(TitleHashesAdded)] := ServerTitleHashes[n];
-
+              TitleHashesAdded += [ServerTitleHashes[n]];
               AddedTitles.Add(FTrackList[i]);
             end;
 
@@ -2698,16 +2687,16 @@ end;
 
 procedure TSavedTree.DoDragging(P: TPoint);
 var
-  i: Integer;
   Tracks: TTrackInfoArray;
+  Track: TTrackInfo;
 begin
   if FDragSource.DragInProgress then
     Exit;
 
   FDragSource.Files.Clear;
   Tracks := GetSelected;
-  for i := 0 to Length(Tracks) - 1 do
-    FDragSource.Files.Add(Tracks[i].Filename);
+  for Track in Tracks do
+    FDragSource.Files.Add(Track.Filename);
 
   if FDragSource.Files.Count = 0 then
     Exit;

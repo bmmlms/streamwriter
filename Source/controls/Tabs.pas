@@ -124,7 +124,7 @@ procedure TMainTabSheet.SavePlaylist(Entries: TPlaylistEntryArray; Open: Boolean
     List.Clear;
     List.Add('[playlist]');
     List.Add('numberofentries=' + IntToStr(Length(Entries)));
-    for i := 0 to Length(Entries) - 1 do
+    for i := 0 to High(Entries) do
     begin
       List.Add('File' + IntToStr(i + 1) + '=' + GetURLString(Entries[i].URL));
       List.Add('Title' + IntToStr(i + 1) + '=' + Entries[i].Name);
@@ -134,14 +134,14 @@ procedure TMainTabSheet.SavePlaylist(Entries: TPlaylistEntryArray; Open: Boolean
 
   procedure BuildM3U(Entries: TPlaylistEntryArray; List: TStringList);
   var
-    i: Integer;
+    Entry: TPlaylistEntry;
   begin
     List.Clear;
     List.Add('#EXTM3U');
-    for i := 0 to Length(Entries) - 1 do
+    for Entry in Entries do
     begin
-      List.Add('#EXTINF:-1,' + Entries[i].Name);
-      List.Add(GetURLString(Entries[i].URL));
+      List.Add('#EXTINF:-1,' + Entry.Name);
+      List.Add(GetURLString(Entry.URL));
     end;
   end;
 
@@ -159,6 +159,7 @@ begin
     begin
       Dlg := TSaveDialog.Create(Self);
       try
+        Dlg.Title := _('Save file');
         Dlg.FileName := '';
         Dlg.Filter := '.M3U Playlist|*.m3u|.PLS Playlist|*.pls';
         Dlg.Options := Dlg.Options + [ofOverwritePrompt, ofPathMustExist];
