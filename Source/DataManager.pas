@@ -2390,7 +2390,7 @@ constructor TChartEntry.Create;
 begin
   inherited;
 
-  SetLength(FCategories, 0);
+  FCategories := [];
   FStreams := TList<TChartStream>.Create;
 end;
 

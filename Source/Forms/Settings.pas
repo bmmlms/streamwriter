@@ -48,6 +48,7 @@ uses
   Images,
   ImgList,
   LanguageObjects,
+  LazUTF8,
   Logging,
   MControlFocuser,
   MControls,
@@ -1152,7 +1153,7 @@ begin
   Item.Checked := AppGlobals.AddonManager.EnableAddon(Self, TAddonBase(Item.Data), True);
   lstAddons.OnItemChecked := lstAddonsItemChecked;
 
-  // Eventuell wurden Abhängigkeiten mitinstalliert. Also alles mal aktualisieren.
+  // Eventuell wurden AbhÃ¤ngigkeiten mitinstalliert. Also alles mal aktualisieren.
   lstAddons.OnItemChecked := nil;
   for i := 0 to lstAddons.Items.Count - 1 do
     lstAddons.Items[i].Checked := TAddonBase(lstAddons.Items[i].Data).PackageDownloaded and TAddonBase(lstAddons.Items[i].Data).FilesExtracted;
@@ -1971,7 +1972,7 @@ end;
 
 procedure TfrmSettings.txtIgnoreTitlePatternChange(Sender: TObject);
 begin
-  btnAddIgnoreTitlePattern.Enabled := Length(Trim(txtIgnoreTitlePattern.Control.Text)) >= 1;
+  btnAddIgnoreTitlePattern.Enabled := UTF8LengthFast(UTF8Trim(txtIgnoreTitlePattern.Control.Text)) >= 1;
 end;
 
 procedure TfrmSettings.txtFilePatternEnter(Sender: TObject);
@@ -2039,7 +2040,7 @@ end;
 
 procedure TfrmSettings.txtRegExChange(Sender: TObject);
 begin
-  btnAddRegEx.Enabled := Length(Trim(txtRegEx.Control.Text)) >= 1;
+  btnAddRegEx.Enabled := UTF8LengthFast(UTF8Trim(txtRegEx.Control.Text)) >= 1;
 end;
 
 procedure TfrmSettings.UpdatePostProcessUpDown;
@@ -2402,7 +2403,7 @@ end;
 
 procedure TfrmSettings.btnResetRemoveCharsClick(Sender: TObject);
 begin
-  txtRemoveChars.Control.Text := '[]{}#$§%~^';
+  txtRemoveChars.Control.Text := '[]{}#$Â§%~^';
   txtRemoveChars.Control.ApplyFocus;
   RemoveGray(txtRemoveChars.Control);
 end;
@@ -2771,7 +2772,7 @@ begin
     chkSeparateTracks.Enabled := chkSaveStreamsToDisk.Checked;
     chkSeparateTracks.Checked := True;
 
-    // Weil das hier drüber die Seite abschaltet, schalten wir sie wieder an..
+    // Weil das hier drÃ¼ber die Seite abschaltet, schalten wir sie wieder an..
     EnablePanel(pnlCut, (not chkSaveStreamsToDisk.Checked or (chkSeparateTracks.Checked and chkSeparateTracks.Enabled)) or (FSettingsType = stAuto));
     chkDeleteStreams.Enabled := (not chkSeparateTracks.Checked) or (chkSaveStreamsToDisk.Checked);
     chkDeleteStreams.Checked := chkDeleteStreams.Enabled and FStreamSettings[0].DeleteStreams;
@@ -2860,7 +2861,7 @@ begin
   FBrowseDir := BrowseDir;
 
   // Wir geben AOwner mit, so dass das MsgDlg zentriert angezeigt wird.
-  // Self ist nämlich noch nicht Visible, haben kein Handle, etc..
+  // Self ist nÃ¤mlich noch nicht Visible, haben kein Handle, etc..
   if not BrowseDir then
     TfrmMsgDlg.ShowMsg(TForm(AOwner), _('Settings from the categories "Streams", "Filenames", "Cut", "Postprocessing" and "Advanced" configured in the general settings window are only applied to new streams you add to the list.'#13#10 +
       'To change those settings for streams in the list, select these streams, then right-click one of them and select "Settings" from the popupmenu.'), mtInformation, [mbOK], mbOK, 4);
@@ -2946,7 +2947,7 @@ begin
   lstBlacklist.Parent := pnlBlacklist;
   lstBlacklist.Align := alClient;
 
-  // Werbung überspringen ausblenden
+  // Werbung Ã¼berspringen ausblenden
   chkSkipShort.Visible := False;
   txtShortLengthSeconds.Visible := False;
 

@@ -1525,7 +1525,6 @@ begin
     end;
   end else
   begin
-    SetLength(Result, 0);
     Nodes := GetSortedSelection(False);
     for i := 0 to Length(Nodes) - 1 do
       if PSavedNodeData(GetNodeData(Nodes[i])).Track <> nil then
@@ -1542,7 +1541,7 @@ var
   Nodes: TNodeArray;
   NodeData: PSavedNodeData;
 begin
-  SetLength(Result, 0);
+  Result := [];
   Nodes := GetNodes(True);
   for i := 0 to Length(Nodes) - 1 do
   begin
@@ -1709,14 +1708,12 @@ function TSavedTree.NextPlayingTrack(ConsiderRnd: Boolean; AddToPlayerList: Bool
     R: Integer;
     Node: PVirtualNode;
     NodeData: PSavedNodeData;
-    Nodes: TNodeArray;
+    Nodes: TNodeArray = [];
   begin
     Result := nil;
 
     if FFileNode.ChildCount <= 1 then
       Exit;
-
-    SetLength(Nodes, 0);
 
     Node := GetFirstChild(FFileNode);
 
@@ -2355,9 +2352,8 @@ end;
 
 procedure TSavedTree.Filter(S: string);
 var
-  Tmp: TCardinalArray;
+  Tmp: TCardinalArray = [];
 begin
-  SetLength(Tmp, 0);
   Filter(S, Tmp, Tmp);
 end;
 
@@ -2366,7 +2362,7 @@ var
   i, n, k: Integer;
   Hash: Cardinal;
   Chars: Integer;
-  TitleHashesAdded: TCardinalArray;
+  TitleHashesAdded: TCardinalArray = [];
   AddedTitles: TList;
   Found: Boolean;
 begin
@@ -2392,8 +2388,6 @@ begin
       end else
       begin
         FFilesExpanded := True;
-
-        SetLength(TitleHashesAdded, 0);
 
         // Erstmal alles basierend auf Title-Hashes einfügen
         for i := 0 to FTrackList.Count - 1 do

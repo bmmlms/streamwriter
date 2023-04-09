@@ -214,13 +214,12 @@ end;
 procedure TfrmSetStreamData.btnOKClick(Sender: TObject);
 var
   i: Integer;
-  RegExps: TStringArray;
+  RegExps: TStringArray = [];
 begin
   if (Length(Trim(txtRegEx.Control.Text)) > 0) and (LowerCase(Trim(txtRegEx.Control.Text)) <> LowerCase(DEFAULT_TITLE_REGEXP)) then
     if TFunctions.MsgBox(_('A regular expression was entered into the text field but not added to the list.'#13#10'Do you want to continue without saving that regular expression?'), _('Question'), MB_YESNO or MB_ICONQUESTION) = IDNO then
       Exit;
 
-  SetLength(RegExps, 0);
   for i := 0 to lstRegExps.Items.Count - 1 do
   begin
     SetLength(RegExps, Length(RegExps) + 1);

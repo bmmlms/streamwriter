@@ -282,10 +282,8 @@ var
   i, n: Integer;
   Found: Boolean;
   Title: TTitleInfo;
-  Hashes: TSyncWishlistRecordArray;
+  Hashes: TSyncWishlistRecordArray = [];
 begin
-  SetLength(Hashes, 0);
-
   for i := 0 to High(FoundTitles) do
   begin
     // If a manual title already exists the manual title needs to be removed

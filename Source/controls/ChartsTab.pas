@@ -44,6 +44,7 @@ uses
   Images,
   ImgList,
   LanguageObjects,
+  LazUTF8,
   Logging,
   MComboBoxExEditable,
   MControlFocuser,
@@ -368,7 +369,7 @@ begin
 
     Strings := Tmp.Split([' ']);
     for S in Strings do
-      if S.Length >= 2 then
+      if UTF8LengthFast(S) >= 2 then
       begin
         Abort := False;
         Break;
@@ -893,8 +894,8 @@ var
   P: TControl;
   Nodes: TNodeArray;
   NodesData: TChartDataArray;
-  Titles: TWishlistTitleInfoArray;
-  Info: TStartStreamingInfoArray;
+  Titles: TWishlistTitleInfoArray = [];
+  Info: TStartStreamingInfoArray = [];
 begin
   P := Parent;
   while not (P.ClassType = TChartsTab) do
@@ -904,8 +905,6 @@ begin
   Nodes := GetNodes(ntAll, True);
   NodesData := NodesToData(Nodes);
 
-  SetLength(Titles, 0);
-  SetLength(Info, 0);
   for i := 0 to Length(NodesData) - 1 do
     if NodesData[i].Chart <> nil then
     begin
@@ -1002,7 +1001,7 @@ var
   Node: PVirtualNode;
   NodeData: PChartNodeData;
 begin
-  SetLength(Result, 0);
+  Result := [];
   Node := GetFirst;
   while Node <> nil do
   begin
@@ -1198,10 +1197,10 @@ procedure TChartsTree.PopupMenuClick(Sender: TObject);
 var
   i: Integer;
   Nodes: TChartDataArray;
-  Titles: TWishlistTitleInfoArray;
+  Titles: TWishlistTitleInfoArray = [];
   P: TControl;
   F: TfrmChartsTabAdjustTitleName;
-  Info: TStartStreamingInfoArray;
+  Info: TStartStreamingInfoArray = [];
 begin
   P := Parent;
   while not (P.ClassType = TChartsTab) do
@@ -1209,8 +1208,6 @@ begin
 
   Nodes := NodesToData(GetNodes(ntAll, True));
 
-  SetLength(Titles, 0);
-  SetLength(Info, 0);
   try
     for i := 0 to Length(Nodes) - 1 do
       if Nodes[i].Chart <> nil then

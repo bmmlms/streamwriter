@@ -629,7 +629,7 @@ var
   Node: PVirtualNode;
   Nodes: TNodeArray;
 begin
-  SetLength(Result, 0);
+  Result := [];
   if not SelectedOnly then
   begin
     Node := GetFirst;
@@ -641,7 +641,6 @@ begin
     end;
   end else
   begin
-    SetLength(Result, 0);
     Nodes := GetSortedSelection(True);
     for i := 0 to Length(Nodes) - 1 do
     begin
@@ -657,7 +656,7 @@ var
   Nodes: TNodeArray;
   NodeData: PStreamNodeData;
 begin
-  SetLength(Result, 0);
+  Result := [];
   Nodes := GetNodes(True);
   for i := 0 to Length(Nodes) - 1 do
   begin
@@ -1028,7 +1027,7 @@ begin
   DoStateChange([], [tsOLEDragPending, tsOLEDragging, tsClearPending]);
   FDraggedStreams := GetSelected;
   FDragSource.Execute(False);
-  SetLength(FDraggedStreams, 0);
+  FDraggedStreams := [];
 end;
 
 function TMStreamTree.Build(AlwaysBuild: Boolean; Search, Genre: string; AudioType: TAudioTypes; Bitrate: Cardinal): Boolean;

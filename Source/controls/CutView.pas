@@ -47,6 +47,7 @@ uses
   Generics.Collections,
   Graphics,
   LanguageObjects,
+  LazUTF8,
   Logging,
   Math,
   MessageBus,
@@ -882,7 +883,7 @@ begin
     FOnStateChanged(Self);
 
   DriveLetter := '';
-  if Length(AppGlobals.TempDir) > 3 then
+  if UTF8LengthFast(AppGlobals.TempDir) > 3 then
   begin
     DriveLetter := Copy(AppGlobals.TempDir, 0, 2);
     TFunctions.MsgBox(Format(_('The temporary cut-file could not be saved. Make sure there is enough free diskspace on drive %s.'), [DriveLetter]), _('Error'), MB_ICONERROR);

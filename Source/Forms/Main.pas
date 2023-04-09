@@ -1981,12 +1981,10 @@ procedure TfrmStreamWriterMain.tabChartsAddToWishlist(Sender: TObject; Arr: TWis
 var
   i, n, NumChars: Integer;
   Hash: Cardinal;
-  Hashes: TSyncWishlistRecordArray;
+  Hashes: TSyncWishlistRecordArray = [];
   Found: Boolean;
   T: TTitleInfo;
 begin
-  SetLength(Hashes, 0);
-
   for i := 0 to High(Arr) do
   begin
     TFunctions.BuildPattern(Arr[i].Title, Hash, NumChars, True);
@@ -2045,10 +2043,8 @@ end;
 procedure TfrmStreamWriterMain.tabChartsRemoveFromWishlist(Sender: TObject; Arr: TWishlistTitleInfoArray);
 var
   i, n: Integer;
-  Hashes: TSyncWishlistRecordArray;
+  Hashes: TSyncWishlistRecordArray = [];
 begin
-  SetLength(Hashes, 0);
-
   for n := 0 to High(Arr) do
     for i := AppGlobals.Data.SaveList.Count - 1 downto 0 do
       if (AppGlobals.Data.SaveList[i].ServerHash > 0) and (Arr[n].Hash > 0) and (not Arr[n].IsArtist) and (AppGlobals.Data.SaveList[i].ServerHash = Arr[n].Hash) then

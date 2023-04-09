@@ -968,9 +968,6 @@ var
 begin
   inherited;
 
-  SetLength(FFoundTitles, 0);
-  SetLength(FNotFoundTitles, 0);
-
   Stream.Read(Count, False);
   for i := 0 to Count - 1 do
   begin
@@ -1024,10 +1021,6 @@ var
   i: Integer;
 begin
   inherited;
-
-  SetLength(FLastTitles, 0);
-  SetLength(FOtherUserRegExps, 0);
-  SetLength(FUserRegExps, 0);
 
   Stream.Read(Count, False);
   for i := 0 to Count - 1 do

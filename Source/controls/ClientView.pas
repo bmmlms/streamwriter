@@ -662,7 +662,7 @@ function TMClientView.GetChildNodes(Parent: PVirtualNode): TNodeArray;
 var
   Node: PVirtualNode;
 begin
-  SetLength(Result, 0);
+  Result := [];
   Node := GetFirst;
   while Node <> nil do
   begin
@@ -680,7 +680,7 @@ var
   Node: PVirtualNode;
   NodeData: PClientNodeData;
 begin
-  SetLength(Result, 0);
+  Result := [];
   Node := GetFirst;
   while Node <> nil do
   begin
@@ -1066,7 +1066,7 @@ begin
   if ((Length(GetNodes(ntCategory, True)) = 0) and (Length(GetNodes(ntClient, True)) = 0)) or ((Length(GetNodes(ntCategory, True)) > 0) and (Length(GetNodes(ntClient, True)) > 0)) then
     Exit;
 
-  SetLength(FDragNodes, 0);
+  FDragNodes := [];
   FDragSource.Files.Clear;
 
   Clients := NodesToClients(GetNodes(ntClient, True));
@@ -1107,7 +1107,7 @@ begin
 
   FDragSource.Execute(False);
 
-  SetLength(FDragNodes, 0);
+  FDragNodes := [];
 end;
 
 function TMClientView.GetEntries(T: TEntryTypes): TPlaylistEntryArray;
@@ -1117,7 +1117,7 @@ var
   Clients: TClientArray;
   Client: TICEClient;
 begin
-  SetLength(Result, 0);
+  Result := [];
   Clients := NodesToClients(GetNodes(ntClient, True));
   for Client in Clients do
   begin

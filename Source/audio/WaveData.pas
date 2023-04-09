@@ -301,7 +301,7 @@ end;
 function TWaveData.FindLowestArea(SearchFirst: Boolean; FromEntry, ToEntry: Integer): TMinSilence;
 var
   i, n, Ret: Integer;
-  MinSilence: TMinSilenceArray;
+  MinSilence: TMinSilenceArray = [];
   MS: TMinSilence;
   EntryCount, MaxPeaks, Avg: Cardinal;
   CmpVal: Int64;
@@ -321,7 +321,6 @@ begin
     Exit;
 
   MaxPeaks := High(Cardinal);
-  SetLength(MinSilence, 0);
   for i := FromEntry to ToEntry - EntryCount do
   begin
     Avg := 0;
