@@ -206,11 +206,15 @@ begin
 end;
 
 procedure TfrmNotification.ControlsAligned;
+var
+  MaxWidth: Integer;
 begin
   inherited;
 
-  lblTitle.Caption := TMStringFunctions.TruncateText(FTitle, 350 - pbLogo.Width, lblTitle.Font);
-  lblStream.Caption := TMStringFunctions.TruncateText(FStream, 350 - pbLogo.Width, lblStream.Font);
+  MaxWidth := Trunc(Screen.PrimaryMonitor.WorkareaRect.Width * 0.2);
+
+  lblTitle.Caption := TMStringFunctions.TruncateText(FTitle, MaxWidth - pbLogo.Width, lblTitle.Font);
+  lblStream.Caption := TMStringFunctions.TruncateText(FStream, MaxWidth - pbLogo.Width, lblStream.Font);
 
   Left := Screen.PrimaryMonitor.WorkareaRect.Right - ClientWidth - 15;
   Top := Screen.PrimaryMonitor.WorkareaRect.Bottom - ClientHeight - 15;
