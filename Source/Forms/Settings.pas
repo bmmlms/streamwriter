@@ -1961,12 +1961,21 @@ begin
 end;
 
 procedure TfrmSettings.txtHotkeyChange(Sender: TObject);
+var
+  ListItem: TListItem;
 begin
-  if Assigned(lstHotkeys.Selected) then
-  begin
-    lstHotkeys.Selected.SubItems[0] := ShortCutToText(txtHotkey.Control.HotKey);
-    lstHotkeys.Selected.Data := Pointer(txtHotkey.Control.HotKey);
-  end;
+  if not Assigned(lstHotkeys.Selected) then
+    Exit;
+
+  for ListItem in lstHotkeys.Items do
+    if ListItem.Data = Pointer(txtHotkey.Control.HotKey) then
+    begin
+      ListItem.SubItems[0] := '';
+      ListItem.Data := nil;
+    end;
+
+  lstHotkeys.Selected.SubItems[0] := ShortCutToText(txtHotkey.Control.HotKey);
+  lstHotkeys.Selected.Data := Pointer(txtHotkey.Control.HotKey);
 end;
 
 procedure TfrmSettings.txtIgnoreTitlePatternChange(Sender: TObject);

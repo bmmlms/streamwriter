@@ -349,6 +349,7 @@ type
     procedure UpdaterUpdateFound(Sender: TObject);
     procedure UpdaterNoUpdateFound(Sender: TObject);
     procedure CheckFilesTerminate(Sender: TObject);
+    procedure UnregisterHotkeys;
     procedure RegisterHotkeys;
     procedure ShowCommunityLogin;
     procedure OpenCut(Filename: string); overload;
@@ -1498,10 +1499,7 @@ begin
     Modifiers := Modifiers or MOD_CONTROL;
 end;
 
-procedure TfrmStreamWriterMain.RegisterHotkeys;
-var
-  K: Word;
-  M: Cardinal;
+procedure TfrmStreamWriterMain.UnregisterHotkeys;
 begin
   UnregisterHotKey(Handle, 0);
   UnregisterHotKey(Handle, 1);
@@ -1511,7 +1509,13 @@ begin
   UnregisterHotKey(Handle, 5);
   UnregisterHotKey(Handle, 6);
   UnregisterHotKey(Handle, 7);
+end;
 
+procedure TfrmStreamWriterMain.RegisterHotkeys;
+var
+  K: Word;
+  M: Cardinal;
+begin
   if AppGlobals.ShortcutPlay > 0 then
   begin
     ShortCutToHotKey(AppGlobals.ShortcutPlay, K, M);
@@ -1695,8 +1699,10 @@ begin
 
   SetLength(StreamSettings, 1);
   if SettingsType = stApp then
+  begin
+    UnregisterHotkeys;
     StreamSettings[0] := AppGlobals.Data.StreamSettings.Copy
-  else if SettingsType = stAuto then
+  end   else if SettingsType = stAuto then
     StreamSettings[0] := AppGlobals.Data.AutoRecordSettings.Copy
   else if SettingsType = stStream then
   begin
@@ -1746,8 +1752,6 @@ begin
 
           addTrayIcon.Visible := AppGlobals.Tray;
 
-          RegisterHotkeys;
-
           TLogger.SetFilename(AppGlobals.LogFile);
         end;
         stAuto:
@@ -1760,6 +1764,9 @@ begin
             if not Clients[i].AutoRemove then
               Clients[i].Entry.Settings.Assign(S.StreamSettings[i]);
       end;
+
+    if SettingsType = stApp then
+      RegisterHotkeys;
   finally
     S.Free;
   end;
