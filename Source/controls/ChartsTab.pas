@@ -363,9 +363,9 @@ begin
   end else
   begin
     if FSearchPanel.FSearch.ItemIndex = -1 then
-      Tmp := Trim(FSearchPanel.FSearch.Text)
+      Tmp := UTF8Trim(FSearchPanel.FSearch.Text)
     else
-      Tmp := Trim(FSearchPanel.FSearch.ItemsEx[FSearchPanel.FSearch.ItemIndex].Caption);
+      Tmp := UTF8Trim(FSearchPanel.FSearch.ItemsEx[FSearchPanel.FSearch.ItemIndex].Caption);
 
     Strings := Tmp.Split([' ']);
     for S in Strings do

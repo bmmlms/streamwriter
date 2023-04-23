@@ -93,13 +93,15 @@ begin
     for i := 0 to High(FEqualizers) do
     begin
       FEqualizers[i] := TMSeekBar.Create(Self);
-      FEqualizers[i].Parent := Self;
       FEqualizers[i].Position := AppGlobals.EQGain[i];
       FEqualizers[i].Orientation := sbVertical;
       FEqualizers[i].GripperVisible := True;
       FEqualizers[i].Top := 0;
       FEqualizers[i].Max := 30;
+      FEqualizers[i].BorderSpacing.Left := 1;
+      FEqualizers[i].BorderSpacing.Right := 1;
       FEqualizers[i].OnPositionChanged := EQPositionChanged;
+      FEqualizers[i].Parent := Self;
 
       FLabels[i] := TLabel.Create(Self);
       FLabels[i].Parent := Self;

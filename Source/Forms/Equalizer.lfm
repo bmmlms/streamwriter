@@ -16,7 +16,6 @@ object frmEqualizer: TfrmEqualizer
   OnCreate = FormCreate
   OnKeyDown = FormKeyDown
   OnShow = FormShow
-  LCLVersion = '2.2.6.0'
   object pnlEqualizer: TPanel
     Left = 0
     Height = 119
