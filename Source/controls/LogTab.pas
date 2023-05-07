@@ -274,6 +274,7 @@ begin
   FLogTree.Align := alClient;
   FLogTree.OnSelectionChange := LogTreeSelectionChange;
 
+  FLogTree.FPopupMenu.ItemDebug.OnClick := PopupMenuClick;
   FLogTree.FPopupMenu.ItemInfo.OnClick := PopupMenuClick;
   FLogTree.FPopupMenu.ItemWarning.OnClick := PopupMenuClick;
   FLogTree.FPopupMenu.ItemError.OnClick := PopupMenuClick;
