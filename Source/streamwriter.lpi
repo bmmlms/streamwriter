@@ -658,6 +658,13 @@
       </SyntaxOptions>
     </Parsing>
     <CodeGeneration>
+      <Checks>
+        <IOChecks Value="True"/>
+        <RangeChecks Value="True"/>
+        <OverflowChecks Value="True"/>
+        <StackChecks Value="True"/>
+      </Checks>
+      <VerifyObjMethodCallValidity Value="True"/>
       <TargetCPU Value="i386"/>
       <TargetOS Value="win32"/>
     </CodeGeneration>
@@ -676,6 +683,10 @@
       <Verbosity>
         <ShowDebugInfo Value="True"/>
       </Verbosity>
+      <CustomOptions Value="-dDEBUG"/>
+      <OtherDefines Count="1">
+        <Define0 Value="DEBUG"/>
+      </OtherDefines>
     </Other>
   </CompilerOptions>
   <Debugging>

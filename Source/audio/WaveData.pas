@@ -35,6 +35,8 @@ uses
   SysUtils,
   Windows;
 
+{$RANGECHECKS OFF}
+
 type
   TMinSilence = record
     A, B: Int64;

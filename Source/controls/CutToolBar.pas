@@ -151,13 +151,6 @@ begin
   FStop.Parent := Self;
   FStop.Hint := 'Stop (Space bar)';
   FStop.ImageIndex := TImages.STOP_BLUE;
-
-  {$IFDEF DEBUG}
-  //FAutoCutAutoDetect := TToolButton.Create(Self);
-  //FAutoCutAutoDetect.Parent := Self;
-  //FAutoCutAutoDetect.Hint := 'Show silence...';
-  //FAutoCutAutoDetect.ImageIndex := 19;
-  {$ENDIF}
 end;
 
 end.

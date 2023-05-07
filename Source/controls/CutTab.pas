@@ -159,9 +159,6 @@ begin
   FToolBar.ApplyEffects.OnClick := ApplyEffectsClick;
   FToolBar.Play.OnClick := PlayClick;
   FToolBar.Stop.OnClick := StopClick;
-  {$IFDEF DEBUG}
-  FToolBar.FAutoCutAutoDetect.OnClick := AutoCutAutoDetectClick;
-  {$ENDIF}
 
   FVolume := TMVolumePanel.Create(Self);
   FVolume.Parent := FToolbarPanel;
