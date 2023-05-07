@@ -1697,13 +1697,12 @@ begin
   else
     OldMonitorCount := 0;
 
-  SetLength(StreamSettings, 1);
   if SettingsType = stApp then
   begin
     UnregisterHotkeys;
-    StreamSettings[0] := AppGlobals.Data.StreamSettings.Copy
+    StreamSettings += [AppGlobals.Data.StreamSettings.Copy]
   end   else if SettingsType = stAuto then
-    StreamSettings[0] := AppGlobals.Data.AutoRecordSettings.Copy
+    StreamSettings += [AppGlobals.Data.AutoRecordSettings.Copy]
   else if SettingsType = stStream then
   begin
     Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClientNoAuto, True));
