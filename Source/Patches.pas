@@ -53,7 +53,7 @@ begin
   end;
 end;
 
-procedure D;
+procedure FinalizeGlobalStructuresNew;
 begin
 
 end;
@@ -71,7 +71,7 @@ var
 
 initialization
   Patch.Call := $E8;
-  Patch.Proc := Pointer(Integer(Pointer(@GetPIDLsFromFilenamesNew)) - Integer(Pointer(@GetPIDLsFromFilenames)) - 5);
+  Patch.Proc := Pointer(SizeUInt(@GetPIDLsFromFilenamesNew) - SizeUInt(@GetPIDLsFromFilenames) - 5);
   Patch.Ret := $C3;
   if VirtualProtect(@GetPIDLsFromFilenames, SizeOf(TPatch), PAGE_EXECUTE_READWRITE, OldProtect) then
     try
@@ -80,7 +80,7 @@ initialization
       VirtualProtect(@GetPIDLsFromFilenames, SizeOf(TPatch), OldProtect, OldProtect);
     end;
 
-  Patch.Proc := Pointer(Integer(Pointer(@D)) - Integer(Pointer(@FinalizeGlobalStructures)) - 5);
+  Patch.Proc := Pointer(SizeUInt(@FinalizeGlobalStructuresNew) - SizeUInt(@FinalizeGlobalStructures) - 5);
   Patch.Ret := $C3;
   if VirtualProtect(@FinalizeGlobalStructures, SizeOf(TPatch), PAGE_EXECUTE_READWRITE, OldProtect) then
     try

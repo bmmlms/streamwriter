@@ -390,6 +390,13 @@ type
     property Hash: Cardinal read FGetHash;
   end;
 
+  TSaveIgnoreList = class(TList<TTitleInfo>)
+  private
+    function FGetAnyAutomatic: Boolean;
+  public
+    property AnyAutomatic: Boolean read FGetAnyAutomatic;
+  end;
+
   { This class defines stream-specific settings. It is used in the settings (AppData) for general
     settings, it is also used in every TStreamEntry which defines configuration of a specific stream }
   TStreamSettings = class
@@ -575,9 +582,9 @@ type
     FSchedules: TScheduleList;
 
     // List of titles to save for this stream
-    FSaveList: TList<TTitleInfo>;
+    FSaveList: TSaveIgnoreList;
     // List of titles to ignore for this stream
-    FIgnoreList: TList<TTitleInfo>;
+    FIgnoreList: TSaveIgnoreList;
     FIgnoreListIndex: Cardinal;
 
     procedure FSetName(Value: string);
@@ -616,8 +623,8 @@ type
 
     property Schedules: TScheduleList read FSchedules;
 
-    property SaveList: TList<TTitleInfo> read FSaveList;
-    property IgnoreList: TList<TTitleInfo> read FIgnoreList;
+    property SaveList: TSaveIgnoreList read FSaveList;
+    property IgnoreList: TSaveIgnoreList read FIgnoreList;
     property IgnoreListIndex: Cardinal read FIgnoreListIndex write FIgnoreListIndex;
   end;
 
@@ -751,13 +758,6 @@ type
   end;
 
   TChartCategoryList = class(TList<TChartCategory>)
-  end;
-
-  TSaveIgnoreList = class(TList<TTitleInfo>)
-  private
-    function FGetAnyAutomatic: Boolean;
-  public
-    property AnyAutomatic: Boolean read FGetAnyAutomatic;
   end;
 
   { This class contains lists and stuff about everything streamWriter
@@ -1012,8 +1012,8 @@ begin
 
   FSchedules := TScheduleList.Create;
 
-  FSaveList := TList<TTitleInfo>.Create;
-  FIgnoreList := TList<TTitleInfo>.Create;
+  FSaveList := TSaveIgnoreList.Create;
+  FIgnoreList := TSaveIgnoreList.Create;
 end;
 
 destructor TStreamEntry.Destroy;

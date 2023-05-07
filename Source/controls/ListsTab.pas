@@ -1358,7 +1358,7 @@ var
   NodeData: PTitleNodeData;
   Title: TTitleInfo;
   Hash: Cardinal;
-  List: TList<TTitleInfo>;
+  List: TSaveIgnoreList;
 begin
   Result := False;
 
