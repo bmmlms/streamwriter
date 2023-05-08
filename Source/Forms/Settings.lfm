@@ -223,15 +223,15 @@ inherited frmSettings: TfrmSettings
         Control.ItemsEx = <        
           item
             Caption = 'Start/stop recording'
-            ImageIndex = 81
+            ImageIndex = 82
           end        
           item
             Caption = 'Listen to stream'
-            ImageIndex = 74
+            ImageIndex = 75
           end        
           item
             Caption = 'Listen to stream (external player)'
-            ImageIndex = 76
+            ImageIndex = 77
           end>
         Control.TabOrder = 0
       end
@@ -252,11 +252,11 @@ inherited frmSettings: TfrmSettings
         Control.ItemsEx = <        
           item
             Caption = 'Start recording'
-            ImageIndex = 81
+            ImageIndex = 82
           end        
           item
             Caption = 'Listen to stream'
-            ImageIndex = 74
+            ImageIndex = 75
           end        
           item
             Caption = 'Only add to list'
@@ -436,23 +436,23 @@ inherited frmSettings: TfrmSettings
           end        
           item
             Caption = 'Use wishlist'
-            ImageIndex = 92
+            ImageIndex = 93
           end        
           item
             Caption = 'Use global ignorelist'
-            ImageIndex = 88
+            ImageIndex = 89
           end        
           item
             Caption = 'Use stream ignorelist'
-            ImageIndex = 88
+            ImageIndex = 89
           end        
           item
             Caption = 'Use both ignorelists'
-            ImageIndex = 88
+            ImageIndex = 89
           end        
           item
             Caption = 'Use all lists'
-            ImageIndex = 97
+            ImageIndex = 98
           end>
         Control.OnChange = lstDefaultFilterChange
         Control.TabOrder = 0
@@ -614,7 +614,7 @@ inherited frmSettings: TfrmSettings
             Width = 28
             Anchors = [akRight, akBottom]
             Images = modSharedData.imgImages
-            ImageIndex = 52
+            ImageIndex = 53
             OnClick = btnHelpClick
           end
         end
@@ -740,7 +740,7 @@ inherited frmSettings: TfrmSettings
         Control.Color = 15790320
         Control.Flat = True
         Control.Images = modSharedData.imgImages
-        Control.ImageIndex = 37
+        Control.ImageIndex = 38
         Control.MaxLength = 0
         Control.NumGlyphs = 1
         Control.OnButtonClick = btnBrowseAppClick
@@ -990,7 +990,7 @@ inherited frmSettings: TfrmSettings
         Control.ButtonWidth = 23
         Control.Flat = True
         Control.Images = modSharedData.imgImages
-        Control.ImageIndex = 37
+        Control.ImageIndex = 38
         Control.MaxLength = 0
         Control.NumGlyphs = 1
         Control.OnButtonClick = btnBrowseClick
@@ -1438,7 +1438,7 @@ inherited frmSettings: TfrmSettings
         Control.ButtonWidth = 23
         Control.Flat = True
         Control.Images = modSharedData.imgImages
-        Control.ImageIndex = 37
+        Control.ImageIndex = 38
         Control.MaxLength = 0
         Control.NumGlyphs = 1
         Control.OnButtonClick = btnBrowseLogFileClick

@@ -51,6 +51,7 @@ uses
   MControls,
   Menus,
   MessageBus,
+  MSpeedButton,
   MStringFunctions,
   MToolbarForcedHorizontal,
   SharedControls,
@@ -81,6 +82,7 @@ type
   private
     FLabel: TLabel;
     FSearch: TMComboBoxExEditable;
+    FSearchButton: TMSpeedButton;
     FToolbar: TMToolbarForcedHorizontal;
 
     FButtonAddToWishlist: TToolButton;
@@ -177,6 +179,7 @@ type
     procedure UpdateButtons;
     procedure SearchKeyPress(Sender: TObject; var Key: Char);
     procedure SearchSelect(Sender: TObject);
+    procedure SearchButtonClick(Sender: TObject);
     procedure HomeCommSearchChartsReceived(Sender: TObject; Success: Boolean; Charts: TChartList);
     procedure ButtonClick(Sender: TObject);
     procedure ChartsTreeSelectionChange(Sender: TObject);
@@ -268,6 +271,8 @@ begin
 
   FSearchPanel.FSearch.OnKeyPress := SearchKeyPress;
   FSearchPanel.FSearch.OnSelect := SearchSelect;
+
+  FSearchPanel.FSearchButton.OnClick := SearchButtonClick;
 
   FChartsTree.Images := modSharedData.imgImages;
 
@@ -391,16 +396,12 @@ end;
 
 procedure TChartsTab.SearchKeyPress(Sender: TObject; var Key: Char);
 begin
-  if Key = #13 then
-  begin
-    if FSearchPanel.FSearch.ItemIndex = 0 then
-    begin
-      SearchCharts(True, True);
-      FSearchPanel.FSearch.ItemIndex := 0;
-    end else
-      SearchCharts(False, True);
-    Key := #0;
-  end;
+  if Key <> #13 then
+    Exit;
+
+  FSearchPanel.FSearchButton.Click;
+
+  Key := #0;
 end;
 
 procedure TChartsTab.SearchSelect(Sender: TObject);
@@ -408,6 +409,16 @@ begin
   if FSearchPanel.FSearch.ItemIndex = 0 then
     SearchCharts(True, True)
   else
+    SearchCharts(False, True);
+end;
+
+procedure TChartsTab.SearchButtonClick(Sender: TObject);
+begin
+  if FSearchPanel.FSearch.ItemIndex = 0 then
+  begin
+    SearchCharts(True, True);
+    FSearchPanel.FSearch.ItemIndex := 0;
+  end else
     SearchCharts(False, True);
 end;
 
@@ -1303,16 +1314,26 @@ begin
   FLabel.Align := alLeft;
   FLabel.Layout := tlCenter;
   FLabel.Caption := 'Search:';
-  FLabel.Left := -100;
+  FLabel.Left := -200;
   FLabel.Parent := Self;
 
   FSearch := TMComboBoxExEditable.Create(Self);
   FSearch.Align := alLeft;
   FSearch.Width := 200;
   FSearch.DropDownCount := 16;
+  FSearch.Left := -100;
   FSearch.Parent := Self;
 
   FSearch.ItemsEx.AddItem(_(SEARCH_TOP));
+
+  FSearchButton := TMSpeedButton.Create(Self);
+  FSearchButton.Width := 23;
+  FSearchButton.Align := alLeft;
+  FSearchButton.Flat := True;
+  FSearchButton.Hint := _('Search');
+  FSearchButton.Images := modSharedData.imgImages;
+  FSearchButton.ImageIndex := TImages.FIND_GO;
+  FSearchButton.Parent := Self;
 
   FToolbar := TMToolbarForcedHorizontal.Create(Self);
   FToolbar.Align := alRight;
