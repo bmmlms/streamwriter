@@ -12,6 +12,7 @@ uses
   Graphics,
   Images,
   LanguageObjects,
+  MSpeedButton,
   SharedData,
   StationCombo,
   StdCtrls,
@@ -27,7 +28,7 @@ type
   private
     FLabel: TLabel;
     FStations: TMStationCombo;
-    FStart: TSpeedButton;
+    FStart: TMSpeedButton;
     FDropTarget: TDropComboTarget;
 
     FOnStart: TNotifyEvent;
@@ -57,38 +58,37 @@ begin
   inherited;
 
   BevelOuter := bvNone;
+  ChildSizing.TopBottomSpacing := 4;
+  ChildSizing.HorizontalSpacing := 4;
 
   FLabel := TLabel.Create(Self);
-  FLabel.Parent := Self;
   FLabel.Align := alLeft;
   FLabel.Layout := tlCenter;
   FLabel.Caption := 'Playlist/Stream-URL:';
+  FLabel.Parent := Self;
 
-  FStart := TSpeedButton.Create(Self);
-  FStart.Parent := Self;
+  FStart := TMSpeedButton.Create(Self);
   FStart.Align := alRight;
-  FStart.Width := 24;
+  FStart.Width := 23;
   FStart.Flat := True;
+  FStart.Enabled := False;
   FStart.Hint := 'Add';
-  FStart.ShowHint := True;
   FStart.OnClick := FStartClick;
   FStart.Images := modSharedData.imgImages;
-  FStart.ImageIndex := TImages.ADD;
+  FStart.Parent := Self;
 
   FStations := TMStationCombo.Create(Self);
-  FStations.Parent := Self;
   FStations.Align := alClient;
   FStations.DropDownCount := 16;
   FStations.OnKeyPress := FStationsKeyPress;
   FStations.OnChange := FStationsChange;
   FStations.Images := modSharedData.imgImages;
+  FStations.Parent := Self;
 
   FDropTarget := TDropComboTarget.Create(Self);
   FDropTarget.Formats := [mfText, mfURL, mfFile];
   FDropTarget.Register(Self); // Register(Self) since Register(FStations) causes drawing issues/flickering at the combobox
   FDropTarget.OnDrop := DropTargetDrop;
-
-  FStart.Enabled := False;
 end;
 
 procedure TClientAddressBar.PostTranslate;

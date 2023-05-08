@@ -52,6 +52,7 @@ uses
   Menus,
   MessageBus,
   MStringFunctions,
+  MToolbarForcedHorizontal,
   SharedControls,
   SharedData,
   StdCtrls,
@@ -80,7 +81,7 @@ type
   private
     FLabel: TLabel;
     FSearch: TMComboBoxExEditable;
-    FToolbar: TToolbarForcedHorizontal;
+    FToolbar: TMToolbarForcedHorizontal;
 
     FButtonAddToWishlist: TToolButton;
     FButtonRemoveFromWishlist: TToolButton;
@@ -246,18 +247,19 @@ begin
   inherited Create(AOwner);
 
   FSearchPanel := TSearchPanel.Create(Self);
-  FSearchPanel.Parent := Self;
   FSearchPanel.Align := alTop;
+  FSearchPanel.Parent := Self;
 
   FChartsTree := TChartsTree.Create(Self);
-  FChartsTree.Parent := Self;
   FChartsTree.Align := alClient;
   FChartsTree.OnSelectionChange := ChartsTreeSelectionChange;
+  FChartsTree.Parent := Self;
 
   FResultLabel := TLabel.Create(Self);
-  FResultLabel.Parent := Self;
   FResultLabel.Align := alBottom;
+  FResultLabel.BorderSpacing.Top := 1;
   FResultLabel.Caption := Format(_(TEXT_RESULTS), [0]);
+  FResultLabel.Parent := Self;
 
   HomeComm.OnSearchChartsReceived := HomeCommSearchChartsReceived;
 
@@ -914,9 +916,8 @@ begin
 
       Titles += [TWishlistTitleInfo.Create(NodeData.Chart.ServerHash, NodeData.Chart.Name, False)];
     end else if NodeData.Stream <> nil then
-    begin
-      Info += [TStartStreamingInfo.Create(NodeData.Stream.ID, NodeData.Stream.Stream.Bitrate, NodeData.Stream.Stream.Name, NodeData.Stream.Stream.URL, NodeData.Stream.Stream.URLs, NodeData.Stream.Stream.RegExes, NodeData.Stream.Stream.IgnoreTitles)];
-    end;
+      Info += [TStartStreamingInfo.Create(NodeData.Stream.ID, NodeData.Stream.Stream.Bitrate, NodeData.Stream.Stream.Name, NodeData.Stream.Stream.URL, NodeData.Stream.Stream.URLs,
+        NodeData.Stream.Stream.RegExes, NodeData.Stream.Stream.IgnoreTitles)];
 
   case AppGlobals.DefaultActionNewStream of
     oaStart:
@@ -1295,74 +1296,76 @@ begin
 
   BevelOuter := bvNone;
   AutoSize := True;
+  ChildSizing.TopBottomSpacing := 4;
+  ChildSizing.HorizontalSpacing := 4;
 
   FLabel := TLabel.Create(Self);
   FLabel.Align := alLeft;
   FLabel.Layout := tlCenter;
-  FLabel.Parent := Self;
   FLabel.Caption := 'Search:';
   FLabel.Left := -100;
+  FLabel.Parent := Self;
 
   FSearch := TMComboBoxExEditable.Create(Self);
   FSearch.Align := alLeft;
-  FSearch.Parent := Self;
   FSearch.Width := 200;
   FSearch.DropDownCount := 16;
+  FSearch.Parent := Self;
 
   FSearch.ItemsEx.AddItem(_(SEARCH_TOP));
 
-  FToolbar := TToolbarForcedHorizontal.Create(Self);
-  FToolbar.Parent := Self;
+  FToolbar := TMToolbarForcedHorizontal.Create(Self);
   FToolbar.Align := alRight;
   FToolbar.Images := modSharedData.imgImages;
+  FToolbar.Parent := Self;
 
   FButtonAddToWishlist := TToolButton.Create(FToolbar);
-  FButtonAddToWishlist.Parent := FToolbar;
   FButtonAddToWishlist.Hint := 'Add title to automatic wishlist';
   FButtonAddToWishlist.ImageIndex := TImages.SCRIPT_BRICKS_ADD;
+  FButtonAddToWishlist.Parent := FToolbar;
 
   FButtonRemoveFromWishlist := TToolButton.Create(FToolbar);
-  FButtonRemoveFromWishlist.Parent := FToolbar;
   FButtonRemoveFromWishlist.Hint := 'Remove title from automatic wishlist';
   FButtonRemoveFromWishlist.ImageIndex := TImages.SCRIPT_BRICKS_DELETE;
+  FButtonRemoveFromWishlist.Parent := FToolbar;
 
   FButtonAddArtistToWishlist := TToolButton.Create(FToolbar);
-  FButtonAddArtistToWishlist.Parent := FToolbar;
   FButtonAddArtistToWishlist.Hint := 'Add artist to automatic wishlist';
   FButtonAddArtistToWishlist.ImageIndex := TImages.SCRIPT_USER_GRAY_COOL_ADD;
+  FButtonAddArtistToWishlist.Parent := FToolbar;
 
   Sep := TToolButton.Create(FToolbar);
   Sep.Parent := FToolbar;
   Sep.Style := tbsSeparator;
 
   FButtonEditAndAddToWishlist := TToolButton.Create(FToolbar);
-  FButtonEditAndAddToWishlist.Parent := FToolbar;
   FButtonEditAndAddToWishlist.Hint := 'Edit and add to manual wishlist...';
   FButtonEditAndAddToWishlist.ImageIndex := TImages.SCRIPT_HEART_ADD;
+  FButtonEditAndAddToWishlist.Parent := FToolbar;
 
   Sep := TToolButton.Create(FToolbar);
-  Sep.Parent := FToolbar;
   Sep.Style := tbsSeparator;
+  Sep.Parent := FToolbar;
 
   FButtonStartStreaming := TToolButton.Create(FToolbar);
-  FButtonStartStreaming.Parent := FToolbar;
   FButtonStartStreaming.Hint := 'Start recording';
   FButtonStartStreaming.ImageIndex := TImages.RECORD_RED;
+  FButtonStartStreaming.Parent := FToolbar;
 
   FButtonPlayStream := TToolButton.Create(FToolbar);
-  FButtonPlayStream.Parent := FToolbar;
   FButtonPlayStream.Hint := 'Play stream';
   FButtonPlayStream.ImageIndex := TImages.PLAY_BLUE;
+  FButtonPlayStream.Parent := FToolbar;
 
   FButtonPlayStreamExternal := TToolButton.Create(FToolbar);
-  FButtonPlayStreamExternal.Parent := FToolbar;
   FButtonPlayStreamExternal.Hint := 'Play stream (external player)';
   FButtonPlayStreamExternal.ImageIndex := TImages.PLAY_GO;
+  FButtonPlayStreamExternal.Parent := FToolbar;
 
   FButtonAddStream := TToolButton.Create(FToolbar);
-  FButtonAddStream.Parent := FToolbar;
   FButtonAddStream.Hint := 'Add stream';
   FButtonAddStream.ImageIndex := TImages.ADD;
+  FButtonAddStream.Parent := FToolbar;
 end;
 
 procedure TSearchPanel.PostTranslate;

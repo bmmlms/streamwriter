@@ -53,6 +53,7 @@ uses
   Menus,
   MessageBus,
   MsgDlg,
+  MToolbarForcedHorizontal,
   SharedControls,
   SharedData,
   StdCtrls,
@@ -104,7 +105,7 @@ type
     property Rename: TMenuItem read FRename;
   end;
 
-  TTitleToolbar = class(TToolbarForcedHorizontal)
+  TTitleToolbar = class(TMToolbarForcedHorizontal)
   private
     FAdd: TToolButton;
     FRemove: TToolButton;
@@ -260,8 +261,8 @@ begin
   ImageIndex := TImages.SCRIPT_EDIT;
 
   FListsPanel := TTitlePanel.Create(Self, Clients);
-  FListsPanel.Parent := Self;
   FListsPanel.Align := alClient;
+  FListsPanel.Parent := Self;
 
   MsgBus.AddSubscriber(MessageReceived);
 
@@ -1087,59 +1088,62 @@ begin
   BevelOuter := bvNone;
 
   FTopPanel := TPanel.Create(Self);
-  FTopPanel.Parent := Self;
   FTopPanel.BevelOuter := bvNone;
   FTopPanel.Align := alTop;
   FTopPanel.AutoSize := True;
   FTopPanel.Top := -100;
+  FTopPanel.ChildSizing.TopBottomSpacing := 4;
+  FTopPanel.Parent := Self;
 
   FSearchPanel := TPanel.Create(Self);
-  FSearchPanel.Parent := Self;
   FSearchPanel.BevelOuter := bvNone;
   FSearchPanel.Align := alTop;
   FSearchPanel.AutoSize := True;
+  FSearchPanel.BorderSpacing.Bottom := 4;
+  FSearchPanel.Parent := Self;
 
   FSearchLabel := TLabel.Create(Self);
-  FSearchLabel.Parent := FSearchPanel;
   FSearchLabel.Align := alLeft;
   FSearchLabel.Layout := tlCenter;
   FSearchLabel.Caption := 'Search:';
   FSearchLabel.Left := -1;
+  FSearchLabel.Parent := FSearchPanel;
 
   FSearchText := TEdit.Create(Self);
-  FSearchText.Parent := FSearchPanel;
   FSearchText.Align := alLeft;
   FSearchText.Width := 200;
   FSearchText.OnChange := SearchTextChange;
+  FSearchText.Parent := FSearchPanel;
 
   FToolbarPanel := TPanel.Create(Self);
-  FToolbarPanel.Parent := FTopPanel;
   FToolbarPanel.BevelOuter := bvNone;
   FToolbarPanel.Align := alTop;
   FToolbarPanel.AutoSize := True;
+  FToolbarPanel.ChildSizing.HorizontalSpacing := 4;
+  FToolbarPanel.Parent := FTopPanel;
 
   FAddLabel := TLabel.Create(Self);
   FAddLabel.Align := alLeft;
   FAddLabel.Layout := tlCenter;
-  FAddLabel.Parent := FToolbarPanel;
   FAddLabel.Caption := 'Add entry:';
   FAddLabel.Left := -1;
+  FAddLabel.Parent := FToolbarPanel;
 
   FAddEdit := TEdit.Create(Self);
   FAddEdit.Align := alLeft;
-  FAddEdit.Parent := FToolbarPanel;
   FAddEdit.Width := 200;
   FAddEdit.OnKeyPress := AddEditKeyPress;
+  FAddEdit.Parent := FToolbarPanel;
 
   FAddCombo := TComboBoxEx.Create(Self);
-  FAddCombo.Parent := FToolbarPanel;
   FAddCombo.Align := alClient;
   FAddCombo.Images := modSharedData.imgImages;
+  FAddCombo.ItemHeight := 17;
+  FAddCombo.Parent := FToolbarPanel;
 
   FToolbar := TTitleToolbar.Create(Self);
   FToolbar.Images := modSharedData.imgImages;
   FToolbar.Align := alRight;
-  FToolbar.Parent := FToolbarPanel;
   FToolbar.FAdd.OnClick := AddClick;
   FToolbar.FRemove.OnClick := RemoveClick;
   FToolbar.FExport.OnClick := ExportClick;
@@ -1149,13 +1153,14 @@ begin
   FToolbar.FSelectIgnored.OnClick := SelectIgnoredClick;
   FToolbar.FRename.OnClick := RenameClick;
   FToolbar.FConvertToAutomatic.OnClick := ConvertToAutomaticClick;
+  FToolbar.Parent := FToolbarPanel;
 
   FTree := TTitleTree.Create(Self);
-  FTree.Parent := Self;
   FTree.Align := alClient;
   FTree.OnChange := TreeChange;
   FTree.OnSelectionChange := TreeSelectionChange;
   FTree.OnKeyDown := TreeKeyDown;
+  FTree.Parent := Self;
 
   BuildTree(False);
   FillClientCombo;
@@ -1177,14 +1182,9 @@ begin
   inherited ControlsAligned;
 
   if FAddLabel.Width > FSearchLabel.Width then
-  begin
-    FAddLabel.BorderSpacing.Right := 0;
-    FSearchLabel.BorderSpacing.Right := FAddLabel.Width - FSearchLabel.Width;
-  end else
-  begin
-    FSearchLabel.BorderSpacing.Right := 0;
-    FAddLabel.BorderSpacing.Right := FSearchLabel.Width - FAddLabel.Width;
-  end;
+    FSearchLabel.BorderSpacing.Right := FAddLabel.Width - FSearchLabel.Width + 4
+  else
+    FAddLabel.BorderSpacing.Right := FSearchLabel.Width - FAddLabel.Width + 4;
 end;
 
 procedure TTitlePanel.SelectIgnoredClick(Sender: TObject);

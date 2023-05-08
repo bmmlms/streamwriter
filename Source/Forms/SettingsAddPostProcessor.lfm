@@ -10,13 +10,12 @@ object frmSettingsAddPostProcessor: TfrmSettingsAddPostProcessor
   ClientHeight = 90
   ClientWidth = 283
   Color = clBtnFace
-  Font.Color = clWindowText
-  Font.Height = -11
-  Font.Name = 'Tahoma'
   KeyPreview = True
   OnCreate = FormCreate
   OnKeyDown = FormKeyDown
   Position = poOwnerFormCenter
+  ShowHint = True
+  LCLVersion = '2.2.6.0'
   object Label1: TLabel
     Left = 0
     Height = 13

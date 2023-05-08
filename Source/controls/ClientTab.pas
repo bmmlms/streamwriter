@@ -29,11 +29,11 @@ uses
   AudioFunctions,
   Buttons,
   Classes,
-  ComboEx,
   ClientAddressBar,
   ClientManager,
   ClientView,
   Clipbrd,
+  ComboEx,
   ComCtrls,
   Controls,
   DataManager,
@@ -57,6 +57,7 @@ uses
   Menus,
   MessageBus,
   MsgDlg,
+  MToolbarForcedHorizontal,
   MVolumePanel,
   PlayerManager,
   PlaylistHandler,
@@ -193,7 +194,7 @@ type
     procedure CreateHandle; override;
     procedure ShownFirst; override;
   public
-    constructor Create(AOwner: TComponent; Toolbar: TToolbar; Actions: TActionList; Clients: TClientManager; Popup: TPopupMenu); reintroduce;
+    constructor Create(AOwner: TComponent; Toolbar: TMToolbarForcedHorizontal; Actions: TActionList; Clients: TClientManager; Popup: TPopupMenu); reintroduce;
     destructor Destroy; override;
 
     function StartStreaming(Streams: TStartStreamingInfoArray; Action: TStreamOpenActions; HitNode: PVirtualNode; Mode: TVTNodeAttachMode): Boolean; overload;
@@ -560,7 +561,7 @@ begin
   SavePlaylist(Entries, True);
 end;
 
-constructor TClientTab.Create(AOwner: TComponent; Toolbar: TToolbar; Actions: TActionList; Clients: TClientManager; Popup: TPopupMenu);
+constructor TClientTab.Create(AOwner: TComponent; Toolbar: TMToolbarForcedHorizontal; Actions: TActionList; Clients: TClientManager; Popup: TPopupMenu);
 
   function GetAction(Name: string): TAction;
   var
@@ -612,22 +613,22 @@ begin
   FToolbarPanel := TPanel.Create(Self);
   FToolbarPanel.Align := alTop;
   FToolbarPanel.BevelOuter := bvNone;
-  FToolbarPanel.Parent := Self;
   FToolbarPanel.Top := -100;
+  FToolbarPanel.BorderSpacing.Top := 4;
   FToolbarPanel.AutoSize := True;
+  FToolbarPanel.Parent := Self;
 
   FAddressBar := TClientAddressBar.Create(Self);
   FAddressBar.Align := alTop;
   FAddressBar.AutoSize := True;
-  FAddressBar.Parent := Self;
   FAddressBar.OnStart := AddressBarStart;
+  FAddressBar.Parent := Self;
 
   FToolbar := Toolbar;
   FToolbar.Align := alClient;
   FToolbar.Parent := FToolbarPanel;
 
   FVolume := TMVolumePanel.Create(Self);
-  FVolume.Parent := FToolbarPanel;
   FVolume.Align := alRight;
   FVolume.Images := modSharedData.imgImages;
   FVolume.ImageIndexMute := TImages.SOUND_MUTE;
@@ -637,6 +638,7 @@ begin
   FVolume.Volume := Players.Volume;
   FVolume.OnVolumeChange := VolumeVolumeChange;
   FVolume.OnGetVolumeBeforeMute := VolumeGetVolumeBeforeMute;
+  FVolume.Parent := FToolbarPanel;
 
   FTimeLabel := TLabel.Create(Self);
   FTimeLabel.Align := alRight;
@@ -674,22 +676,21 @@ begin
   GetAction('actAddToStreamIgnoreList').OnExecute := ActionAddToStreamIgnoreList;
 
   FSplitter := TSplitter.Create(Self);
-  FSplitter.Parent := Self;
   FSplitter.Align := alRight;
   FSplitter.AutoSnap := False;
   FSplitter.ResizeStyle := rsUpdate;
+  FSplitter.Parent := Self;
 
   FSideBar := TSidebar.Create(Self);
-  FSideBar.Parent := Self;
   FSideBar.Align := alRight;
   FSideBar.FDebugView.DebugView.OnClear := DebugClear;
   FSideBar.FBrowserView.StreamTree.OnAction := StreamBrowserAction;
   FSideBar.FBrowserView.StreamTree.OnIsInClientList := StreamBrowserIsInClientList;
   if Screen.PixelsPerInch = 96 then
     FSideBar.FBrowserView.StreamTree.PopupMenu2.Images := modSharedData.imgImages;
+  FSideBar.Parent := Self;
 
   FClientView := TMClientView.Create(Self, Popup, FSideBar.FBrowserView.StreamTree);
-  FClientView.Parent := Self;
   FClientView.Align := alClient;
   FClientView.Images := modSharedData.imgImages;
   FClientView.OnSelectionChange := FClientViewSelectionChange;
@@ -697,6 +698,7 @@ begin
   FClientView.OnKeyPress := FClientViewKeyPress;
   FClientView.OnKeyDown := FClientViewKeyDown;
   FClientView.OnStartStreaming := FClientViewStartStreaming;
+  FClientView.Parent := Self;
 
   MsgBus.AddSubscriber(MessageReceived);
 

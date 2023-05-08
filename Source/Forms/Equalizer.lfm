@@ -8,14 +8,13 @@ object frmEqualizer: TfrmEqualizer
   Caption = 'Equalizer'
   ClientHeight = 140
   ClientWidth = 220
-  Font.Color = clWindowText
-  Font.Height = -11
-  Font.Name = 'Tahoma'
   FormStyle = fsStayOnTop
   KeyPreview = True
   OnCreate = FormCreate
   OnKeyDown = FormKeyDown
   OnShow = FormShow
+  ShowHint = True
+  LCLVersion = '2.2.6.0'
   object pnlEqualizer: TPanel
     Left = 0
     Height = 119
@@ -60,8 +59,6 @@ object frmEqualizer: TfrmEqualizer
       Images = modSharedData.imgImages
       ImageIndex = 2
       OnClick = btnResetClick
-      ShowHint = True
-      ParentShowHint = False
     end
   end
 end

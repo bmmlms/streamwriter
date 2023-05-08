@@ -10,9 +10,6 @@ object frmConfigureSoX: TfrmConfigureSoX
   ClientHeight = 289
   ClientWidth = 144
   Color = clBtnFace
-  Font.Color = clWindowText
-  Font.Height = -11
-  Font.Name = 'Tahoma'
   Icon.Data = {
     7E04000000000100010010100000010020006804000016000000280000001000
     0000200000000100200000000000000000000000000000000000000000000000
@@ -54,7 +51,8 @@ object frmConfigureSoX: TfrmConfigureSoX
   }
   KeyPreview = True
   Position = poOwnerFormCenter
-  LCLVersion = '2.2.4.0'
+  ShowHint = True
+  LCLVersion = '2.2.6.0'
   object pnlNav: TPanel
     Left = 0
     Height = 40

@@ -238,13 +238,8 @@ begin
   TreeOptions.PaintOptions := TreeOptions.PaintOptions - [toShowTreeLines] + [toHideFocusRect];
   TreeOptions.SelectionOptions := TreeOptions.SelectionOptions + [toFullRowSelect, toMultiSelect];
   ScrollBarOptions.ScrollBars := ssVertical;
-
   Images := modSharedData.imgImages;
-
   Indent := 0;
-  ShowHint := True;
-  HintMode := hmTooltip;
-
   Header.Options := [hoAutoResize];
 
   Header.Columns.Add;

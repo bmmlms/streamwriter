@@ -53,6 +53,7 @@ uses
   MessageBus,
   MSeekBar,
   MStringFunctions,
+  MToolbarForcedHorizontal,
   MVolumePanel,
   Notifications,
   Player,
@@ -156,7 +157,7 @@ type
     property ItemImportFolder: TMenuItem read FItemImportFolder;
   end;
 
-  TSavedToolBar = class(TToolbarForcedHorizontal)
+  TSavedToolBar = class(TMToolbarForcedHorizontal)
   private
     FRefresh: TToolButton;
     FCutSong: TToolButton;
@@ -182,7 +183,7 @@ type
     procedure EnableItems(Enable, HashesSelected: Boolean);
   end;
 
-  TPlayToolBar = class(TToolbarForcedHorizontal)
+  TPlayToolBar = class(TMToolbarForcedHorizontal)
   private
     FPrev: TToolButton;
     FPlay: TToolButton;
@@ -722,60 +723,61 @@ begin
 
   // Panel oben komplett
   FTopPanel := TPanel.Create(Self);
-  FTopPanel.Parent := Self;
   FTopPanel.Align := alTop;
   FTopPanel.BevelOuter := bvNone;
   FTopPanel.AutoSize := True;
+  FTopPanel.ChildSizing.TopBottomSpacing := 4;
+  FTopPanel.Parent := Self;
 
   // Panel links
   FTopLeftPanel := TPanel.Create(Self);
-  FTopLeftPanel.Parent := FTopPanel;
   FTopLeftPanel.Align := alLeft;
   FTopLeftPanel.Width := MulDiv(460, Screen.PixelsPerInch, 96);
   FTopLeftPanel.BevelOuter := bvNone;
   FTopLeftPanel.AutoSize := True;
+  FTopLeftPanel.Parent := FTopPanel;
 
   // Panel rechts
   FTopRightPanel := TPanel.Create(Self);
-  FTopRightPanel.Parent := FTopPanel;
   FTopRightPanel.Align := alClient;
   FTopRightPanel.BevelOuter := bvNone;
   FTopRightPanel.AutoSize := True;
+  FTopRightPanel.Parent := FTopPanel;
 
   FTopRightLeftPanel := TPanel.Create(Self);
-  FTopRightLeftPanel.Parent := FTopRightPanel;
   FTopRightLeftPanel.Align := alRight;
   FTopRightLeftPanel.BevelOuter := bvNone;
   FTopRightLeftPanel.AutoSize := True;
+  FTopRightLeftPanel.BorderSpacing.Right := 4;
+  FTopRightLeftPanel.Parent := FTopRightPanel;
 
   FTopRightRightPanel := TPanel.Create(Self);
-  FTopRightRightPanel.Parent := FTopRightPanel;
   FTopRightRightPanel.Align := alRight;
   FTopRightRightPanel.BevelOuter := bvNone;
   FTopRightPanel.AutoSize := True;
+  FTopRightRightPanel.Parent := FTopRightPanel;
 
   FPlayToolbar := TPlayToolBar.Create(Self);
-  FPlayToolbar.Parent := FTopRightLeftPanel;
   FPlayToolbar.Align := alBottom;
   FPlayToolbar.Images := modSharedData.imgImages;
+  FPlayToolbar.Parent := FTopRightLeftPanel;
 
   FPosLabel := TLabel.Create(Self);
   FPosLabel.AutoSize := True;
   FPosLabel.Alignment := taRightJustify;
   FPosLabel.Layout := tlCenter;
   FPosLabel.Caption := '00:00';
-  FPosLabel.Parent := FTopRightRightPanel;
   FPosLabel.Align := alClient;
+  FPosLabel.Parent := FTopRightRightPanel;
 
   FSearchBar := TSearchBar.Create(Self);
-  FSearchBar.Parent := FTopLeftPanel;
   FSearchBar.Align := alClient;
   FSearchBar.AutoSize := True;
   FSearchBar.FSearch.OnClick := SearchTextClick;
   FSearchBar.FSearch.OnChange := SearchTextChange;
+  FSearchBar.Parent := FTopLeftPanel;
 
   FToolBar := TSavedToolBar.Create(Self);
-  FToolBar.Parent := FTopLeftPanel;
   FToolBar.Align := alTop;
   FToolBar.Images := modSharedData.imgImages;
   FToolBar.FRefresh.OnClick := ToolBarClick;
@@ -796,14 +798,14 @@ begin
   FToolBar.FProperties.OnClick := ToolBarClick;
   FToolBar.FImportFiles.OnClick := ToolBarClick;
   FToolBar.FImportFolder.OnClick := ToolBarClick;
+  FToolBar.Parent := FTopLeftPanel;
 
   FSeek := TMSeekBar.Create(Self);
-  FSeek.Parent := FTopRightLeftPanel;
   FSeek.Align := alTop;
   FSeek.OnPositionChanged := SeekChange;
+  FSeek.Parent := FTopRightLeftPanel;
 
   FVolume := TMVolumePanel.Create(Self);
-  FVolume.Parent := FTopRightRightPanel;
   FVolume.Align := alTop;
   FVolume.Images := modSharedData.imgImages;
   FVolume.ImageIndexMute := TImages.SOUND_MUTE;
@@ -813,6 +815,7 @@ begin
   FVolume.Volume := Players.Volume;
   FVolume.OnVolumeChange := VolumeTrackbarChange;
   FVolume.OnGetVolumeBeforeMute := VolumeGetVolumeBeforeMute;
+  FVolume.Parent := FTopRightRightPanel;
 
   FPlayToolBar.FPrev.OnClick := FSavedTree.PopupMenuClick;
   FPlayToolBar.FPlay.OnClick := ToolBarClick;
@@ -827,10 +830,10 @@ begin
   //FImportPanel.Height := 80;
   FImportPanel.AutoSize := True;
   FImportPanel.Visible := False;
-  FImportPanel.Parent := Self;
   FImportPanel.AnchorVerticalCenterTo(Self);
   FImportPanel.AnchorHorizontalCenterTo(Self);
   FImportPanel.Button.OnClick := ImportPanelCancelClick;
+  FImportPanel.Parent := Self;
 end;
 
 destructor TSavedTab.Destroy;
@@ -2728,12 +2731,14 @@ begin
   inherited;
 
   BevelOuter := bvNone;
+  BorderSpacing.Top := 4;
 
   FLabel := TLabel.Create(Self);
   FLabel.Align := alLeft;
   FLabel.Layout := tlCenter;
-  FLabel.Parent := Self;
   FLabel.Caption := 'Search:';
+  FLabel.BorderSpacing.Right := 4;
+  FLabel.Parent := Self;
 
   FSearch := TEdit.Create(Self);
   FSearch.Align := alLeft;

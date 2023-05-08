@@ -72,6 +72,7 @@ uses
   MessageBus,
   MPageControl,
   MsgDlg,
+  MToolbarForcedHorizontal,
   Notifications,
   PlayerManager,
   PowerManagement,
@@ -163,7 +164,7 @@ type
     mnuReset1: TMenuItem;
     mnuReset11: TMenuItem;
     actResetData: TAction;
-    tbClients: TToolBar;
+    tbClients: TMToolbarForcedHorizontal;
     cmdStart: TToolButton;
     cmdStop: TToolButton;
     ToolButton3: TToolButton;
@@ -1345,7 +1346,7 @@ begin
   for Node in Cats do
   begin
     NodeData := tabClients.ClientView.GetNodeData(Node);
-    if Integer(NodeData) = Item.Tag then
+    if SizeUInt(NodeData) = Item.Tag then
     begin
       Cat := Node;
       Break;
@@ -1700,8 +1701,8 @@ begin
   if SettingsType = stApp then
   begin
     UnregisterHotkeys;
-    StreamSettings += [AppGlobals.Data.StreamSettings.Copy]
-  end   else if SettingsType = stAuto then
+    StreamSettings += [AppGlobals.Data.StreamSettings.Copy];
+  end else if SettingsType = stAuto then
     StreamSettings += [AppGlobals.Data.AutoRecordSettings.Copy]
   else if SettingsType = stStream then
   begin

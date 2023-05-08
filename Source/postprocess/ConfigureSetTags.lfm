@@ -10,9 +10,6 @@ object frmConfigureSetTags: TfrmConfigureSetTags
   ClientHeight = 326
   ClientWidth = 325
   Color = clBtnFace
-  Font.Color = clWindowText
-  Font.Height = -11
-  Font.Name = 'Tahoma'
   Icon.Data = {
     7E04000000000100010010100000010020006804000016000000280000001000
     0000200000000100200000000000000000000000000000000000000000000000
@@ -54,6 +51,8 @@ object frmConfigureSetTags: TfrmConfigureSetTags
   }
   KeyPreview = True
   Position = poOwnerFormCenter
+  ShowHint = True
+  LCLVersion = '2.2.6.0'
   object lblPattern: TLabel
     Left = 0
     Height = 39
@@ -73,8 +72,6 @@ object frmConfigureSetTags: TfrmConfigureSetTags
     Anchors = [akTop, akRight]
     Flat = True
     OnClick = btnResetPatternClick
-    ShowHint = True
-    ParentShowHint = False
   end
   object pnlNav: TPanel
     Left = 0
@@ -234,8 +231,6 @@ object frmConfigureSetTags: TfrmConfigureSetTags
       Images = modSharedData.imgImages
       ImageIndex = 2
       OnClick = btnResetPatternClick
-      ShowHint = True
-      ParentShowHint = False
     end
     object txtComment: TMemo
       Left = 0

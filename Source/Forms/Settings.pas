@@ -486,7 +486,7 @@ begin
   inherited;
 
   Width := 600;
-  Height := 450;
+  Height := 440;
 end;
 
 procedure TfrmSettings.EnablePanel(Panel: TPanel; Enable: Boolean);
@@ -2977,7 +2977,6 @@ begin
   chkAutoRemoveSavedFromWishlist.Checked := FStreamSettings[0].RemoveSavedFromWishlist;
 
   Caption := _('Settings for automatic recordings');
-  lblTop.Caption := _('Settings for automatic recordings');
 
   chkAutoTuneInClick(chkAutoTuneIn);
 
@@ -3030,7 +3029,6 @@ begin
   end;
 
   Caption := _('Stream settings');
-  lblTop.Caption := _('Stream settings');
 end;
 
 procedure TfrmSettings.CreateGeneral;
@@ -3069,7 +3067,6 @@ begin
   TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toAcceptOLEDrop];
   Header.Options := Header.Options + [hoAutoResize] - [hoDrag];
   Header.AutoSizeIndex := 0;
-  ShowHint := True;
   HintMode := hmTooltip;
 
   for i := 0 to Streams.Count - 1 do

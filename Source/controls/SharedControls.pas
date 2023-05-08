@@ -64,15 +64,6 @@ type
     property HideIdx: Integer read FHideIdx write FHideIdx;
   end;
 
-  { TToolbarForcedHorizontal }
-
-  TToolbarForcedHorizontal = class(TToolBar)
-  public
-    constructor Create(TheOwner: TComponent); override;
-  protected
-    function IsVertical: Boolean; override;
-  end;
-
   { TMSWVirtualTree }
 
   TMSWVirtualTree = class(TMVirtualTree, IPostTranslatable)
@@ -131,23 +122,6 @@ begin
 
   for i := 0 to Items.Count - 1 do
     Items[i].Checked := coVisible in TVirtualTreeColumn(Items[i].Tag).Options;
-end;
-
-{ TToolbarForcedHorizontal }
-
-constructor TToolbarForcedHorizontal.Create(TheOwner: TComponent);
-begin
-  inherited Create(TheOwner);
-
-  Indent := 0;
-  ShowHint := True;
-  EdgeBorders := [];
-  AutoSize := True;
-end;
-
-function TToolbarForcedHorizontal.IsVertical: Boolean;
-begin
-  Result := False;
 end;
 
 end.

@@ -9,12 +9,11 @@ object frmIntro: TfrmIntro
   ClientHeight = 279
   ClientWidth = 439
   Color = clBtnFace
-  Font.Color = clWindowText
-  Font.Height = -11
-  Font.Name = 'Tahoma'
   OnCreate = FormCreate
   OnKeyDown = FormKeyDown
   Position = poOwnerFormCenter
+  ShowHint = True
+  LCLVersion = '2.2.6.0'
   object imgLogo: TImage
     Left = 382
     Height = 48
@@ -29,12 +28,7 @@ object frmIntro: TfrmIntro
     Top = 8
     Width = 173
     Caption = 'Welcome to streamWriter!'
-    Font.Color = clWindowText
-    Font.Height = -13
-    Font.Name = 'Tahoma'
-    Font.Style = [fsBold]
     ParentColor = False
-    ParentFont = False
   end
   object lblIntro: TLabel
     Left = 8
@@ -53,12 +47,7 @@ object frmIntro: TfrmIntro
     Width = 149
     Anchors = [akLeft, akBottom]
     Caption = '- Manually record streams'
-    Font.Color = clWindowText
-    Font.Height = -11
-    Font.Name = 'Tahoma'
-    Font.Style = [fsBold]
     ParentColor = False
-    ParentFont = False
   end
   object lblManualDesc: TLabel
     Left = 16
@@ -78,12 +67,7 @@ object frmIntro: TfrmIntro
     Width = 208
     Anchors = [akLeft, akBottom]
     Caption = '- Automatically record specific songs'
-    Font.Color = clWindowText
-    Font.Height = -11
-    Font.Name = 'Tahoma'
-    Font.Style = [fsBold]
     ParentColor = False
-    ParentFont = False
   end
   object lblAutomaticDesc: TLabel
     Left = 16

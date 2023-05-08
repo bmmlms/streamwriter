@@ -12,9 +12,6 @@ object frmNotification: TfrmNotification
   ClientWidth = 133
   Color = clBtnFace
   Constraints.MaxHeight = 72
-  Font.Color = clWindowText
-  Font.Height = -11
-  Font.Name = 'Tahoma'
   FormStyle = fsSystemStayOnTop
   object Panel1: TPanel
     Left = 4
@@ -29,26 +26,26 @@ object frmNotification: TfrmNotification
     TabOrder = 0
     object lblTitle: TLabel
       Left = 0
-      Height = 24
+      Height = 30
       Top = 0
       Width = 61
       Align = alTop
       Caption = 'lblTitle'
-      Font.Color = clWindowText
-      Font.Height = -20
-      Font.Name = 'Tahoma'
+      Font.Height = -21
       ParentColor = False
       ParentFont = False
       ShowAccelChar = False
     end
     object lblStream: TLabel
       Left = 0
-      Height = 40
-      Top = 24
+      Height = 34
+      Top = 30
       Width = 61
       Align = alClient
       Caption = 'lblStream'
+      Font.Height = -13
       ParentColor = False
+      ParentFont = False
       ShowAccelChar = False
     end
   end

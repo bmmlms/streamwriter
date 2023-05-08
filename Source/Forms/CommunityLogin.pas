@@ -53,9 +53,6 @@ type
   TfrmCommunityLogin = class(TForm)
     txtPassword: TMLabeledEdit;
     txtUsername: TMLabeledEdit;
-    pnlHeader: TPanel;
-    Shape1: TShape;
-    lblTop: TLabel;
     pnlNav: TPanel;
     Bevel2: TBevel;
     btnOK: TBitBtn;

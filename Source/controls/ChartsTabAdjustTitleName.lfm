@@ -1,18 +1,15 @@
 object frmChartsTabAdjustTitleName: TfrmChartsTabAdjustTitleName
   Left = 0
-  Height = 77
+  Height = 81
   Top = 0
-  Width = 199
+  Width = 213
   AutoSize = True
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Change title name'
-  ClientHeight = 77
-  ClientWidth = 199
+  ClientHeight = 81
+  ClientWidth = 213
   Color = clBtnFace
-  Font.Color = clWindowText
-  Font.Height = -11
-  Font.Name = 'Tahoma'
   KeyPreview = True
   OnCreate = FormCreate
   OnShow = FormShow
@@ -20,23 +17,23 @@ object frmChartsTabAdjustTitleName: TfrmChartsTabAdjustTitleName
   object pnlNav: TPanel
     Left = 0
     Height = 40
-    Top = 37
-    Width = 199
+    Top = 41
+    Width = 213
     Align = alBottom
     BevelOuter = bvNone
     ClientHeight = 40
-    ClientWidth = 199
+    ClientWidth = 213
     TabOrder = 0
     object Bevel2: TBevel
       Left = 0
       Height = 5
       Top = 0
-      Width = 199
+      Width = 213
       Align = alTop
       Shape = bsTopLine
     end
     object btnOK: TBitBtn
-      Left = 99
+      Left = 113
       Height = 35
       Top = 5
       Width = 100
@@ -50,15 +47,15 @@ object frmChartsTabAdjustTitleName: TfrmChartsTabAdjustTitleName
   end
   object txtTitle: TMLabeledEdit
     Left = 0
-    Height = 37
+    Height = 41
     Top = 0
-    Width = 199
+    Width = 213
     Align = alClient
     Caption = 'Please enter the name of the title to add:'
     Control.Left = 0
-    Control.Height = 21
-    Control.Top = 16
-    Control.Width = 199
+    Control.Height = 23
+    Control.Top = 18
+    Control.Width = 213
     Control.Align = alClient
     Control.TabOrder = 0
   end

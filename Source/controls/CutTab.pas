@@ -89,8 +89,6 @@ type
     function VolumeGetVolumeBeforeMute(Sender: TObject): Integer;
 
     procedure MessageReceived(Msg: TMessageBase);
-  protected
-    procedure ControlsAligned; override;
   public
     constructor Create(AOwner: TComponent; Track: TTrackInfo; Filename: string = ''); reintroduce;
     destructor Destroy; override;
@@ -137,12 +135,14 @@ begin
     FFilename := Filename;
 
   FToolbarPanel := TPanel.Create(Self);
-  FToolbarPanel.Parent := Self;
   FToolbarPanel.Align := alTop;
   FToolbarPanel.BevelOuter := bvNone;
+  FToolbarPanel.ChildSizing.TopBottomSpacing := 4;
+  FToolbarPanel.ChildSizing.HorizontalSpacing := 4;
+  FToolbarPanel.AutoSize := True;
+  FToolbarPanel.Parent := Self;
 
   FToolBar := TCutToolBar.Create(Self);
-  FToolBar.Parent := FToolbarPanel;
   FToolBar.Align := alClient;
   FToolBar.Images := modSharedData.imgImages;
   FToolbar.Save.OnClick := SaveClick;
@@ -159,9 +159,9 @@ begin
   FToolBar.ApplyEffects.OnClick := ApplyEffectsClick;
   FToolBar.Play.OnClick := PlayClick;
   FToolBar.Stop.OnClick := StopClick;
+  FToolBar.Parent := FToolbarPanel;
 
   FVolume := TMVolumePanel.Create(Self);
-  FVolume.Parent := FToolbarPanel;
   FVolume.Align := alRight;
   FVolume.Images := modSharedData.imgImages;
   FVolume.ImageIndexMute := TImages.SOUND_MUTE;
@@ -171,11 +171,12 @@ begin
   FVolume.Volume := Players.Volume;
   FVolume.OnVolumeChange := VolumeTrackbarChange;
   FVolume.OnGetVolumeBeforeMute := VolumeGetVolumeBeforeMute;
+  FVolume.Parent := FToolbarPanel;
 
   FCutView := TCutView.Create(Self);
-  FCutView.Parent := Self;
   FCutView.Align := alClient;
   FCutView.OnStateChanged := CutViewStateChanged;
+  FCutView.Parent := Self;
 
   ImageIndex := TImages.CUT;
   ShowCloseButton := True;
@@ -413,13 +414,6 @@ begin
     if VolMsg.Volume <> FVolume.Volume then
       FVolume.Volume := TVolumeChangedMsg(Msg).Volume;
   end;
-end;
-
-procedure TCutTab.ControlsAligned;
-begin
-  inherited ControlsAligned;
-
-  FToolbarPanel.ClientHeight := FToolbar.Height;
 end;
 
 procedure TCutTab.SaveClick(Sender: TObject);

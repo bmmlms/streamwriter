@@ -11,13 +11,11 @@ object frmDownloadAddons: TfrmDownloadAddons
   ClientWidth = 250
   Color = clBtnFace
   Constraints.MinWidth = 250
-  Font.Color = clWindowText
-  Font.Height = -11
-  Font.Name = 'Tahoma'
   OnActivate = FormActivate
   OnClose = FormClose
   Position = poOwnerFormCenter
-  LCLVersion = '2.2.0.4'
+  ShowHint = True
+  LCLVersion = '2.2.6.0'
   object Label1: TLabel
     Left = 0
     Height = 17
@@ -27,6 +25,7 @@ object frmDownloadAddons: TfrmDownloadAddons
     Alignment = taCenter
     AutoSize = False
     Caption = 'Downloading required files...'
+    ParentColor = False
     WordWrap = True
   end
   object ProgressBar1: TProgressBar

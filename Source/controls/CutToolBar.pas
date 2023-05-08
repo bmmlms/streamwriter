@@ -6,6 +6,7 @@ uses
   Classes,
   ComCtrls,
   Images,
+  MToolbarForcedHorizontal,
   SharedControls,
   SysUtils;
 
@@ -13,7 +14,7 @@ type
 
   { TCutToolBar }
 
-  TCutToolBar = class(TToolbarForcedHorizontal)
+  TCutToolBar = class(TMToolbarForcedHorizontal)
   private
     FSave: TToolButton;
     FZoomIn: TToolButton;

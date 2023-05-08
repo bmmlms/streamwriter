@@ -86,6 +86,7 @@ inherited frmSettings: TfrmSettings
         WrapAfter = waAuto
         Index = 13
       end>
+    TabOrder = 4
     object pnlMain: TPanel[0]
       Left = 1
       Height = 332
@@ -182,22 +183,22 @@ inherited frmSettings: TfrmSettings
       end
       object txtMinDiskSpace: TMLabeledSpinEdit
         Left = 1
-        Height = 37
+        Height = 41
         Top = 172
         Width = 291
         Align = alTop
         Caption = 'Stop recording when free space gets below:'
         Control.Left = 0
-        Control.Height = 21
-        Control.Top = 16
+        Control.Height = 23
+        Control.Top = 18
         Control.Width = 50
         Control.Align = alLeft
         Control.TabOrder = 0
         object Label7: TLabel
           Left = 52
-          Height = 21
-          Top = 16
-          Width = 13
+          Height = 23
+          Top = 18
+          Width = 15
           Align = alLeft
           BorderSpacing.Left = 2
           Caption = 'GB'
@@ -207,18 +208,18 @@ inherited frmSettings: TfrmSettings
       end
       object lstDefaultAction: TMLabeledComboBoxEx
         Left = 1
-        Height = 38
-        Top = 255
+        Height = 40
+        Top = 251
         Width = 291
         Align = alBottom
         Caption = 'Default action on doubleclick on stream:'
         Control.Left = 0
         Control.Height = 22
-        Control.Top = 16
+        Control.Top = 18
         Control.Width = 291
         Control.Align = alClient
         Control.Images = modSharedData.imgImages
-        Control.ItemHeight = 16
+        Control.ItemHeight = 17
         Control.ItemsEx = <        
           item
             Caption = 'Start/stop recording'
@@ -236,18 +237,18 @@ inherited frmSettings: TfrmSettings
       end
       object lstDefaultActionNewStream: TMLabeledComboBoxEx
         Left = 1
-        Height = 38
-        Top = 293
+        Height = 40
+        Top = 291
         Width = 291
         Align = alBottom
         Caption = 'Default action for newly added streams:'
         Control.Left = 0
         Control.Height = 22
-        Control.Top = 16
+        Control.Top = 18
         Control.Width = 291
         Control.Align = alClient
         Control.Images = modSharedData.imgImages
-        Control.ItemHeight = 16
+        Control.ItemHeight = 17
         Control.ItemsEx = <        
           item
             Caption = 'Start recording'
@@ -288,7 +289,7 @@ inherited frmSettings: TfrmSettings
       object chkAddSavedToIgnore: TCheckBox
         Left = 1
         Height = 19
-        Top = 133
+        Top = 137
         Width = 291
         Align = alTop
         Caption = 'Add saved titles to global ignorelist'
@@ -329,7 +330,7 @@ inherited frmSettings: TfrmSettings
       object chkOverwriteSmaller: TCheckBox
         Left = 1
         Height = 19
-        Top = 209
+        Top = 213
         Width = 291
         Align = alTop
         Caption = 'Overwrite existing file if newer file is larger'
@@ -339,7 +340,7 @@ inherited frmSettings: TfrmSettings
       object chkDiscardSmaller: TCheckBox
         Left = 1
         Height = 19
-        Top = 228
+        Top = 232
         Width = 291
         Align = alTop
         Caption = 'Discard new file if existing one is larger'
@@ -349,7 +350,7 @@ inherited frmSettings: TfrmSettings
       object chkAddSavedToStreamIgnore: TCheckBox
         Left = 1
         Height = 19
-        Top = 152
+        Top = 156
         Width = 291
         Align = alTop
         Caption = 'Add saved titles to stream ignorelist'
@@ -359,7 +360,7 @@ inherited frmSettings: TfrmSettings
       object chkRemoveSavedFromWishlist: TCheckBox
         Left = 1
         Height = 19
-        Top = 171
+        Top = 175
         Width = 291
         Align = alTop
         Caption = 'Remove saved titles from wishlist'
@@ -369,7 +370,7 @@ inherited frmSettings: TfrmSettings
       object chkDiscardAlways: TCheckBox
         Left = 1
         Height = 19
-        Top = 190
+        Top = 194
         Width = 291
         Align = alTop
         Caption = 'Discard new file if it already exists'
@@ -389,24 +390,24 @@ inherited frmSettings: TfrmSettings
       end
       object txtShortLengthSeconds: TMLabeledSpinEdit
         Left = 19
-        Height = 37
+        Height = 41
         Top = 96
         Width = 273
         Align = alTop
         BorderSpacing.Left = 18
         Caption = 'Ads to skip are shorter than:'
         Control.Left = 0
-        Control.Height = 21
-        Control.Top = 16
+        Control.Height = 23
+        Control.Top = 18
         Control.Width = 50
         Control.Align = alLeft
         Control.OnChange = txtShortLengthSecondsChange
         Control.TabOrder = 0
         object Label4: TLabel
           Left = 53
-          Height = 21
-          Top = 16
-          Width = 39
+          Height = 23
+          Top = 18
+          Width = 43
           Align = alLeft
           BorderSpacing.Left = 3
           Caption = 'seconds'
@@ -416,18 +417,18 @@ inherited frmSettings: TfrmSettings
       end
       object lstDefaultFilter: TMLabeledComboBoxEx
         Left = 1
-        Height = 38
-        Top = 254
+        Height = 40
+        Top = 252
         Width = 291
         Align = alBottom
         Caption = 'Lists:'
         Control.Left = 0
         Control.Height = 22
-        Control.Top = 16
+        Control.Top = 18
         Control.Width = 291
         Control.Align = alClient
         Control.Images = modSharedData.imgImages
-        Control.ItemHeight = 16
+        Control.ItemHeight = 17
         Control.ItemsEx = <        
           item
             Caption = 'Save every song'
@@ -469,8 +470,8 @@ inherited frmSettings: TfrmSettings
       Visible = False
       object lblAppParams: TLabel
         Left = 1
-        Height = 13
-        Top = 287
+        Height = 15
+        Top = 285
         Width = 292
         Align = alBottom
         Caption = '-'
@@ -479,15 +480,15 @@ inherited frmSettings: TfrmSettings
       end
       object txtAppParams: TMLabeledEdit
         Left = 1
-        Height = 37
-        Top = 250
+        Height = 41
+        Top = 244
         Width = 292
         Align = alBottom
         Enabled = False
         Caption = 'Parameters:'
         Control.Left = 0
-        Control.Height = 21
-        Control.Top = 16
+        Control.Height = 23
+        Control.Top = 18
         Control.Width = 292
         Control.Align = alClient
         Control.OnChange = txtAppParamsChange
@@ -496,7 +497,7 @@ inherited frmSettings: TfrmSettings
       object chkOnlyIfCut: TCheckBox
         Left = 1
         Height = 19
-        Top = 194
+        Top = 184
         Width = 292
         Align = alBottom
         Caption = 'Use only if file was cut successfully'
@@ -505,17 +506,17 @@ inherited frmSettings: TfrmSettings
       end
       object lstOutputFormat: TMLabeledComboBoxEx
         Left = 1
-        Height = 38
+        Height = 40
         Top = 1
         Width = 292
         Align = alTop
         Caption = 'Format to convert recorded files to:'
         Control.Left = 0
         Control.Height = 22
-        Control.Top = 16
+        Control.Top = 18
         Control.Width = 261
         Control.Align = alClient
-        Control.ItemHeight = 16
+        Control.ItemHeight = 17
         Control.ItemsEx = <        
           item
             Caption = 'Do not change format'
@@ -538,30 +539,28 @@ inherited frmSettings: TfrmSettings
           Left = 264
           Height = 22
           Hint = 'Configure encoder...'
-          Top = 16
+          Top = 18
           Width = 28
           Align = alRight
           BorderSpacing.Left = 3
           Images = modSharedData.imgImages
           ImageIndex = 14
           OnClick = btnConfigureEncoderClick
-          ShowHint = True
-          ParentShowHint = False
         end
       end
       object Panel3: TPanel
         Left = 1
-        Height = 128
-        Top = 39
+        Height = 116
+        Top = 41
         Width = 292
         Align = alClient
         BevelOuter = bvNone
-        ClientHeight = 128
+        ClientHeight = 116
         ClientWidth = 292
         TabOrder = 3
         object FlowPanel3: TFlowPanel
           Left = 261
-          Height = 128
+          Height = 116
           Top = 0
           Width = 31
           Align = alRight
@@ -595,8 +594,6 @@ inherited frmSettings: TfrmSettings
             Images = modSharedData.imgImages
             ImageIndex = 12
             OnClick = btnMoveClick
-            ShowHint = True
-            ParentShowHint = False
           end
           object btnMoveDown: TSpeedButton
             Left = 3
@@ -608,8 +605,6 @@ inherited frmSettings: TfrmSettings
             Images = modSharedData.imgImages
             ImageIndex = 11
             OnClick = btnMoveClick
-            ShowHint = True
-            ParentShowHint = False
           end
           object btnHelpPostProcess: TSpeedButton
             Left = 3
@@ -621,13 +616,11 @@ inherited frmSettings: TfrmSettings
             Images = modSharedData.imgImages
             ImageIndex = 52
             OnClick = btnHelpClick
-            ShowHint = True
-            ParentShowHint = False
           end
         end
         object lstPostProcess: TListView
           Left = 0
-          Height = 128
+          Height = 116
           Top = 0
           Width = 261
           Align = alClient
@@ -650,7 +643,7 @@ inherited frmSettings: TfrmSettings
       object Panel4: TPanel
         Left = 1
         Height = 27
-        Top = 167
+        Top = 157
         Width = 292
         Align = alBottom
         AutoSize = True
@@ -732,15 +725,15 @@ inherited frmSettings: TfrmSettings
       end
       object txtApp: TMLabeledEditButton
         Left = 1
-        Height = 37
-        Top = 213
+        Height = 41
+        Top = 203
         Width = 292
         Align = alBottom
         Enabled = False
         Caption = 'Path to application:'
         Control.Left = 0
-        Control.Height = 21
-        Control.Top = 16
+        Control.Height = 23
+        Control.Top = 18
         Control.Width = 292
         Control.Align = alClient
         Control.ButtonWidth = 23
@@ -767,8 +760,8 @@ inherited frmSettings: TfrmSettings
       Visible = False
       object lblIgnoreTitles: TLabel
         Left = 1
-        Height = 26
-        Top = 160
+        Height = 45
+        Top = 168
         Width = 291
         Align = alTop
         Caption = 'Ignore the following stream title changes (i.e. announcements like ''Next playing: ...'') to disable saving:'
@@ -777,7 +770,7 @@ inherited frmSettings: TfrmSettings
       end
       object Label21: TLabel
         Left = 1
-        Height = 26
+        Height = 30
         Top = 1
         Width = 291
         Align = alTop
@@ -787,14 +780,14 @@ inherited frmSettings: TfrmSettings
       end
       object txtRegEx: TMLabeledEditButton
         Left = 1
-        Height = 37
-        Top = 96
+        Height = 41
+        Top = 100
         Width = 291
         Align = alTop
         Caption = 'Regular expression to add:'
         Control.Left = 0
-        Control.Height = 21
-        Control.Top = 16
+        Control.Height = 23
+        Control.Top = 18
         Control.Width = 291
         Control.Align = alClient
         Control.ButtonHint = 'Reset pattern to default'
@@ -811,8 +804,8 @@ inherited frmSettings: TfrmSettings
       end
       object lstIgnoreTitles: TListView
         Left = 1
-        Height = 87
-        Top = 186
+        Height = 60
+        Top = 213
         Width = 291
         Align = alTop
         Anchors = [akTop, akLeft, akRight, akBottom]
@@ -830,14 +823,14 @@ inherited frmSettings: TfrmSettings
       end
       object txtIgnoreTitlePattern: TMLabeledEdit
         Left = 1
-        Height = 37
+        Height = 41
         Top = 273
         Width = 291
         Align = alTop
         Caption = 'Pattern to add (use ''*'' as wildcard):'
         Control.Left = 0
-        Control.Height = 21
-        Control.Top = 16
+        Control.Height = 23
+        Control.Top = 18
         Control.Width = 291
         Control.Align = alClient
         Control.OnChange = txtIgnoreTitlePatternChange
@@ -846,7 +839,7 @@ inherited frmSettings: TfrmSettings
       object lstRegExes: TListView
         Left = 1
         Height = 69
-        Top = 27
+        Top = 31
         Width = 291
         Align = alTop
         Columns = <        
@@ -864,7 +857,7 @@ inherited frmSettings: TfrmSettings
       object FlowPanel1: TFlowPanel
         Left = 1
         Height = 27
-        Top = 133
+        Top = 141
         Width = 291
         Align = alTop
         AutoSize = True
@@ -909,7 +902,7 @@ inherited frmSettings: TfrmSettings
       object FlowPanel2: TFlowPanel
         Left = 1
         Height = 27
-        Top = 310
+        Top = 314
         Width = 291
         Align = alTop
         AutoSize = True
@@ -964,8 +957,8 @@ inherited frmSettings: TfrmSettings
       Visible = False
       object lblFilePattern: TLabel
         Left = 1
-        Height = 47
-        Top = 232
+        Height = 23
+        Top = 256
         Width = 291
         Align = alTop
         Anchors = [akTop, akLeft, akRight, akBottom]
@@ -976,21 +969,21 @@ inherited frmSettings: TfrmSettings
       object Bevel1: TBevel
         Left = 1
         Height = 9
-        Top = 38
+        Top = 42
         Width = 291
         Align = alTop
         Shape = bsTopLine
       end
       object txtDir: TMLabeledEditButton
         Left = 1
-        Height = 37
+        Height = 41
         Top = 1
         Width = 291
         Align = alTop
         Caption = 'Folder for saved songs:'
         Control.Left = 0
-        Control.Height = 21
-        Control.Top = 16
+        Control.Height = 23
+        Control.Top = 18
         Control.Width = 291
         Control.Align = alClient
         Control.ButtonHint = 'Browse...'
@@ -1006,15 +999,15 @@ inherited frmSettings: TfrmSettings
       end
       object txtFilePattern: TMLabeledEditButton
         Left = 1
-        Height = 37
-        Top = 47
+        Height = 41
+        Top = 51
         Width = 291
         Align = alTop
         Caption = 'Pattern for filenames of completely recorded tracks:'
         Control.Left = 0
-        Control.Height = 21
+        Control.Height = 23
         Control.Hint = 'Reset pattern to default'
-        Control.Top = 16
+        Control.Top = 18
         Control.Width = 291
         Control.Align = alClient
         Control.ButtonHint = 'Reset pattern to default'
@@ -1032,14 +1025,14 @@ inherited frmSettings: TfrmSettings
       end
       object txtIncompleteFilePattern: TMLabeledEditButton
         Left = 1
-        Height = 37
-        Top = 84
+        Height = 41
+        Top = 92
         Width = 291
         Align = alTop
         Caption = 'Pattern for filenames of incompletely recorded tracks:'
         Control.Left = 0
-        Control.Height = 21
-        Control.Top = 16
+        Control.Height = 23
+        Control.Top = 18
         Control.Width = 291
         Control.Align = alClient
         Control.ButtonHint = 'Reset pattern to default'
@@ -1057,14 +1050,14 @@ inherited frmSettings: TfrmSettings
       end
       object txtAutomaticFilePattern: TMLabeledEditButton
         Left = 1
-        Height = 37
-        Top = 121
+        Height = 41
+        Top = 133
         Width = 291
         Align = alTop
         Caption = 'Pattern for filenames of automatically recorded tracks:'
         Control.Left = 0
-        Control.Height = 21
-        Control.Top = 16
+        Control.Height = 23
+        Control.Top = 18
         Control.Width = 291
         Control.Align = alClient
         Control.ButtonHint = 'Reset pattern to default'
@@ -1082,14 +1075,14 @@ inherited frmSettings: TfrmSettings
       end
       object txtStreamFilePattern: TMLabeledEditButton
         Left = 1
-        Height = 37
-        Top = 158
+        Height = 41
+        Top = 174
         Width = 291
         Align = alTop
         Caption = 'Pattern for filenames of stream files:'
         Control.Left = 0
-        Control.Height = 21
-        Control.Top = 16
+        Control.Height = 23
+        Control.Top = 18
         Control.Width = 291
         Control.Align = alClient
         Control.ButtonHint = 'Reset pattern to default'
@@ -1107,14 +1100,14 @@ inherited frmSettings: TfrmSettings
       end
       object txtPreview: TMLabeledEdit
         Left = 1
-        Height = 37
-        Top = 195
+        Height = 41
+        Top = 215
         Width = 291
         Align = alTop
         Caption = 'Preview for selected pattern:'
         Control.Left = 0
-        Control.Height = 21
-        Control.Top = 16
+        Control.Height = 23
+        Control.Top = 18
         Control.Width = 291
         Control.Align = alClient
         Control.Color = clBtnFace
@@ -1134,33 +1127,33 @@ inherited frmSettings: TfrmSettings
       Visible = False
       object lblPanelCut: TLabel
         Left = 208
-        Height = 13
+        Height = 15
         Top = 168
-        Width = 53
+        Width = 61
         Alignment = taCenter
         Caption = 'lblPanelCut'
         ParentColor = False
       end
       object txtSongBuffer: TMLabeledSpinEdit
         Left = 19
-        Height = 37
-        Top = 97
+        Height = 41
+        Top = 103
         Width = 273
         Align = alTop
         BorderSpacing.Left = 18
         Caption = 'If no silence was found, append buffer to start/end:'
         Control.Left = 0
-        Control.Height = 21
-        Control.Top = 16
+        Control.Height = 23
+        Control.Top = 18
         Control.Width = 100
         Control.Align = alLeft
         Control.OnChange = txtSongBufferChange
         Control.TabOrder = 0
         object Label5: TLabel
           Left = 103
-          Height = 21
-          Top = 16
-          Width = 55
+          Height = 23
+          Top = 18
+          Width = 66
           Align = alLeft
           BorderSpacing.Left = 3
           Caption = 'milliseconds'
@@ -1181,7 +1174,7 @@ inherited frmSettings: TfrmSettings
       object chkAdjustTrackOffset: TCheckBox
         Left = 1
         Height = 19
-        Top = 134
+        Top = 144
         Width = 291
         Align = alTop
         Caption = 'Adjust offset of detected track changes'
@@ -1191,7 +1184,7 @@ inherited frmSettings: TfrmSettings
       object optAdjustBackward: TRadioButton
         Left = 19
         Height = 19
-        Top = 174
+        Top = 186
         Width = 273
         Align = alTop
         BorderSpacing.Left = 18
@@ -1204,7 +1197,7 @@ inherited frmSettings: TfrmSettings
       object optAdjustForward: TRadioButton
         Left = 19
         Height = 19
-        Top = 193
+        Top = 205
         Width = 273
         Align = alTop
         BorderSpacing.Left = 18
@@ -1215,7 +1208,7 @@ inherited frmSettings: TfrmSettings
       object chkManualSilenceLevel: TCheckBox
         Left = 19
         Height = 19
-        Top = 41
+        Top = 43
         Width = 273
         Align = alTop
         BorderSpacing.Left = 18
@@ -1225,31 +1218,31 @@ inherited frmSettings: TfrmSettings
       end
       object Panel1: TPanel
         Left = 19
-        Height = 21
+        Height = 23
         Top = 20
         Width = 273
         Align = alTop
         AutoSize = True
         BorderSpacing.Left = 18
         BevelOuter = bvNone
-        ClientHeight = 21
+        ClientHeight = 23
         ClientWidth = 273
         TabOrder = 6
         object Label6: TLabel
           Left = 0
-          Height = 21
+          Height = 23
           Top = 0
-          Width = 61
+          Width = 66
           Align = alLeft
           Caption = 'in a range of'
           Layout = tlCenter
           ParentColor = False
         end
         object Label15: TLabel
-          Left = 117
-          Height = 21
+          Left = 122
+          Height = 23
           Top = 0
-          Width = 39
+          Width = 43
           Align = alLeft
           BorderSpacing.Left = 3
           Caption = 'seconds'
@@ -1257,8 +1250,8 @@ inherited frmSettings: TfrmSettings
           ParentColor = False
         end
         object txtSilenceBufferSeconds: TSpinEdit
-          Left = 64
-          Height = 21
+          Left = 69
+          Height = 23
           Top = 0
           Width = 50
           Align = alLeft
@@ -1272,15 +1265,15 @@ inherited frmSettings: TfrmSettings
       end
       object txtSilenceLevel: TMLabeledSpinEdit
         Left = 19
-        Height = 37
-        Top = 60
+        Height = 41
+        Top = 62
         Width = 273
         Align = alTop
         BorderSpacing.Left = 18
         Caption = 'Silence is defined by volume lower than:'
         Control.Left = 0
-        Control.Height = 21
-        Control.Top = 16
+        Control.Height = 23
+        Control.Top = 18
         Control.Width = 50
         Control.Align = alLeft
         Control.MaxValue = 100
@@ -1290,9 +1283,9 @@ inherited frmSettings: TfrmSettings
         Control.Value = 1
         object Label12: TLabel
           Left = 53
-          Height = 21
-          Top = 16
-          Width = 31
+          Height = 23
+          Top = 18
+          Width = 35
           Align = alLeft
           BorderSpacing.Left = 3
           Caption = 'lasting'
@@ -1300,10 +1293,10 @@ inherited frmSettings: TfrmSettings
           ParentColor = False
         end
         object Label13: TLabel
-          Left = 190
-          Height = 21
-          Top = 16
-          Width = 13
+          Left = 194
+          Height = 23
+          Top = 18
+          Width = 16
           Align = alLeft
           BorderSpacing.Left = 3
           Caption = 'ms'
@@ -1311,9 +1304,9 @@ inherited frmSettings: TfrmSettings
           ParentColor = False
         end
         object txtSilenceLength: TSpinEdit
-          Left = 87
-          Height = 21
-          Top = 16
+          Left = 91
+          Height = 23
+          Top = 18
           Width = 100
           Align = alLeft
           BorderSpacing.Left = 3
@@ -1326,19 +1319,19 @@ inherited frmSettings: TfrmSettings
       end
       object pnlAdjustTrackOffset: TPanel
         Left = 19
-        Height = 21
-        Top = 153
+        Height = 23
+        Top = 163
         Width = 273
         Align = alTop
         AutoSize = True
         BorderSpacing.Left = 18
         BevelOuter = bvNone
-        ClientHeight = 21
+        ClientHeight = 23
         ClientWidth = 273
         TabOrder = 8
         object txtAdjustTrackOffset: TSpinEdit
           Left = 0
-          Height = 21
+          Height = 23
           Top = 0
           Width = 100
           Align = alLeft
@@ -1348,9 +1341,9 @@ inherited frmSettings: TfrmSettings
         end
         object Label9: TLabel
           Left = 103
-          Height = 21
+          Height = 23
           Top = 0
-          Width = 55
+          Width = 66
           Align = alLeft
           BorderSpacing.Left = 3
           Caption = 'milliseconds'
@@ -1371,14 +1364,14 @@ inherited frmSettings: TfrmSettings
       Visible = False
       object txtMaxRetries: TMLabeledSpinEdit
         Left = 1
-        Height = 37
+        Height = 41
         Top = 1
         Width = 291
         Align = alTop
         Caption = 'Max. connect retries on error (zero is infinite):'
         Control.Left = 0
-        Control.Height = 21
-        Control.Top = 16
+        Control.Height = 23
+        Control.Top = 18
         Control.Width = 50
         Control.Align = alLeft
         Control.MaxValue = 999
@@ -1387,14 +1380,14 @@ inherited frmSettings: TfrmSettings
       end
       object txtRetryDelay: TMLabeledSpinEdit
         Left = 1
-        Height = 37
-        Top = 38
+        Height = 41
+        Top = 42
         Width = 291
         Align = alTop
         Caption = 'Time between retries:'
         Control.Left = 0
-        Control.Height = 21
-        Control.Top = 16
+        Control.Height = 23
+        Control.Top = 18
         Control.Width = 50
         Control.Align = alLeft
         Control.MaxValue = 999
@@ -1402,9 +1395,9 @@ inherited frmSettings: TfrmSettings
         Control.TabOrder = 0
         object Label1: TLabel
           Left = 53
-          Height = 21
-          Top = 16
-          Width = 39
+          Height = 23
+          Top = 18
+          Width = 43
           Align = alLeft
           BorderSpacing.Left = 3
           Caption = 'seconds'
@@ -1414,31 +1407,31 @@ inherited frmSettings: TfrmSettings
       end
       object lstSoundDevice: TMLabeledComboBoxEx
         Left = 1
-        Height = 38
-        Top = 75
+        Height = 40
+        Top = 83
         Width = 291
         Align = alTop
         Caption = 'Sound device:'
         Control.Left = 0
         Control.Height = 22
-        Control.Top = 16
+        Control.Top = 18
         Control.Width = 291
         Control.Align = alClient
         Control.Images = modSharedData.imgImages
-        Control.ItemHeight = 16
+        Control.ItemHeight = 17
         Control.ItemsEx = <>
         Control.TabOrder = 0
       end
       object txtLogFile: TMLabeledEditButton
         Left = 1
-        Height = 37
-        Top = 113
+        Height = 41
+        Top = 123
         Width = 291
         Align = alTop
         Caption = 'Logfile:'
         Control.Left = 0
-        Control.Height = 21
-        Control.Top = 16
+        Control.Height = 23
+        Control.Top = 18
         Control.Width = 291
         Control.Align = alClient
         Control.ButtonHint = 'Browse...'
@@ -1465,8 +1458,8 @@ inherited frmSettings: TfrmSettings
       Visible = False
       object Label22: TLabel
         Left = 19
-        Height = 102
-        Top = 57
+        Height = 98
+        Top = 61
         Width = 272
         Align = alClient
         BorderSpacing.Left = 18
@@ -1476,23 +1469,23 @@ inherited frmSettings: TfrmSettings
       end
       object txtMaxSpeed: TMLabeledSpinEdit
         Left = 19
-        Height = 37
+        Height = 41
         Top = 20
         Width = 272
         Align = alTop
         BorderSpacing.Left = 18
         Caption = 'Max. bandwidth available to streamWriter:'
         Control.Left = 0
-        Control.Height = 21
-        Control.Top = 16
+        Control.Height = 23
+        Control.Top = 18
         Control.Width = 50
         Control.Align = alLeft
         Control.TabOrder = 0
         object Label10: TLabel
           Left = 53
-          Height = 21
-          Top = 16
-          Width = 21
+          Height = 23
+          Top = 18
+          Width = 24
           Align = alLeft
           BorderSpacing.Left = 3
           Caption = 'KB/s'
@@ -1523,7 +1516,7 @@ inherited frmSettings: TfrmSettings
       Visible = False
       object Label29: TLabel
         Left = 1
-        Height = 13
+        Height = 15
         Top = 1
         Width = 291
         Align = alTop
@@ -1533,7 +1526,7 @@ inherited frmSettings: TfrmSettings
       object Panel2: TPanel
         Left = 1
         Height = 24
-        Top = 38
+        Top = 40
         Width = 291
         Align = alTop
         AutoSize = True
@@ -1558,7 +1551,7 @@ inherited frmSettings: TfrmSettings
           Left = 29
           Height = 24
           Top = 0
-          Width = 82
+          Width = 94
           Align = alLeft
           Caption = 'Background color'
           Layout = tlCenter
@@ -1568,7 +1561,7 @@ inherited frmSettings: TfrmSettings
       object Panel5: TPanel
         Left = 1
         Height = 24
-        Top = 14
+        Top = 16
         Width = 291
         Align = alTop
         AutoSize = True
@@ -1581,7 +1574,7 @@ inherited frmSettings: TfrmSettings
           Left = 29
           Height = 24
           Top = 0
-          Width = 48
+          Width = 51
           Align = alLeft
           Caption = 'Text color'
           Layout = tlCenter
@@ -1603,7 +1596,7 @@ inherited frmSettings: TfrmSettings
       object Panel6: TPanel
         Left = 1
         Height = 24
-        Top = 86
+        Top = 88
         Width = 291
         Align = alTop
         AutoSize = True
@@ -1616,7 +1609,7 @@ inherited frmSettings: TfrmSettings
           Left = 29
           Height = 24
           Top = 0
-          Width = 133
+          Width = 148
           Align = alLeft
           Caption = 'Background color (selected)'
           Layout = tlCenter
@@ -1638,7 +1631,7 @@ inherited frmSettings: TfrmSettings
       object Panel7: TPanel
         Left = 1
         Height = 24
-        Top = 62
+        Top = 64
         Width = 291
         Align = alTop
         AutoSize = True
@@ -1651,7 +1644,7 @@ inherited frmSettings: TfrmSettings
           Left = 29
           Height = 24
           Top = 0
-          Width = 99
+          Width = 105
           Align = alLeft
           Caption = 'Text color (selected)'
           Layout = tlCenter
@@ -1672,18 +1665,18 @@ inherited frmSettings: TfrmSettings
       end
       object Panel8: TPanel
         Left = 1
-        Height = 23
-        Top = 110
+        Height = 25
+        Top = 112
         Width = 291
         Align = alTop
         AutoSize = True
         BevelOuter = bvNone
-        ClientHeight = 23
+        ClientHeight = 25
         ClientWidth = 291
         TabOrder = 4
         object btnResetColor: TButton
           Left = 198
-          Height = 23
+          Height = 25
           Top = 0
           Width = 93
           Align = alRight
@@ -1705,7 +1698,7 @@ inherited frmSettings: TfrmSettings
       Visible = False
       object lstHotkeys: TListView
         Left = 1
-        Height = 38
+        Height = 34
         Top = 1
         Width = 291
         Align = alClient
@@ -1728,15 +1721,15 @@ inherited frmSettings: TfrmSettings
       end
       object txtHotkey: TMLabeledHotkeyEdit
         Left = 1
-        Height = 37
-        Top = 39
+        Height = 41
+        Top = 35
         Width = 291
         Align = alBottom
         Enabled = False
         Caption = 'Hotkey:'
         Control.Left = 0
-        Control.Height = 21
-        Control.Top = 16
+        Control.Height = 23
+        Control.Top = 18
         Control.Width = 291
         Control.Align = alClient
         Control.OnChange = txtHotkeyChange
@@ -1744,20 +1737,20 @@ inherited frmSettings: TfrmSettings
     end
     object pnlCommunityBlacklist: TPanel[10]
       Left = 294
-      Height = 42
+      Height = 44
       Top = 622
-      Width = 268
+      Width = 299
       Anchors = []
       AutoSize = True
-      ClientHeight = 42
-      ClientWidth = 268
+      ClientHeight = 44
+      ClientWidth = 299
       TabOrder = 11
       Visible = False
       object Label19: TLabel
         Left = 1
-        Height = 13
+        Height = 15
         Top = 1
-        Width = 266
+        Width = 297
         Align = alTop
         Caption = 'Do not automatically record from the following streams:'
         ParentColor = False
@@ -1765,8 +1758,8 @@ inherited frmSettings: TfrmSettings
       object pnlBlacklist: TPanel
         Left = 1
         Height = 0
-        Top = 14
-        Width = 266
+        Top = 16
+        Width = 297
         Align = alClient
         AutoSize = True
         BevelOuter = bvNone
@@ -1775,8 +1768,8 @@ inherited frmSettings: TfrmSettings
       object FlowPanel6: TFlowPanel
         Left = 1
         Height = 27
-        Top = 14
-        Width = 266
+        Top = 16
+        Width = 297
         Align = alBottom
         AutoSize = True
         BevelOuter = bvNone
@@ -1790,7 +1783,7 @@ inherited frmSettings: TfrmSettings
         FlowStyle = fsRightLeftBottomTop
         TabOrder = 1
         object btnBlacklistRemove: TButton
-          Left = 173
+          Left = 204
           Height = 27
           Top = 0
           Width = 93
@@ -1803,7 +1796,7 @@ inherited frmSettings: TfrmSettings
       end
     end
     object pnlFilenamesExt: TPanel[11]
-      Left = 562
+      Left = 593
       Height = 112
       Top = 622
       Width = 293
@@ -1814,7 +1807,7 @@ inherited frmSettings: TfrmSettings
       object chkNormalizeVariables: TCheckBox
         Left = 1
         Height = 19
-        Top = 75
+        Top = 83
         Width = 291
         Align = alTop
         Caption = 'Adjust upper-/lowercase of artist/title/album'
@@ -1823,14 +1816,14 @@ inherited frmSettings: TfrmSettings
       end
       object txtFilePatternDecimals: TMLabeledSpinEdit
         Left = 1
-        Height = 37
+        Height = 41
         Top = 1
         Width = 291
         Align = alTop
         Caption = 'Minimum count of decimals for tracknumbers:'
         Control.Left = 0
-        Control.Height = 21
-        Control.Top = 16
+        Control.Height = 23
+        Control.Top = 18
         Control.Width = 50
         Control.Align = alLeft
         Control.OnChange = txtFilePatternDecimalsChange
@@ -1838,14 +1831,14 @@ inherited frmSettings: TfrmSettings
       end
       object txtRemoveChars: TMLabeledEditButton
         Left = 1
-        Height = 37
-        Top = 38
+        Height = 41
+        Top = 42
         Width = 291
         Align = alTop
         Caption = 'Remove the following characters from filenames:'
         Control.Left = 0
-        Control.Height = 21
-        Control.Top = 16
+        Control.Height = 23
+        Control.Top = 18
         Control.Width = 291
         Control.Align = alClient
         Control.ButtonHint = 'Reset pattern to default'
@@ -1862,7 +1855,7 @@ inherited frmSettings: TfrmSettings
       end
     end
     object pnlAutoRecord: TPanel[12]
-      Left = 855
+      Left = 886
       Height = 177
       Top = 622
       Width = 293
@@ -1914,7 +1907,7 @@ inherited frmSettings: TfrmSettings
       end
       object lstMinQuality: TMLabeledComboBoxEx
         Left = 19
-        Height = 38
+        Height = 40
         Top = 77
         Width = 273
         Align = alTop
@@ -1922,10 +1915,10 @@ inherited frmSettings: TfrmSettings
         Caption = 'Minimum quality:'
         Control.Left = 0
         Control.Height = 22
-        Control.Top = 16
+        Control.Top = 18
         Control.Width = 273
         Control.Align = alClient
-        Control.ItemHeight = 16
+        Control.ItemHeight = 17
         Control.ItemsEx = <        
           item
             Caption = 'High'
@@ -1940,18 +1933,18 @@ inherited frmSettings: TfrmSettings
       end
       object lstFormat: TMLabeledComboBoxEx
         Left = 19
-        Height = 38
-        Top = 115
+        Height = 40
+        Top = 117
         Width = 273
         Align = alTop
         BorderSpacing.Left = 18
         Caption = 'Format:'
         Control.Left = 0
         Control.Height = 22
-        Control.Top = 16
+        Control.Top = 18
         Control.Width = 273
         Control.Align = alClient
-        Control.ItemHeight = 16
+        Control.ItemHeight = 17
         Control.ItemsEx = <        
           item
             Caption = 'MP3/AAC'
@@ -1977,7 +1970,7 @@ inherited frmSettings: TfrmSettings
       Visible = False
       object Label2: TLabel
         Left = 19
-        Height = 26
+        Height = 45
         Top = 20
         Width = 273
         Align = alTop
@@ -1989,8 +1982,8 @@ inherited frmSettings: TfrmSettings
       end
       object Label8: TLabel
         Left = 19
-        Height = 39
-        Top = 65
+        Height = 60
+        Top = 84
         Width = 273
         Align = alTop
         BorderSpacing.Left = 18
@@ -2001,8 +1994,8 @@ inherited frmSettings: TfrmSettings
       end
       object Label20: TLabel
         Left = 19
-        Height = 91
-        Top = 123
+        Height = 105
+        Top = 163
         Width = 273
         Align = alTop
         BorderSpacing.Left = 18
@@ -2023,7 +2016,7 @@ inherited frmSettings: TfrmSettings
       object chkSubmitStats: TCheckBox
         Left = 1
         Height = 19
-        Top = 46
+        Top = 65
         Width = 291
         Align = alTop
         Caption = 'Submit statistics/track changes to the server'
@@ -2033,7 +2026,7 @@ inherited frmSettings: TfrmSettings
       object chkMonitorMode: TCheckBox
         Left = 1
         Height = 19
-        Top = 104
+        Top = 144
         Width = 291
         Align = alTop
         Caption = 'Enable monitor mode'
@@ -2042,15 +2035,15 @@ inherited frmSettings: TfrmSettings
       end
       object txtMonitorCount: TMLabeledSpinEdit
         Left = 19
-        Height = 37
-        Top = 214
+        Height = 41
+        Top = 268
         Width = 273
         Align = alTop
         BorderSpacing.Left = 18
         Caption = 'Max. number of streams to monitor:'
         Control.Left = 0
-        Control.Height = 21
-        Control.Top = 16
+        Control.Height = 23
+        Control.Top = 18
         Control.Width = 50
         Control.Align = alLeft
         Control.MaxValue = 99
@@ -2058,21 +2051,11 @@ inherited frmSettings: TfrmSettings
       end
     end
   end
-  inherited pnlHeader: TPanel
-    Width = 1576
-    ClientWidth = 1576
-    TabOrder = 2
-    inherited Shape1: TShape
-      Width = 1576
-    end
-    inherited lblTop: TLabel
-      Width = 1576
-    end
-  end
   inherited pnlNav: TPanel
     Top = 842
     Width = 1576
     ClientWidth = 1576
+    TabOrder = 1
     inherited Bevel2: TBevel
       Width = 1576
     end
@@ -2087,9 +2070,26 @@ inherited frmSettings: TfrmSettings
   inherited pnlGeneral: TPanel
     Left = 1212
     Top = 84
-    TabOrder = 5
+    inherited chkAutoUpdateCheck: TCheckBox
+      Top = 41
+    end
+    inherited chkProxy: TCheckBox
+      Top = 79
+    end
+    inherited chkCheckCertificate: TCheckBox
+      Top = 60
+    end
+    inherited lstLanguages: TMLabeledComboBoxEx
+      Height = 40
+    end
+    inherited txtHost: TMLabeledEdit
+      Top = 98
+    end
+    inherited txtPort: TMLabeledSpinEdit
+      Top = 139
+    end
   end
-  object pnlAddons: TPanel[5]
+  object pnlAddons: TPanel[4]
     Left = 1204
     Height = 37
     Top = 392
@@ -2119,21 +2119,21 @@ inherited frmSettings: TfrmSettings
       OnResize = lstAddonsResize
     end
   end
-  object dlgOpen: TOpenDialog[6]
+  object dlgOpen: TOpenDialog[5]
     Title = 'Open file'
     Filter = 'Executable files (*.exe, *.bat)|*.exe;*.bat'
     Options = [ofHideReadOnly, ofEnableSizing, ofDontAddToRecent]
     Left = 548
     Top = 272
   end
-  object dlgSave: TSaveDialog[7]
+  object dlgSave: TSaveDialog[6]
     Title = 'Save file'
     Filter = 'Text files (*.txt)|*.txt'
     Options = [ofOverwritePrompt, ofHideReadOnly, ofPathMustExist, ofEnableSizing, ofDontAddToRecent]
     Left = 548
     Top = 320
   end
-  object dlgColor: TColorDialog[8]
+  object dlgColor: TColorDialog[7]
     Title = 'Select color'
     Color = clBlack
     CustomColors.Strings = (

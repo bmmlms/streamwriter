@@ -46,6 +46,7 @@ uses
   Menus,
   MessageBus,
   MStringFunctions,
+  MToolbarForcedHorizontal,
   SharedControls,
   SharedData,
   StdCtrls,
@@ -101,7 +102,7 @@ type
   private
     FLabel: TLabel;
     FSearch: TEdit;
-    FToolbar: TToolBar;
+    FToolbar: TMToolbarForcedHorizontal;
 
     FButtonDebug: TToolButton;
     FButtonInfo: TToolButton;
@@ -265,14 +266,14 @@ begin
   ImageIndex := TImages.BOOK_OPEN;
 
   FLogPanel := TLogPanel.Create(Self);
-  FLogPanel.Parent := Self;
   FLogPanel.Align := alTop;
   FLogPanel.AutoSize := True;
+  FLogPanel.Parent := Self;
 
   FLogTree := TLogTree.Create(Self);
-  FLogTree.Parent := Self;
   FLogTree.Align := alClient;
   FLogTree.OnSelectionChange := LogTreeSelectionChange;
+  FLogTree.Parent := Self;
 
   FLogTree.FPopupMenu.ItemDebug.OnClick := PopupMenuClick;
   FLogTree.FPopupMenu.ItemInfo.OnClick := PopupMenuClick;
@@ -686,6 +687,8 @@ begin
   inherited;
 
   BevelOuter := bvNone;
+  ChildSizing.TopBottomSpacing := 4;
+  ChildSizing.HorizontalSpacing := 4;
 
   FLabel := TLabel.Create(Self);
   FLabel.Parent := Self;
@@ -698,7 +701,7 @@ begin
   FSearch.Parent := Self;
   FSearch.Align := alLeft;
 
-  FToolbar := TToolbarForcedHorizontal.Create(Self);
+  FToolbar := TMToolbarForcedHorizontal.Create(Self);
   FToolbar.Parent := Self;
   FToolbar.Align := alRight;
   FToolbar.Images := modSharedData.imgImages;

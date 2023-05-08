@@ -417,8 +417,6 @@ begin
   TreeOptions.MiscOptions := TreeOptions.MiscOptions - [toAcceptOLEDrop] + [toFullRowDrag];
   Header.Options := Header.Options + [hoShowSortGlyphs, hoVisible, hoOwnerDraw] - [hoDrag, hoColumnResize];
   DragMode := dmAutomatic;
-  ShowHint := True;
-  HintMode := hmTooltip;
 
   ScrollBarOptions.ScrollBars := ssVertical;
   ScrollBarOptions.AlwaysVisible := True;
@@ -543,8 +541,7 @@ begin
   F := TFont.Create;
   try
     F.Assign(Font);
-    F.Size := F.Size - 1;
-
+    F.Size := Round((Graphics.GetFontData(Font.Handle).Height * 72 / Font.PixelsPerInch) * -1) - 1;
     NodeHeight := TMStringFunctions.GetTextSize(MeasureTextHeightString, Font).Height + TMStringFunctions.GetTextSize(MeasureTextHeightString, F).Height + 6;
   finally
     F.Free;
@@ -795,7 +792,7 @@ begin
   else
     NewText := StringReplace(NewText, '&', '&&', [rfReplaceall]); // Wegen & und dem Shortcut..
 
-  PaintInfo.Canvas.Font.Size := PaintInfo.Canvas.Font.Size - 1;
+  PaintInfo.Canvas.Font.Size := Round((Graphics.GetFontData(PaintInfo.Canvas.Font.Handle).Height * 72 / Font.PixelsPerInch) * -1) - 1;
 
   if PaintInfo.Canvas.GetTextWidth(NewText) > MaxTextWidth then
     NewText := ShortenString(PaintInfo.Canvas.Handle, NewText, MaxTextWidth, 0);
@@ -1220,16 +1217,21 @@ begin
   Align := alClient;
 
   FSearch := TMStreamSearchPanel.Create(Self);
-  FSearch.Parent := Self;
   FSearch.Align := alTop;
+  FSearch.ChildSizing.TopBottomSpacing := 4;
+  FSearch.ChildSizing.LeftRightSpacing := 4;
+  FSearch.ChildSizing.HorizontalSpacing := 4;
+  FSearch.ChildSizing.VerticalSpacing := 4;
   FSearch.AutoSize := True;
   FSearch.FSearchEdit.OnChange := SearchEditChange;
   FSearch.FGenreList.OnChange := ListsChange;
   FSearch.FKbpsList.OnChange := ListsChange;
   FSearch.FTypeList.OnChange := ListsChange;
+  FSearch.Parent := Self;
 
   FCountLabel := TLabel.Create(Self);
   FCountLabel.Align := alBottom;
+  FCountLabel.BorderSpacing.Top := 1;
   FCountLabel.Parent := Self;
 
   FStreamTree := TMStreamTree.Create(Self);
@@ -1454,6 +1456,7 @@ constructor TMStreamSearchPanel.Create(AOwner: TComponent);
     L.Align := alLeft;
     L.Caption := LabelText;
     L.Layout := tlCenter;
+    L.BorderSpacing.Right := 4;
 
     FPanelLabels.Add(L);
   end;
@@ -1469,8 +1472,9 @@ begin
 
   P := CreatePanel(_('Type') + ':');
   FTypeList := TComboBoxEx.Create(Self);
-  FTypeList.Parent := P;
   FTypeList.Align := alClient;
+  FTypeList.ItemHeight := 17;
+  FTypeList.Parent := P;
 
   FTypeList.ItemsEx.AddItem(_('- No type -'));
   FTypeList.ItemsEx.AddItem(_('MP3'));
@@ -1479,8 +1483,9 @@ begin
 
   P := CreatePanel(_('Kbps') + ':');
   FKbpsList := TComboBoxEx.Create(Self);
-  FKbpsList.Parent := P;
   FKbpsList.Align := alClient;
+  FKbpsList.ItemHeight := 17;
+  FKbpsList.Parent := P;
 
   FKbpsList.ItemsEx.AddItem(_('- No kbps -'));
   FKbpsList.ItemsEx.AddItem('>= 64');
@@ -1492,14 +1497,15 @@ begin
 
   P := CreatePanel(_('Genre') + ':');
   FGenreList := TComboBoxEx.Create(Self);
-  FGenreList.Parent := P;
   FGenreList.Align := alClient;
   FGenreList.DropDownCount := 16;
+  FGenreList.ItemHeight := 17;
+  FGenreList.Parent := P;
 
   P := CreatePanel(_('Search') + ':');
   FSearchEdit := TEdit.Create(Self);
-  FSearchEdit.Parent := P;
   FSearchEdit.Align := alClient;
+  FSearchEdit.Parent := P;
 end;
 
 destructor TMStreamSearchPanel.Destroy;
