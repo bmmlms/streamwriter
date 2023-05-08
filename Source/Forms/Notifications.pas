@@ -30,6 +30,8 @@ uses
   Forms,
   Functions,
   Graphics,
+  InterfaceBase,
+  LCLType,
   LMessages,
   MStringFunctions,
   StdCtrls,
@@ -42,12 +44,7 @@ type
   { TfrmNotification }
 
   TfrmNotification = class(TForm)
-    lblStream: TLabel;
-    lblTitle: TLabel;
-    pbLogo: TPaintBox;
-    Panel1: TPanel;
     tmrFade: TTimer;
-    procedure pbLogoPaint(Sender: TObject);
     procedure tmrFadeTimer(Sender: TObject);
   type
     TNotificationStates = (nsFadingIn, nsVisible, nsFadingOut);
@@ -55,17 +52,24 @@ type
   const
     FADE_DURATION = 500;
     SHOW_DURATION = 3000;
+    REAL_IMAGE_SIZE = 96;
+    SMALL_IMAGE_SIZE = 64;
+    TITLE_FONT_SIZE = 20;
+    STREAM_FONT_SIZE = 12;
+    BORDER_SIZE = 6;
   private
     FState: TNotificationStates;
     FFadeStartedAt, FFadeoutAt: TDateTime;
     FTitle, FStream: string;
+    FBitmap: Graphics.TBitmap;
+
     FRedisplayTitle, FRedisplayStream: string;
     FWindow: TfrmNotification; static;
 
+    procedure UpdateBitmap;
     procedure MouseHook(Sender: TObject; Msg: Cardinal);
   protected
     procedure ShowNoActivate;
-    procedure ControlsAligned; override;
     procedure DoClose(var CloseAction: TCloseAction); override;
     procedure Paint; override;
   public
@@ -107,12 +111,16 @@ begin
 
   FState := nsFadingIn;
   Application.AddOnUserInputHandler(MouseHook);
+
+  FBitmap := Graphics.TBitmap.Create;
+  FBitmap.Canvas.Font.Assign(Canvas.Font);
 end;
 
 destructor TfrmNotification.Destroy;
 begin
   Application.RemoveOnUserInputHandler(MouseHook);
   FWindow := nil;
+  FBitmap.Free;
 
   inherited;
 end;
@@ -127,8 +135,15 @@ begin
 
       FFadeStartedAt := Now;
 
+      UpdateBitmap;
+
+      Width := FBitmap.Width;
+      Height := FBitmap.Height;
+      Left := Screen.PrimaryMonitor.WorkareaRect.Right - Width - 15;
+      Top := Screen.PrimaryMonitor.WorkareaRect.Bottom - Height - 15;
+
       if Visible then
-        ControlsAligned;
+        Invalidate;
 
       ShowNoActivate;
     end;
@@ -175,25 +190,77 @@ begin
   end;
 end;
 
+procedure TfrmNotification.UpdateBitmap;
+var
+  MaxWidth, MaxTextWidth, TextWidth: Integer;
+  ImageSize, TitleSize, StreamSize: TSize;
+  ScaledBorderSize, ScaledImageSize, TransparentRight, TransparentTop: Integer;
+  FormRect, ContentRect, TextRect: TRect;
+  TextStyle: TTextStyle;
+  TextMetricsTitle, TextMetricsStream: LCLType.TTextMetric;
+  Icon: TIcon;
+begin
+  ScaledBorderSize := Scale96ToFont(BORDER_SIZE);
+  ScaledImageSize := Min(REAL_IMAGE_SIZE, Scale96ToFont(SMALL_IMAGE_SIZE));
+
+  Icon := TIcon.Create;
+  try
+    Icon.SetSize(REAL_IMAGE_SIZE, REAL_IMAGE_SIZE);
+    Icon.LoadFromResourceName(HINSTANCE, 'MAINICON');
+
+    TFunctions.GetMaxTransparent(Icon, TransparentTop, TransparentRight);
+
+    TransparentRight := Trunc((ScaledImageSize / REAL_IMAGE_SIZE) * TransparentRight);
+    TransparentTop := Trunc((ScaledImageSize / REAL_IMAGE_SIZE) * TransparentTop);
+
+    ImageSize := TSize.Create(TransparentRight, ScaledImageSize - TransparentTop);
+
+    MaxWidth := Trunc(Screen.PrimaryMonitor.WorkareaRect.Width * 0.2);
+    MaxTextWidth := MaxWidth - ScaledBorderSize * 2 - ScaledBorderSize - ImageSize.Width;
+
+    FBitmap.Canvas.Font.Size := TITLE_FONT_SIZE;
+    WidgetSet.GetTextMetrics(FBitmap.Canvas.Handle, TextMetricsTitle);
+    TitleSize := FBitmap.Canvas.TextExtent(FTitle);
+
+    FBitmap.Canvas.Font.Size := STREAM_FONT_SIZE;
+    WidgetSet.GetTextMetrics(FBitmap.Canvas.Handle, TextMetricsStream);
+    StreamSize := FBitmap.Canvas.TextExtent(FStream);
+
+    TextWidth := Min(Max(TitleSize.Width, StreamSize.Width), MaxTextWidth);
+
+    FormRect := TRect.Create(0, 0, TextWidth + ScaledBorderSize * 2 + ScaledBorderSize + ImageSize.Width, ImageSize.Height + ScaledBorderSize * 2);
+
+    ContentRect := FormRect;
+    ContentRect.Inflate(-ScaledBorderSize, -ScaledBorderSize);
+
+    TextRect := ContentRect;
+    TextRect.Inflate(-ScaledBorderSize, -ScaledBorderSize);
+    TextRect.Right -= ImageSize.Width - ScaledBorderSize;
+
+    FBitmap.SetSize(FormRect.Width, FormRect.Height);
+
+    FBitmap.Canvas.Pen.Color := clBtnShadow;
+    FBitmap.Canvas.Rectangle(FormRect);
+
+    FillChar(TextStyle, SizeOf(TextStyle), 0);
+    TextStyle.EndEllipsis := True;
+
+    FBitmap.Canvas.Font.Size := TITLE_FONT_SIZE;
+    FBitmap.Canvas.TextRect(TextRect, TextRect.Left, TextRect.Top - TextMetricsTitle.tmInternalLeading, FTitle, TextStyle);
+
+    FBitmap.Canvas.Font.Size := STREAM_FONT_SIZE;
+    FBitmap.Canvas.TextRect(TextRect, TextRect.Left, TextRect.Bottom - TextMetricsStream.tmHeight, FStream, TextStyle);
+
+    DrawIconEx(FBitmap.Canvas.Handle, ContentRect.Right - ImageSize.Width, ContentRect.Top, Icon.Handle, ImageSize.Width, ImageSize.Height, 0, 0, DI_NORMAL);
+  finally
+    Icon.Free;
+  end;
+end;
+
 procedure TfrmNotification.MouseHook(Sender: TObject; Msg: Cardinal);
 begin
   if (Msg = LM_LBUTTONDOWN) and (PtInRect(Self.BoundsRect, Mouse.CursorPos)) then
     Close;
-end;
-
-procedure TfrmNotification.pbLogoPaint(Sender: TObject);
-var
-  Icon: TIcon;
-begin
-  Icon := TIcon.Create;
-  try
-    Icon.SetSize(96, 96);
-    Icon.LoadFromResourceName(HINSTANCE, 'MAINICON');
-
-    DrawIconEx(pbLogo.Canvas.Handle, 0, 0, Icon.Handle, 64, 64, 0, 0, DI_NORMAL);
-  finally
-    Icon.Free;
-  end;
 end;
 
 procedure TfrmNotification.ShowNoActivate;
@@ -205,21 +272,6 @@ begin
   Visible := True;
 end;
 
-procedure TfrmNotification.ControlsAligned;
-var
-  MaxWidth: Integer;
-begin
-  inherited;
-
-  MaxWidth := Trunc(Screen.PrimaryMonitor.WorkareaRect.Width * 0.2);
-
-  lblTitle.Caption := TMStringFunctions.TruncateText(FTitle, MaxWidth - pbLogo.Width, lblTitle.Font);
-  lblStream.Caption := TMStringFunctions.TruncateText(FStream, MaxWidth - pbLogo.Width, lblStream.Font);
-
-  Left := Screen.PrimaryMonitor.WorkareaRect.Right - ClientWidth - 15;
-  Top := Screen.PrimaryMonitor.WorkareaRect.Bottom - ClientHeight - 15;
-end;
-
 procedure TfrmNotification.DoClose(var CloseAction: TCloseAction);
 begin
   inherited;
@@ -229,10 +281,7 @@ end;
 
 procedure TfrmNotification.Paint;
 begin
-  inherited;
-
-  Canvas.Pen.Color := clBtnShadow;
-  Canvas.Rectangle(0, 0, ClientWidth, ClientHeight);
+  Canvas.Draw(0, 0, FBitmap);
 end;
 
 procedure TfrmNotification.HideWindow;

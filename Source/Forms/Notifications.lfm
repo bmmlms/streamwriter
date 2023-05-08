@@ -2,61 +2,12 @@ object frmNotification: TfrmNotification
   Left = 0
   Height = 72
   Top = 0
-  Width = 133
-  AutoSize = True
+  Width = 253
   BorderIcons = []
   BorderStyle = bsNone
-  BorderWidth = 4
   Caption = 'frmNotification'
-  ClientHeight = 72
-  ClientWidth = 133
   Color = clBtnFace
-  Constraints.MaxHeight = 72
   FormStyle = fsSystemStayOnTop
-  object Panel1: TPanel
-    Left = 4
-    Height = 64
-    Top = 4
-    Width = 61
-    Align = alClient
-    AutoSize = True
-    BevelOuter = bvNone
-    ClientHeight = 64
-    ClientWidth = 61
-    TabOrder = 0
-    object lblTitle: TLabel
-      Left = 0
-      Height = 30
-      Top = 0
-      Width = 61
-      Align = alTop
-      Caption = 'lblTitle'
-      Font.Height = -21
-      ParentColor = False
-      ParentFont = False
-      ShowAccelChar = False
-    end
-    object lblStream: TLabel
-      Left = 0
-      Height = 34
-      Top = 30
-      Width = 61
-      Align = alClient
-      Caption = 'lblStream'
-      Font.Height = -13
-      ParentColor = False
-      ParentFont = False
-      ShowAccelChar = False
-    end
-  end
-  object pbLogo: TPaintBox
-    Left = 65
-    Height = 64
-    Top = 4
-    Width = 64
-    Align = alRight
-    OnPaint = pbLogoPaint
-  end
   object tmrFade: TTimer
     Interval = 20
     OnTimer = tmrFadeTimer
