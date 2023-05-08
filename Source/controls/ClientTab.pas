@@ -644,6 +644,7 @@ begin
   FTimeLabel.Align := alRight;
   FTimeLabel.Layout := tlCenter;
   FTimeLabel.Alignment := taCenter;
+  FTimeLabel.BorderSpacing.Right := 4;
   FTimeLabel.Parent := FToolbarPanel;
 
   FActionPlay := GetAction('actPlay');
