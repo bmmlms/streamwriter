@@ -1,6 +1,6 @@
 object frmConfigureEncoder: TfrmConfigureEncoder
   Left = 0
-  Height = 143
+  Height = 138
   Top = 0
   Width = 250
   AutoSize = True
@@ -8,7 +8,7 @@ object frmConfigureEncoder: TfrmConfigureEncoder
   BorderStyle = bsSingle
   BorderWidth = 4
   Caption = 'Configure encoder'
-  ClientHeight = 143
+  ClientHeight = 138
   ClientWidth = 250
   Color = clBtnFace
   Constraints.MinWidth = 250
@@ -61,14 +61,14 @@ object frmConfigureEncoder: TfrmConfigureEncoder
   end
   object pnlNav: TPanel
     Left = 4
-    Height = 39
+    Height = 34
     Top = 100
     Width = 242
     Align = alTop
     AutoSize = True
     BorderSpacing.Top = 8
     BevelOuter = bvNone
-    ClientHeight = 39
+    ClientHeight = 34
     ClientWidth = 242
     TabOrder = 4
     object Bevel2: TBevel
@@ -81,12 +81,12 @@ object frmConfigureEncoder: TfrmConfigureEncoder
     end
     object btnOK: TBitBtn
       Left = 142
-      Height = 35
+      Height = 30
       Top = 4
       Width = 100
       Align = alRight
       Caption = '&OK'
-      Constraints.MinHeight = 35
+      Constraints.MinHeight = 30
       Constraints.MinWidth = 100
       OnClick = btnOKClick
       TabOrder = 0

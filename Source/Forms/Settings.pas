@@ -1194,7 +1194,7 @@ begin
     Item.Checked := AppGlobals.PostProcessManager.EnablePostProcess(Self, Item.Checked, TInternalPostProcess(Item.Data));
     lstPostProcess.OnItemChecked := lstPostProcessItemChecked;
 
-    btnConfigure.Enabled := Item.Checked and TPostProcessBase(Item.Data).CanConfigure;
+    btnConfigure.Enabled := Item.Checked and Item.Selected and TPostProcessBase(Item.Data).CanConfigure;
   end;
 
   FTemporaryPostProcessors.Find(TPostProcessBase(Item.Data)).Active := Item.Checked;
@@ -1248,7 +1248,7 @@ begin
     btnRemove.Enabled := False;
   end;
 
-  btnConfigure.Enabled := (Item <> nil) and Item.Checked and TPostProcessBase(Item.Data).CanConfigure;
+  btnConfigure.Enabled := (Item <> nil) and Item.Selected and Item.Checked and TPostProcessBase(Item.Data).CanConfigure;
 end;
 
 procedure TfrmSettings.MenuItem1Click(Sender: TObject);

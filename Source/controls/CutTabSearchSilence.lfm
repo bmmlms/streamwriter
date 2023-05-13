@@ -40,7 +40,7 @@ object frmCutTabSearchSilence: TfrmCutTabSearchSilence
       Width = 100
       Align = alRight
       Caption = '&OK'
-      Constraints.MinHeight = 35
+      Constraints.MinHeight = 30
       Constraints.MinWidth = 100
       OnClick = btnOKClick
       TabOrder = 0

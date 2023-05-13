@@ -45,11 +45,11 @@ type
   { TfrmConfigureSoX }
 
   TfrmConfigureSoX = class(TForm)
-    chkSilenceStart: TCheckBox;
-    chkSilenceEnd: TCheckBox;
     chkFadeoutEnd: TCheckBox;
     chkFadeoutStart: TCheckBox;
     chkNormalize: TCheckBox;
+    chkSilenceEnd: TCheckBox;
+    chkSilenceStart: TCheckBox;
     GroupBox1: TGroupBox;
     GroupBox2: TGroupBox;
     GroupBox3: TGroupBox;
@@ -57,6 +57,7 @@ type
     Label2: TLabel;
     Label3: TLabel;
     Label4: TLabel;
+    Panel1: TPanel;
     pnlNav: TPanel;
     Bevel2: TBevel;
     btnOK: TBitBtn;

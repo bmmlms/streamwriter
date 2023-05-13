@@ -11,7 +11,7 @@ inherited frmSettings: TfrmSettings
   OnShow = FormShow
   Position = poOwnerFormCenter
   inherited FlowPanelPages: TFlowPanel
-    Height = 826
+    Height = 831
     Width = 1467
     BevelOuter = bvRaised
     ControlList = <    
@@ -1170,12 +1170,12 @@ inherited frmSettings: TfrmSettings
         Control.Left = 0
         Control.Height = 23
         Control.Top = 18
-        Control.Width = 100
+        Control.Width = 80
         Control.Align = alLeft
         Control.OnChange = txtSongBufferChange
         Control.TabOrder = 0
         object Label5: TLabel
-          Left = 104
+          Left = 84
           Height = 23
           Top = 18
           Width = 66
@@ -1318,13 +1318,13 @@ inherited frmSettings: TfrmSettings
           ParentColor = False
         end
         object Label13: TLabel
-          Left = 197
+          Left = 177
           Height = 23
           Top = 18
-          Width = 16
+          Width = 66
           Align = alLeft
           BorderSpacing.Left = 4
-          Caption = 'ms'
+          Caption = 'milliseconds'
           Layout = tlCenter
           ParentColor = False
         end
@@ -1332,7 +1332,7 @@ inherited frmSettings: TfrmSettings
           Left = 93
           Height = 23
           Top = 18
-          Width = 100
+          Width = 80
           Align = alLeft
           BorderSpacing.Left = 4
           MaxValue = 5000
@@ -1358,14 +1358,14 @@ inherited frmSettings: TfrmSettings
           Left = 0
           Height = 23
           Top = 0
-          Width = 100
+          Width = 80
           Align = alLeft
           MaxValue = 30000
           OnChange = txtAdjustTrackOffsetChange
           TabOrder = 0
         end
         object Label9: TLabel
-          Left = 104
+          Left = 84
           Height = 23
           Top = 0
           Width = 66
@@ -2094,8 +2094,10 @@ inherited frmSettings: TfrmSettings
     end
   end
   inherited pnlNav: TPanel
-    Top = 838
+    Height = 34
+    Top = 843
     Width = 1568
+    ClientHeight = 34
     ClientWidth = 1568
     TabOrder = 1
     inherited Bevel2: TBevel
@@ -2103,10 +2105,11 @@ inherited frmSettings: TfrmSettings
     end
     inherited btnOK: TBitBtn
       Left = 1468
+      Height = 30
     end
   end
   inherited pnlLeft: TPanel
-    Height = 826
+    Height = 831
     TabOrder = 3
   end
   inherited pnlGeneral: TPanel

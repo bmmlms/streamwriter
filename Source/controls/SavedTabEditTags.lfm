@@ -42,7 +42,7 @@ object frmEditTags: TfrmEditTags
       Width = 100
       Align = alRight
       Caption = '&Save'
-      Constraints.MinHeight = 35
+      Constraints.MinHeight = 30
       Constraints.MinWidth = 100
       OnClick = btnCloseClick
       TabOrder = 0

@@ -1,6 +1,6 @@
 object frmChartsTabAdjustTitleName: TfrmChartsTabAdjustTitleName
   Left = 0
-  Height = 96
+  Height = 91
   Top = 0
   Width = 300
   AutoSize = True
@@ -8,7 +8,7 @@ object frmChartsTabAdjustTitleName: TfrmChartsTabAdjustTitleName
   BorderStyle = bsSingle
   BorderWidth = 4
   Caption = 'Change title name'
-  ClientHeight = 96
+  ClientHeight = 91
   ClientWidth = 300
   Color = clBtnFace
   Constraints.MinWidth = 300
@@ -18,14 +18,14 @@ object frmChartsTabAdjustTitleName: TfrmChartsTabAdjustTitleName
   Position = poOwnerFormCenter
   object pnlNav: TPanel
     Left = 4
-    Height = 39
+    Height = 34
     Top = 53
     Width = 292
     Align = alBottom
     AutoSize = True
     BorderSpacing.Top = 8
     BevelOuter = bvNone
-    ClientHeight = 39
+    ClientHeight = 34
     ClientWidth = 292
     TabOrder = 0
     object Bevel2: TBevel
@@ -38,13 +38,13 @@ object frmChartsTabAdjustTitleName: TfrmChartsTabAdjustTitleName
     end
     object btnOK: TBitBtn
       Left = 192
-      Height = 35
+      Height = 30
       Top = 4
       Width = 100
       Align = alRight
       AutoSize = True
       Caption = '&OK'
-      Constraints.MinHeight = 35
+      Constraints.MinHeight = 30
       Constraints.MinWidth = 100
       OnClick = btnOKClick
       TabOrder = 0

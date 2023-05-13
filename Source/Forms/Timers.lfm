@@ -61,14 +61,14 @@ object frmTimers: TfrmTimers
   ShowHint = True
   object pnlNav: TPanel
     Left = 4
-    Height = 39
-    Top = 377
+    Height = 34
+    Top = 382
     Width = 472
     Align = alBottom
     AutoSize = True
     BorderSpacing.Top = 8
     BevelOuter = bvNone
-    ClientHeight = 39
+    ClientHeight = 34
     ClientWidth = 472
     TabOrder = 0
     object Bevel2: TBevel
@@ -81,13 +81,13 @@ object frmTimers: TfrmTimers
     end
     object btnOK: TBitBtn
       Left = 372
-      Height = 35
+      Height = 30
       Top = 4
       Width = 100
       Align = alRight
       AutoSize = True
       Caption = '&OK'
-      Constraints.MinHeight = 35
+      Constraints.MinHeight = 30
       Constraints.MinWidth = 100
       OnClick = btnOKClick
       TabOrder = 0
@@ -95,12 +95,12 @@ object frmTimers: TfrmTimers
   end
   object Panel1: TPanel
     Left = 4
-    Height = 365
+    Height = 370
     Top = 4
     Width = 472
     Align = alClient
     BevelOuter = bvNone
-    ClientHeight = 365
+    ClientHeight = 370
     ClientWidth = 472
     TabOrder = 1
     object pnlConfig: TPanel
@@ -358,13 +358,14 @@ object frmTimers: TfrmTimers
         object btnAdd: TButton
           AnchorSideTop.Side = asrBottom
           Left = 372
-          Height = 35
+          Height = 30
           Top = 7
           Width = 100
           Align = alRight
           BorderSpacing.Top = 7
           Caption = '&Add'
-          Constraints.MinHeight = 35
+          Constraints.MaxHeight = 30
+          Constraints.MinHeight = 30
           Constraints.MinWidth = 100
           OnClick = btnAddClick
           TabOrder = 2
@@ -373,7 +374,7 @@ object frmTimers: TfrmTimers
     end
     object pnlTree: TPanel
       Left = 0
-      Height = 126
+      Height = 136
       Top = 200
       Width = 472
       Align = alClient
@@ -385,25 +386,25 @@ object frmTimers: TfrmTimers
     end
     object Panel3: TPanel
       Left = 0
-      Height = 35
-      Top = 330
+      Height = 30
+      Top = 340
       Width = 472
       Align = alBottom
       AutoSize = True
       BorderSpacing.Top = 4
       BevelOuter = bvNone
-      ClientHeight = 35
+      ClientHeight = 30
       ClientWidth = 472
       TabOrder = 2
       object btnRemove: TButton
         Left = 372
-        Height = 35
+        Height = 30
         Top = 0
         Width = 100
         Align = alRight
         AutoSize = True
         Caption = '&Remove'
-        Constraints.MinHeight = 35
+        Constraints.MinHeight = 30
         Constraints.MinWidth = 100
         Enabled = False
         OnClick = btnRemoveClick

@@ -1,6 +1,6 @@
 object frmConfigureSetTags: TfrmConfigureSetTags
   Left = 0
-  Height = 388
+  Height = 383
   Top = 0
   Width = 302
   AutoSize = True
@@ -8,7 +8,7 @@ object frmConfigureSetTags: TfrmConfigureSetTags
   BorderStyle = bsSingle
   BorderWidth = 4
   Caption = 'frmConfigureSetTags'
-  ClientHeight = 388
+  ClientHeight = 383
   ClientWidth = 302
   Color = clBtnFace
   Icon.Data = {
@@ -76,14 +76,14 @@ object frmConfigureSetTags: TfrmConfigureSetTags
   end
   object pnlNav: TPanel
     Left = 4
-    Height = 39
+    Height = 34
     Top = 345
     Width = 294
     Align = alBottom
     AutoSize = True
     BorderSpacing.Top = 8
     BevelOuter = bvNone
-    ClientHeight = 39
+    ClientHeight = 34
     ClientWidth = 294
     TabOrder = 0
     object Bevel2: TBevel
@@ -96,13 +96,13 @@ object frmConfigureSetTags: TfrmConfigureSetTags
     end
     object btnOK: TBitBtn
       Left = 194
-      Height = 35
+      Height = 30
       Top = 4
       Width = 100
       Align = alRight
       AutoSize = True
       Caption = '&OK'
-      Constraints.MinHeight = 35
+      Constraints.MinHeight = 30
       Constraints.MinWidth = 100
       OnClick = btnOKClick
       TabOrder = 0
