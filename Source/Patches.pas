@@ -1,14 +1,14 @@
 unit Patches;
 
-{$IFDEF CPU32}
-
 interface
 
 uses
   ActiveX,
+  DDetours,
   DragDropFile,
-  VirtualTrees,
   DragDropPIDL,
+  StrUtils,
+  VirtualTrees,
   Windows;
 
 implementation
@@ -58,42 +58,20 @@ begin
 
 end;
 
-type
-  TPatch = packed record
-    Call: Byte;
-    Proc: Pointer;
-    Ret: Byte;
-  end;
-
 var
-  Patch: TPatch;
-  OldProtect: Cardinal;
+  DrawTextExWOld: function(DC: HDC; lpchText: LPWSTR; cchText: Integer; var p4: TRect; dwDTFormat: UINT; DTParams: PDrawTextParams): Integer; stdcall;
+
+function DrawTextExWNew(DC: HDC; lpchText: LPWSTR; cchText: Integer; var p4: TRect; dwDTFormat: UINT; DTParams: PDrawTextParams): Integer; stdcall;
+begin
+  // That char must be the same as in MPageControl, hack is somehow required for proper tabpage captions when caption contains '&'
+  if EndsText(' ', lpchText) then
+    dwDTFormat := dwDTFormat and not (1 shl DT_EXTERNALLEADING);
+  Result := DrawTextExWOld(DC, lpchText, cchText, p4, dwDTFormat, DTParams);
+end;
 
 initialization
-  Patch.Call := $E8;
-  Patch.Proc := Pointer(SizeUInt(@GetPIDLsFromFilenamesNew) - SizeUInt(@GetPIDLsFromFilenames) - 5);
-  Patch.Ret := $C3;
-  if VirtualProtect(@GetPIDLsFromFilenames, SizeOf(TPatch), PAGE_EXECUTE_READWRITE, OldProtect) then
-    try
-      CopyMemory(@GetPIDLsFromFilenames, @Patch, SizeOf(TPatch));
-    finally
-      VirtualProtect(@GetPIDLsFromFilenames, SizeOf(TPatch), OldProtect, OldProtect);
-    end;
-
-  Patch.Proc := Pointer(SizeUInt(@FinalizeGlobalStructuresNew) - SizeUInt(@FinalizeGlobalStructures) - 5);
-  Patch.Ret := $C3;
-  if VirtualProtect(@FinalizeGlobalStructures, SizeOf(TPatch), PAGE_EXECUTE_READWRITE, OldProtect) then
-    try
-      CopyMemory(@FinalizeGlobalStructures, @Patch, SizeOf(TPatch));
-    finally
-      VirtualProtect(@FinalizeGlobalStructures, SizeOf(TPatch), OldProtect, OldProtect);
-    end;
-
-{$ELSE}
-
-interface
-implementation
-
-{$ENDIF}
+  InterceptCreate(@FinalizeGlobalStructures, @FinalizeGlobalStructuresNew);
+  InterceptCreate(@GetPIDLsFromFilenames, @GetPIDLsFromFilenamesNew);
+  @DrawTextExWOld := InterceptCreate(@DrawTextExW, @DrawTextExWNew);
 
 end.
