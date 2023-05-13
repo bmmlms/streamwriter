@@ -29,27 +29,39 @@ uses
   Dialogs,
   ExtCtrls,
   Forms,
+  Functions,
   Graphics,
   LanguageObjects,
   StdCtrls,
   SysUtils,
-  Variants;
+  Variants,
+  Windows;
 
 type
+
+  { TfrmIntro }
+
   TfrmIntro = class(TForm)
-    imgLogo: TImage;
+    Label1: TLabel;
+    Label2: TLabel;
+    lblAutomatic1: TLabel;
+    lblAutomaticDesc1: TLabel;
+    lblManual1: TLabel;
+    lblManualDesc1: TLabel;
     lblTitle: TLabel;
     lblIntro: TLabel;
-    lblManual: TLabel;
-    lblManualDesc: TLabel;
-    lblAutomatic: TLabel;
-    lblAutomaticDesc: TLabel;
+    pbLogo: TPaintBox;
+    Panel1: TPanel;
+    Panel2: TPanel;
+    Panel3: TPanel;
+    Panel4: TPanel;
     pnlNav: TPanel;
     Bevel2: TBevel;
     btnClose: TBitBtn;
     procedure btnCloseClick(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure FormCreate(Sender: TObject);
+    procedure pbLogoPaint(Sender: TObject);
   private
   public
   end;
@@ -66,6 +78,24 @@ end;
 procedure TfrmIntro.FormCreate(Sender: TObject);
 begin
   Language.Translate(Self);
+end;
+
+procedure TfrmIntro.pbLogoPaint(Sender: TObject);
+var
+  TransparentRight, TransparentTop: Integer;
+  Icon: TIcon;
+begin
+  Icon := TIcon.Create;
+  try
+    Icon.SetSize(96, 96);
+    Icon.LoadFromResourceName(HINSTANCE, 'MAINICON');
+
+    TFunctions.GetMaxTransparent(Icon, TransparentTop, TransparentRight);
+
+    DrawIconEx(pbLogo.Canvas.Handle, Trunc(pbLogo.ClientWidth - (64 / 96) * TransparentRight), Trunc(-((64 / 96) * TransparentTop)), Icon.Handle, 64, 64, 0, 0, DI_NORMAL);
+  finally
+    Icon.Free;
+  end;
 end;
 
 procedure TfrmIntro.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);

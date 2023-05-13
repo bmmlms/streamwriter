@@ -1,13 +1,14 @@
 object frmConfigureEncoder: TfrmConfigureEncoder
   Left = 0
-  Height = 123
+  Height = 143
   Top = 0
   Width = 250
   AutoSize = True
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
+  BorderWidth = 4
   Caption = 'Configure encoder'
-  ClientHeight = 123
+  ClientHeight = 143
   ClientWidth = 250
   Color = clBtnFace
   Constraints.MinWidth = 250
@@ -15,32 +16,32 @@ object frmConfigureEncoder: TfrmConfigureEncoder
   OnKeyDown = FormKeyDown
   Position = poOwnerFormCenter
   ShowHint = True
-  LCLVersion = '2.2.6.0'
   object optCBR: TRadioButton
-    Left = 0
+    Left = 4
     Height = 19
-    Top = 0
-    Width = 250
+    Top = 4
+    Width = 242
     Align = alTop
     Caption = 'Use constant bitrate'
     OnClick = optCBRClick
     TabOrder = 0
   end
   object optVBR: TRadioButton
-    Left = 0
+    Left = 4
     Height = 19
-    Top = 42
-    Width = 250
+    Top = 50
+    Width = 242
     Align = alTop
+    BorderSpacing.Top = 4
     Caption = 'Use variable bitrate'
     OnClick = optVBRClick
     TabOrder = 2
   end
   object lstCBR: TComboBoxEx
-    Left = 18
+    Left = 22
     Height = 23
-    Top = 19
-    Width = 232
+    Top = 23
+    Width = 224
     Align = alTop
     BorderSpacing.Left = 18
     ItemHeight = 17
@@ -48,10 +49,10 @@ object frmConfigureEncoder: TfrmConfigureEncoder
     TabOrder = 1
   end
   object lstVBR: TComboBoxEx
-    Left = 18
+    Left = 22
     Height = 23
-    Top = 61
-    Width = 232
+    Top = 69
+    Width = 224
     Align = alTop
     BorderSpacing.Left = 18
     ItemHeight = 17
@@ -59,26 +60,27 @@ object frmConfigureEncoder: TfrmConfigureEncoder
     TabOrder = 3
   end
   object pnlNav: TPanel
-    Left = 0
+    Left = 4
     Height = 39
-    Top = 84
-    Width = 250
+    Top = 100
+    Width = 242
     Align = alTop
     AutoSize = True
+    BorderSpacing.Top = 8
     BevelOuter = bvNone
     ClientHeight = 39
-    ClientWidth = 250
+    ClientWidth = 242
     TabOrder = 4
     object Bevel2: TBevel
       Left = 0
       Height = 4
       Top = 0
-      Width = 250
+      Width = 242
       Align = alTop
       Shape = bsTopLine
     end
     object btnOK: TBitBtn
-      Left = 150
+      Left = 142
       Height = 35
       Top = 4
       Width = 100

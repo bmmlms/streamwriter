@@ -1,40 +1,42 @@
 object frmEditTags: TfrmEditTags
   Left = 0
-  Height = 294
+  Height = 397
   Top = 0
-  Width = 154
+  Width = 250
   AutoSize = True
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
+  BorderWidth = 4
   Caption = 'Edit tags and data'
-  ClientHeight = 294
-  ClientWidth = 154
+  ClientHeight = 397
+  ClientWidth = 250
   Color = clBtnFace
+  Constraints.MinWidth = 250
   KeyPreview = True
   Position = poOwnerFormCenter
   ShowHint = True
-  LCLVersion = '2.2.6.0'
   object pnlNav: TPanel
-    Left = 0
+    Left = 4
     Height = 39
-    Top = 255
-    Width = 154
+    Top = 354
+    Width = 242
     Align = alBottom
     AutoSize = True
+    BorderSpacing.Top = 8
     BevelOuter = bvNone
     ClientHeight = 39
-    ClientWidth = 154
+    ClientWidth = 242
     TabOrder = 1
     object Bevel2: TBevel
       Left = 0
       Height = 4
       Top = 0
-      Width = 154
+      Width = 242
       Align = alTop
       Shape = bsTopLine
     end
     object btnClose: TBitBtn
-      Left = 54
+      Left = 142
       Height = 35
       Top = 4
       Width = 100
@@ -47,113 +49,122 @@ object frmEditTags: TfrmEditTags
     end
   end
   object grpData: TGroupBox
-    Left = 0
-    Height = 55
-    Top = 200
-    Width = 154
+    Left = 4
+    Height = 69
+    Top = 277
+    Width = 242
     Align = alBottom
     AutoSize = True
     Caption = ' Data '
-    ClientHeight = 37
-    ClientWidth = 150
+    ChildSizing.LeftRightSpacing = 4
+    ChildSizing.TopBottomSpacing = 4
+    ClientHeight = 49
+    ClientWidth = 238
     TabOrder = 0
     object txtStreamname: TMLabeledEdit
-      Left = 0
-      Height = 37
-      Top = 0
-      Width = 150
+      Left = 4
+      Height = 41
+      Top = 4
+      Width = 230
       Align = alClient
       Caption = 'Streamname:'
       Control.Left = 0
-      Control.Height = 21
-      Control.Top = 16
-      Control.Width = 150
+      Control.Height = 23
+      Control.Top = 18
+      Control.Width = 230
       Control.Align = alClient
       Control.TabOrder = 0
     end
   end
   object grpTags: TGroupBox
-    Left = 0
-    Height = 200
-    Top = 0
-    Width = 154
+    Left = 4
+    Height = 273
+    Top = 4
+    Width = 242
     Align = alClient
     AutoSize = True
     Caption = ' Tags '
-    ClientHeight = 182
-    ClientWidth = 150
+    ChildSizing.LeftRightSpacing = 4
+    ChildSizing.TopBottomSpacing = 4
+    ClientHeight = 253
+    ClientWidth = 238
     TabOrder = 2
     object Label1: TLabel
-      Left = 0
-      Height = 13
-      Top = 148
-      Width = 150
+      Left = 4
+      Height = 15
+      Top = 184
+      Width = 230
       Align = alTop
+      BorderSpacing.Top = 4
       Caption = 'Comment:'
       ParentColor = False
     end
     object txtComment: TMemo
-      Left = 0
-      Height = 21
-      Top = 161
-      Width = 150
+      Left = 4
+      Height = 50
+      Top = 199
+      Width = 230
       Align = alClient
+      Constraints.MinHeight = 50
       ScrollBars = ssVertical
       TabOrder = 0
     end
     object txtGenre: TMLabeledEdit
-      Left = 0
-      Height = 37
-      Top = 74
-      Width = 150
+      Left = 4
+      Height = 41
+      Top = 94
+      Width = 230
       Align = alTop
+      BorderSpacing.Top = 4
       Caption = 'Genre:'
       Control.Left = 0
-      Control.Height = 21
-      Control.Top = 16
-      Control.Width = 150
+      Control.Height = 23
+      Control.Top = 18
+      Control.Width = 230
       Control.Align = alClient
       Control.TabOrder = 0
     end
     object txtAlbum: TMLabeledEdit
-      Left = 0
-      Height = 37
-      Top = 111
-      Width = 150
+      Left = 4
+      Height = 41
+      Top = 139
+      Width = 230
       Align = alTop
+      BorderSpacing.Top = 4
       Caption = 'Album:'
       Control.Left = 0
-      Control.Height = 21
-      Control.Top = 16
-      Control.Width = 150
+      Control.Height = 23
+      Control.Top = 18
+      Control.Width = 230
       Control.Align = alClient
       Control.TabOrder = 0
     end
     object txtTitle: TMLabeledEdit
-      Left = 0
-      Height = 37
-      Top = 37
-      Width = 150
+      Left = 4
+      Height = 41
+      Top = 49
+      Width = 230
       Align = alTop
+      BorderSpacing.Top = 4
       Caption = 'Title:'
       Control.Left = 0
-      Control.Height = 21
-      Control.Top = 16
-      Control.Width = 150
+      Control.Height = 23
+      Control.Top = 18
+      Control.Width = 230
       Control.Align = alClient
       Control.TabOrder = 0
     end
     object txtArtist: TMLabeledEdit
-      Left = 0
-      Height = 37
-      Top = 0
-      Width = 150
+      Left = 4
+      Height = 41
+      Top = 4
+      Width = 230
       Align = alTop
       Caption = 'Artist:'
       Control.Left = 0
-      Control.Height = 21
-      Control.Top = 16
-      Control.Width = 150
+      Control.Height = 23
+      Control.Top = 18
+      Control.Width = 230
       Control.Align = alClient
       Control.TabOrder = 0
     end

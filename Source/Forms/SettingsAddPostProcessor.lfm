@@ -1,51 +1,52 @@
 object frmSettingsAddPostProcessor: TfrmSettingsAddPostProcessor
   Left = 0
-  Height = 90
+  Height = 108
   Top = 0
-  Width = 283
+  Width = 315
   AutoSize = True
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
+  BorderWidth = 4
   Caption = 'Add postprocessor'
-  ClientHeight = 90
-  ClientWidth = 283
+  ClientHeight = 108
+  ClientWidth = 315
   Color = clBtnFace
   KeyPreview = True
   OnCreate = FormCreate
   OnKeyDown = FormKeyDown
   Position = poOwnerFormCenter
   ShowHint = True
-  LCLVersion = '2.2.6.0'
   object Label1: TLabel
-    Left = 0
-    Height = 13
-    Top = 0
-    Width = 283
+    Left = 4
+    Height = 15
+    Top = 4
+    Width = 307
     Align = alTop
     Caption = 'This postprocessor is used for...'
     ParentColor = False
   end
   object pnlNav: TPanel
-    Left = 0
+    Left = 4
     Height = 39
-    Top = 51
-    Width = 283
+    Top = 65
+    Width = 307
     Align = alTop
     AutoSize = True
+    BorderSpacing.Top = 8
     BevelOuter = bvNone
     ClientHeight = 39
-    ClientWidth = 283
+    ClientWidth = 307
     TabOrder = 2
     object Bevel2: TBevel
       Left = 0
       Height = 4
       Top = 0
-      Width = 283
+      Width = 307
       Align = alTop
       Shape = bsTopLine
     end
     object btnOK: TBitBtn
-      Left = 183
+      Left = 207
       Height = 35
       Top = 4
       Width = 100
@@ -59,10 +60,10 @@ object frmSettingsAddPostProcessor: TfrmSettingsAddPostProcessor
     end
   end
   object optWAVE: TRadioButton
-    Left = 18
+    Left = 22
     Height = 19
-    Top = 13
-    Width = 269
+    Top = 19
+    Width = 289
     Align = alTop
     BorderSpacing.Left = 18
     Caption = '...processing when in WAVE-format'
@@ -71,10 +72,10 @@ object frmSettingsAddPostProcessor: TfrmSettingsAddPostProcessor
     TabStop = True
   end
   object optDestinationFormat: TRadioButton
-    Left = 18
+    Left = 22
     Height = 19
-    Top = 32
-    Width = 269
+    Top = 38
+    Width = 289
     Align = alTop
     BorderSpacing.Left = 18
     Caption = '...processing after conversion to destination format'

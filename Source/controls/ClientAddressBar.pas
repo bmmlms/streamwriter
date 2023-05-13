@@ -58,7 +58,6 @@ begin
   inherited;
 
   BevelOuter := bvNone;
-  ChildSizing.TopBottomSpacing := 4;
   ChildSizing.HorizontalSpacing := 4;
 
   FLabel := TLabel.Create(Self);

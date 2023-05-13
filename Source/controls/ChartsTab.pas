@@ -260,7 +260,7 @@ begin
 
   FResultLabel := TLabel.Create(Self);
   FResultLabel.Align := alBottom;
-  FResultLabel.BorderSpacing.Top := 1;
+  FResultLabel.BorderSpacing.Top := 2;
   FResultLabel.Caption := Format(_(TEXT_RESULTS), [0]);
   FResultLabel.Parent := Self;
 
@@ -625,7 +625,7 @@ begin
   FProgressBar := TProgressBar.Create(Self);
   FProgressBar.Parent := Self;
   FProgressBar.Width := 200;
-  FProgressBar.Height := 20;
+  FProgressBar.Height := 24;
   FProgressBar.Style := pbstMarquee;
   FProgressBar.Visible := False;
   FProgressBar.AnchorSideLeft.Control := Self;

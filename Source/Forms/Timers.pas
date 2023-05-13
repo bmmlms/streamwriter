@@ -41,6 +41,7 @@ uses
   LanguageObjects,
   LCLType,
   Logging,
+  MVirtualTree,
   PowerManagement,
   SharedData,
   StdCtrls,
@@ -54,7 +55,7 @@ type
   end;
   PScheduleTreeNodeData = ^ TScheduleTreeNodeData;
 
-  TScheduleTree = class(TVirtualStringTree)
+  TScheduleTree = class(TMVirtualTree)
   private
   protected
     procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var Text: string); override;
@@ -70,30 +71,32 @@ type
   { TfrmTimers }
 
   TfrmTimers = class(TForm)
+    btnAdd: TButton;
+    Label1: TLabel;
+    Label2: TLabel;
+    Label3: TLabel;
+    Label4: TLabel;
+    Panel2: TPanel;
+    Panel4: TPanel;
+    Panel6: TPanel;
     pnlNav: TPanel;
     Bevel2: TBevel;
     btnOK: TBitBtn;
-    Panel2: TPanel;
     Panel1: TPanel;
     pnlConfig: TPanel;
-    Label1: TLabel;
-    Label2: TLabel;
     rbRecurring: TRadioButton;
     rbDate: TRadioButton;
     lstInterval: TComboBoxEx;
     lstDay: TComboBoxEx;
     dtpDate: TDateTimePicker;
-    txtStartHour: TEdit;
-    txtStartMinute: TEdit;
-    txtEndHour: TEdit;
-    txtEndMinute: TEdit;
     pnlTree: TPanel;
     Panel3: TPanel;
-    btnAdd: TButton;
     btnRemove: TButton;
-    Label3: TLabel;
-    Label4: TLabel;
     chkAutoRemove: TCheckBox;
+    txtEndHour: TEdit;
+    txtEndMinute: TEdit;
+    txtStartHour: TEdit;
+    txtStartMinute: TEdit;
     procedure FormCreate(Sender: TObject);
     procedure btnOKClick(Sender: TObject);
     procedure rbRecurringClick(Sender: TObject);

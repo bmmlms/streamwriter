@@ -2,105 +2,67 @@ object frmIntro: TfrmIntro
   Left = 0
   Height = 279
   Top = 0
-  Width = 439
+  Width = 512
+  AutoSize = True
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
+  BorderWidth = 4
   Caption = 'Introduction'
   ClientHeight = 279
-  ClientWidth = 439
+  ClientWidth = 512
   Color = clBtnFace
+  Constraints.MaxWidth = 600
+  Constraints.MinWidth = 500
   OnCreate = FormCreate
   OnKeyDown = FormKeyDown
   Position = poOwnerFormCenter
   ShowHint = True
-  LCLVersion = '2.2.6.0'
-  object imgLogo: TImage
-    Left = 382
-    Height = 48
-    Top = 8
-    Width = 48
-    Anchors = [akTop, akRight]
-    AutoSize = True
-  end
   object lblTitle: TLabel
-    Left = 8
-    Height = 16
-    Top = 8
-    Width = 173
+    Left = 4
+    Height = 15
+    Top = 4
+    Width = 504
+    Align = alTop
+    BorderSpacing.Bottom = 4
     Caption = 'Welcome to streamWriter!'
+    Font.Style = [fsBold]
     ParentColor = False
+    ParentFont = False
   end
   object lblIntro: TLabel
-    Left = 8
-    Height = 29
-    Top = 32
-    Width = 361
-    AutoSize = False
+    Left = 4
+    Height = 30
+    Top = 23
+    Width = 444
+    Align = alTop
+    BorderSpacing.Right = 60
+    BorderSpacing.Bottom = 16
     Caption = 'Since this is the first time you start up streamWriter, here is some basic information on how to record songs.'
     ParentColor = False
     WordWrap = True
   end
-  object lblManual: TLabel
-    Left = 8
-    Height = 13
-    Top = 148
-    Width = 149
-    Anchors = [akLeft, akBottom]
-    Caption = '- Manually record streams'
-    ParentColor = False
-  end
-  object lblManualDesc: TLabel
-    Left = 16
-    Height = 67
-    Top = 168
-    Width = 413
-    Anchors = [akLeft, akRight, akBottom]
-    AutoSize = False
-    Caption = 'In order to manually record streams just doubleclick them in the stream-browser on the right. You can also use the stream-browser''s contextmenu. Manual recording of streams helps those people who use automatic recording because the titles your streamWriter detects are broadcasted on the streamWriter-network.'
-    ParentColor = False
-    WordWrap = True
-  end
-  object lblAutomatic: TLabel
-    Left = 8
-    Height = 13
-    Top = 68
-    Width = 208
-    Anchors = [akLeft, akBottom]
-    Caption = '- Automatically record specific songs'
-    ParentColor = False
-  end
-  object lblAutomaticDesc: TLabel
-    Left = 16
-    Height = 55
-    Top = 88
-    Width = 413
-    Anchors = [akLeft, akRight, akBottom]
-    AutoSize = False
-    Caption = 'To record specific songs automatically you have to add titles to your wishlist using the "Title search" tab. When streamWriter detects that a title on your wishlist is played on an observed stream, this title will be recorded automatically.'
-    ParentColor = False
-    WordWrap = True
-  end
   object pnlNav: TPanel
-    Left = 0
+    Left = 4
     Height = 39
-    Top = 240
-    Width = 439
+    Top = 236
+    Width = 504
     Align = alBottom
     AutoSize = True
+    BorderSpacing.Top = 8
     BevelOuter = bvNone
     ClientHeight = 39
-    ClientWidth = 439
+    ClientWidth = 504
     TabOrder = 0
     object Bevel2: TBevel
       Left = 0
       Height = 4
       Top = 0
-      Width = 439
+      Width = 504
       Align = alTop
       Shape = bsTopLine
     end
     object btnClose: TBitBtn
-      Left = 339
+      Left = 404
       Height = 35
       Top = 4
       Width = 100
@@ -113,5 +75,133 @@ object frmIntro: TfrmIntro
       OnClick = btnCloseClick
       TabOrder = 0
     end
+  end
+  object Panel1: TPanel
+    Left = 4
+    Height = 80
+    Top = 69
+    Width = 504
+    Align = alTop
+    AutoSize = True
+    BevelOuter = bvNone
+    ClientHeight = 80
+    ClientWidth = 504
+    TabOrder = 1
+    object Label1: TLabel
+      Left = 0
+      Height = 80
+      Top = 0
+      Width = 8
+      Align = alLeft
+      Caption = '- '
+      Font.Style = [fsBold]
+      ParentColor = False
+      ParentFont = False
+    end
+    object Panel2: TPanel
+      Left = 8
+      Height = 80
+      Top = 0
+      Width = 496
+      Align = alClient
+      AutoSize = True
+      BevelOuter = bvNone
+      ClientHeight = 80
+      ClientWidth = 496
+      TabOrder = 0
+      object lblAutomatic1: TLabel
+        Left = 0
+        Height = 15
+        Top = 0
+        Width = 496
+        Align = alTop
+        BorderSpacing.Bottom = 4
+        Caption = 'Automatically record specific songs'
+        Font.Style = [fsBold]
+        ParentColor = False
+        ParentFont = False
+      end
+      object lblAutomaticDesc1: TLabel
+        Left = 0
+        Height = 45
+        Top = 19
+        Width = 496
+        Align = alClient
+        BorderSpacing.Bottom = 16
+        Caption = 'To record specific songs automatically you have to add titles to your wishlist using the "Title search" tab. When streamWriter detects that a title on your wishlist is played on an observed stream, this title will be recorded automatically.'
+        ParentColor = False
+        WordWrap = True
+      end
+    end
+  end
+  object Panel3: TPanel
+    Left = 4
+    Height = 79
+    Top = 149
+    Width = 504
+    Align = alClient
+    AutoSize = True
+    BevelOuter = bvNone
+    ClientHeight = 79
+    ClientWidth = 504
+    TabOrder = 2
+    object Label2: TLabel
+      Left = 0
+      Height = 79
+      Top = 0
+      Width = 8
+      Align = alLeft
+      Caption = '- '
+      Font.Style = [fsBold]
+      ParentColor = False
+      ParentFont = False
+    end
+    object Panel4: TPanel
+      Left = 8
+      Height = 79
+      Top = 0
+      Width = 496
+      Align = alClient
+      AutoSize = True
+      BevelOuter = bvNone
+      ClientHeight = 79
+      ClientWidth = 496
+      TabOrder = 0
+      object lblManual1: TLabel
+        Left = 0
+        Height = 15
+        Top = 0
+        Width = 496
+        Align = alTop
+        BorderSpacing.Bottom = 4
+        Caption = 'Manually record streams'
+        Font.Style = [fsBold]
+        ParentColor = False
+        ParentFont = False
+      end
+      object lblManualDesc1: TLabel
+        Left = 0
+        Height = 60
+        Top = 19
+        Width = 496
+        Align = alClient
+        Caption = 'In order to manually record streams just doubleclick them in the stream-browser on the right. You can also use the stream-browser''s contextmenu. Manual recording of streams helps those people who use automatic recording because the titles your streamWriter detects are broadcasted on the streamWriter-network.'
+        ParentColor = False
+        WordWrap = True
+      end
+    end
+  end
+  object pbLogo: TPaintBox
+    Left = 444
+    Height = 64
+    Top = 4
+    Width = 64
+    Align = alCustom
+    Anchors = [akTop, akRight]
+    Constraints.MaxHeight = 64
+    Constraints.MaxWidth = 64
+    Constraints.MinHeight = 64
+    Constraints.MinWidth = 64
+    OnPaint = pbLogoPaint
   end
 end

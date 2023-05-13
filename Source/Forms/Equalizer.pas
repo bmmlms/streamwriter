@@ -34,6 +34,7 @@ uses
   Graphics,
   LanguageObjects,
   MSeekBar,
+  MSpeedButton,
   MStringFunctions,
   PlayerManager,
   SharedControls,
@@ -61,7 +62,7 @@ type
   { TfrmEqualizer }
 
   TfrmEqualizer = class(TForm)
-    btnReset: TSpeedButton;
+    btnReset: TMSpeedButton;
     chkEqualizer: TCheckBox;
     Panel1: TPanel;
     pnlEqualizer: TPanel;

@@ -4,6 +4,7 @@ object frmSetStreamData: TfrmSetStreamData
   Top = 0
   Width = 765
   BorderIcons = [biSystemMenu]
+  BorderWidth = 4
   Caption = 'Set data'
   ClientHeight = 400
   ClientWidth = 765
@@ -16,28 +17,28 @@ object frmSetStreamData: TfrmSetStreamData
   OnKeyDown = FormKeyDown
   Position = poOwnerFormCenter
   ShowHint = True
-  LCLVersion = '2.2.6.0'
   object pnlNav: TPanel
-    Left = 0
+    Left = 4
     Height = 39
-    Top = 361
-    Width = 765
+    Top = 357
+    Width = 757
     Align = alBottom
     AutoSize = True
+    BorderSpacing.Top = 8
     BevelOuter = bvNone
     ClientHeight = 39
-    ClientWidth = 765
+    ClientWidth = 757
     TabOrder = 0
     object Bevel2: TBevel
       Left = 0
       Height = 4
       Top = 0
-      Width = 765
+      Width = 757
       Align = alTop
       Shape = bsTopLine
     end
     object btnOK: TBitBtn
-      Left = 665
+      Left = 657
       Height = 35
       Top = 4
       Width = 100
@@ -74,11 +75,12 @@ object frmSetStreamData: TfrmSetStreamData
     TabOrder = 1
     object Label21: TLabel
       Left = 0
-      Height = 26
-      Top = 123
+      Height = 30
+      Top = 130
       Width = 416
       Align = alTop
       Anchors = [akTop, akRight]
+      BorderSpacing.Bottom = 3
       Caption = 'Use the following regular expressions for this stream (groups: a = artist, t = title, l = album):'
       ParentColor = False
       WordWrap = True
@@ -91,17 +93,19 @@ object frmSetStreamData: TfrmSetStreamData
       Align = alTop
       Anchors = [akTop, akRight]
       AutoSize = False
+      BorderSpacing.Bottom = 3
       Caption = 'Regular expressions set by other users:'
       ParentColor = False
       WordWrap = True
     end
     object lstRegExps: TListView
       Left = 0
-      Height = 119
-      Top = 149
+      Height = 95
+      Top = 163
       Width = 416
       Align = alClient
       Anchors = [akTop, akRight, akBottom]
+      BorderSpacing.Bottom = 4
       Columns = <      
         item
           AutoSize = True
@@ -118,10 +122,11 @@ object frmSetStreamData: TfrmSetStreamData
     object lstOtherRegExps: TListView
       Left = 0
       Height = 106
-      Top = 17
+      Top = 20
       Width = 416
       Align = alTop
       Anchors = [akTop, akRight]
+      BorderSpacing.Bottom = 4
       Columns = <      
         item
           AutoSize = True
@@ -136,15 +141,16 @@ object frmSetStreamData: TfrmSetStreamData
     end
     object txtRegEx: TMLabeledEditButton
       Left = 0
-      Height = 37
-      Top = 268
+      Height = 41
+      Top = 262
       Width = 416
       Align = alBottom
+      BorderSpacing.Bottom = 4
       Caption = 'Regular expression to add:'
       Control.Left = 0
-      Control.Height = 21
+      Control.Height = 23
       Control.Hint = 'Reset pattern to default'
-      Control.Top = 16
+      Control.Top = 18
       Control.Width = 416
       Control.Align = alClient
       Control.ButtonWidth = 23
@@ -159,42 +165,44 @@ object frmSetStreamData: TfrmSetStreamData
     end
     object FlowPanel1: TFlowPanel
       Left = 0
-      Height = 27
-      Top = 305
+      Height = 25
+      Top = 307
       Width = 416
       Align = alBottom
       AutoSize = True
       BevelOuter = bvNone
       ControlList = <      
         item
-          Control = btnAddRegEx
+          Control = btnRemoveRegEx
           WrapAfter = waAuto
           Index = 0
         end      
         item
-          Control = btnRemoveRegEx
+          Control = btnAddRegEx
           WrapAfter = waAuto
           Index = 1
         end>
       FlowLayout = tlTop
-      FlowStyle = fsLeftRightTopBottom
+      FlowStyle = fsRightLeftBottomTop
       TabOrder = 3
       object btnRemoveRegEx: TButton
-        Left = 93
-        Height = 27
+        Left = 347
+        Height = 25
         Top = 0
-        Width = 93
+        Width = 69
         Anchors = [akRight, akBottom]
+        AutoSize = True
         Caption = '&Remove'
         OnClick = btnRemoveRegExClick
         TabOrder = 0
       end
       object btnAddRegEx: TButton
-        Left = 0
-        Height = 27
+        Left = 299
+        Height = 25
         Top = 0
-        Width = 93
+        Width = 48
         Anchors = [akRight, akBottom]
+        AutoSize = True
         Caption = '&Add'
         OnClick = btnAddRegExClick
         TabOrder = 1

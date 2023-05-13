@@ -1,39 +1,41 @@
 object frmCutTabSearchSilence: TfrmCutTabSearchSilence
   Left = 0
-  Height = 81
+  Height = 96
   Top = 0
-  Width = 203
+  Width = 221
   AutoSize = True
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
+  BorderWidth = 4
   Caption = 'Silence settings'
-  ClientHeight = 81
-  ClientWidth = 203
+  ClientHeight = 96
+  ClientWidth = 221
   Color = clBtnFace
   KeyPreview = True
   Position = poOwnerFormCenter
-  LCLVersion = '2.2.4.0'
   object pnlNav: TPanel
-    Left = 0
-    Height = 44
-    Top = 37
-    Width = 203
+    Left = 4
+    Height = 39
+    Top = 53
+    Width = 213
     Align = alBottom
+    AutoSize = True
+    BorderSpacing.Top = 8
     BevelOuter = bvNone
-    ClientHeight = 44
-    ClientWidth = 203
+    ClientHeight = 39
+    ClientWidth = 213
     TabOrder = 0
     object Bevel2: TBevel
       Left = 0
       Height = 4
       Top = 0
-      Width = 203
+      Width = 213
       Align = alTop
       Shape = bsTopLine
     end
     object btnOK: TBitBtn
-      Left = 103
-      Height = 40
+      Left = 113
+      Height = 35
       Top = 4
       Width = 100
       Align = alRight
@@ -45,15 +47,15 @@ object frmCutTabSearchSilence: TfrmCutTabSearchSilence
     end
   end
   object txtSilenceLevel: TMLabeledSpinEdit
-    Left = 0
-    Height = 37
-    Top = 0
-    Width = 203
+    Left = 4
+    Height = 41
+    Top = 4
+    Width = 213
     Align = alClient
     Caption = 'Silence is defined by volume lower than:'
     Control.Left = 0
-    Control.Height = 21
-    Control.Top = 16
+    Control.Height = 23
+    Control.Top = 18
     Control.Width = 50
     Control.Align = alLeft
     Control.MaxValue = 100
@@ -61,34 +63,34 @@ object frmCutTabSearchSilence: TfrmCutTabSearchSilence
     Control.TabOrder = 0
     Control.Value = 1
     object Label12: TLabel
-      Left = 53
-      Height = 21
-      Top = 16
-      Width = 31
+      Left = 54
+      Height = 23
+      Top = 18
+      Width = 35
       Align = alLeft
-      BorderSpacing.Left = 3
+      BorderSpacing.Left = 4
       Caption = 'lasting'
       Layout = tlCenter
       ParentColor = False
     end
     object Label13: TLabel
-      Left = 190
-      Height = 21
-      Top = 16
-      Width = 13
+      Left = 197
+      Height = 23
+      Top = 18
+      Width = 16
       Align = alLeft
-      BorderSpacing.Left = 3
+      BorderSpacing.Left = 4
       Caption = 'ms'
       Layout = tlCenter
       ParentColor = False
     end
     object txtSilenceLength: TSpinEdit
-      Left = 87
-      Height = 21
-      Top = 16
+      Left = 93
+      Height = 23
+      Top = 18
       Width = 100
       Align = alLeft
-      BorderSpacing.Left = 3
+      BorderSpacing.Left = 4
       MaxValue = 5000
       MinValue = 20
       TabOrder = 1

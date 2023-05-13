@@ -499,7 +499,7 @@ begin
   FProgressBar := TProgressBar.Create(Self);
   FProgressBar.Parent := Self;
   FProgressBar.Width := 150;
-  FProgressBar.Height := 20;
+  FProgressBar.Height := 24;
   FProgressBar.Visible := False;
   FProgressBar.Max := 100;
   FProgressBar.Min := 0;
@@ -1231,7 +1231,7 @@ begin
 
   FCountLabel := TLabel.Create(Self);
   FCountLabel.Align := alBottom;
-  FCountLabel.BorderSpacing.Top := 1;
+  FCountLabel.BorderSpacing.Top := 2;
   FCountLabel.Parent := Self;
 
   FStreamTree := TMStreamTree.Create(Self);

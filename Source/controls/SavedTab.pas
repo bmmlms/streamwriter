@@ -826,8 +826,6 @@ begin
   FPlayToolbar.FShuffle.OnClick := ToolBarClick;
 
   FImportPanel := TImportPanel.Create(Self);
-  //FImportPanel.Width := 250;
-  //FImportPanel.Height := 80;
   FImportPanel.AutoSize := True;
   FImportPanel.Visible := False;
   FImportPanel.AnchorVerticalCenterTo(Self);
@@ -2882,31 +2880,44 @@ end;
 { TImportPanel }
 
 constructor TImportPanel.Create(AOwner: TComponent);
+var
+  PanelBottom: TPanel;
 begin
   inherited;
 
-  Color := clBtnFace;
-
-  Button := TButton.Create(Self);
-  Button.Parent := Self;
-  Button.Align := alTop;
-  Button.Constraints.MinWidth := MulDiv(100, Screen.PixelsPerInch, 96);
-  Button.Constraints.MinHeight := MulDiv(35, Screen.PixelsPerInch, 96);
-  Button.Caption := _('Cancel');
-  Button.AutoSize := True;
-
-  ProgressBar := TProgressBar.Create(Self);
-  ProgressBar.Parent := Self;
-  ProgressBar.Align := alTop;
-  ProgressBar.Style := pbstMarquee;
-  ProgressBar.AutoSize := True;
+  ChildSizing.TopBottomSpacing := 4;
+  ChildSizing.LeftRightSpacing := 4;
+  BevelOuter := bvNone;
+  BorderStyle := bsSingle;
+  Constraints.MinWidth := Scale96ToFont(300);
 
   LabelFilename := TLabel.Create(Self);
-  LabelFilename.Parent := Self;
   LabelFilename.Align := alTop;
+  LabelFilename.BorderSpacing.Bottom := 4;
   LabelFilename.Alignment := taCenter;
   LabelFilename.Caption := _('Searching files...');
   LabelFilename.AutoSize := True;
+  LabelFilename.Parent := Self;
+
+  ProgressBar := TProgressBar.Create(Self);
+  ProgressBar.Align := alClient;
+  ProgressBar.BorderSpacing.Bottom := 8;
+  ProgressBar.Constraints.MinHeight := 24;
+  ProgressBar.Style := pbstMarquee;
+  ProgressBar.AutoSize := True;
+  ProgressBar.Parent := Self;
+
+  PanelBottom := TPanel.Create(Self);
+  PanelBottom.Align := alBottom;
+  PanelBottom.BevelOuter := bvNone;
+  PanelBottom.AutoSize := True;
+  PanelBottom.Parent := Self;
+
+  Button := TButton.Create(Self);
+  Button.Align := alRight;
+  Button.Caption := _('Cancel');
+  Button.AutoSize := True;
+  Button.Parent := PanelBottom;
 end;
 
 procedure TImportPanel.SetData(Progress: Integer; CurrentFilename: string);

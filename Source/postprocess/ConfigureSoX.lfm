@@ -1,14 +1,15 @@
 object frmConfigureSoX: TfrmConfigureSoX
   Left = 0
-  Height = 289
+  Height = 350
   Top = 0
-  Width = 144
+  Width = 174
   AutoSize = True
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
+  BorderWidth = 4
   Caption = 'Configure SoX'
-  ClientHeight = 289
-  ClientWidth = 144
+  ClientHeight = 350
+  ClientWidth = 174
   Color = clBtnFace
   Icon.Data = {
     7E04000000000100010010100000010020006804000016000000280000001000
@@ -52,28 +53,29 @@ object frmConfigureSoX: TfrmConfigureSoX
   KeyPreview = True
   Position = poOwnerFormCenter
   ShowHint = True
-  LCLVersion = '2.2.6.0'
   object pnlNav: TPanel
-    Left = 0
-    Height = 40
-    Top = 249
-    Width = 144
+    Left = 4
+    Height = 39
+    Top = 307
+    Width = 166
     Align = alBottom
+    AutoSize = True
+    BorderSpacing.Top = 8
     BevelOuter = bvNone
-    ClientHeight = 40
-    ClientWidth = 144
+    ClientHeight = 39
+    ClientWidth = 166
     TabOrder = 0
     object Bevel2: TBevel
       Left = 0
       Height = 4
       Top = 0
-      Width = 144
+      Width = 166
       Align = alTop
       Shape = bsTopLine
     end
     object btnOK: TBitBtn
-      Left = 44
-      Height = 36
+      Left = 66
+      Height = 35
       Top = 4
       Width = 100
       Align = alRight
@@ -85,81 +87,84 @@ object frmConfigureSoX: TfrmConfigureSoX
     end
   end
   object GroupBox1: TGroupBox
-    Left = 0
-    Height = 106
-    Top = 0
-    Width = 144
+    Left = 4
+    Height = 124
+    Top = 4
+    Width = 166
     Align = alTop
     AutoSize = True
     Caption = ' Fadein/Fadeout '
-    ClientHeight = 88
-    ClientWidth = 140
+    ChildSizing.LeftRightSpacing = 4
+    ChildSizing.TopBottomSpacing = 4
+    ClientHeight = 104
+    ClientWidth = 162
     TabOrder = 1
     object txtFadeinStart: TMLabeledSpinEdit
-      Left = 0
-      Height = 25
-      Top = 19
-      Width = 140
+      Left = 4
+      Height = 27
+      Top = 23
+      Width = 154
       Align = alTop
+      BorderSpacing.Bottom = 4
       Control.Left = 0
-      Control.Height = 21
+      Control.Height = 23
       Control.Top = 4
       Control.Width = 50
       Control.Align = alLeft
       Control.MaxValue = 100
       Control.TabOrder = 0
       object Label1: TLabel
-        Left = 53
-        Height = 21
+        Left = 54
+        Height = 23
         Top = 4
-        Width = 39
+        Width = 43
         Align = alLeft
-        BorderSpacing.Left = 3
+        BorderSpacing.Left = 4
         Caption = 'seconds'
         Layout = tlCenter
         ParentColor = False
       end
     end
     object txtFadeoutEnd: TMLabeledSpinEdit
-      Left = 0
-      Height = 25
-      Top = 63
-      Width = 140
+      Left = 4
+      Height = 27
+      Top = 73
+      Width = 154
       Align = alTop
       Control.Left = 0
-      Control.Height = 21
+      Control.Height = 23
       Control.Top = 4
       Control.Width = 50
       Control.Align = alLeft
       Control.MaxValue = 100
       Control.TabOrder = 0
       object Label2: TLabel
-        Left = 53
-        Height = 21
+        Left = 54
+        Height = 23
         Top = 4
-        Width = 39
+        Width = 43
         Align = alLeft
-        BorderSpacing.Left = 3
+        BorderSpacing.Left = 4
         Caption = 'seconds'
         Layout = tlCenter
         ParentColor = False
       end
     end
     object chkFadeoutStart: TCheckBox
-      Left = 0
+      Left = 4
       Height = 19
-      Top = 0
-      Width = 140
+      Top = 4
+      Width = 154
       Align = alTop
       Caption = 'Add fadein at beginning:'
       OnChange = chkChange
       TabOrder = 2
     end
     object chkFadeoutEnd: TCheckBox
-      Left = 0
+      Left = 4
       Height = 19
-      Top = 44
-      Width = 140
+      Top = 54
+      Width = 154
       Align = alTop
       Caption = 'Add fadeout at end:'
       OnChange = chkChange
@@ -167,81 +172,84 @@ object frmConfigureSoX: TfrmConfigureSoX
     end
   end
   object GroupBox2: TGroupBox
-    Left = 0
-    Height = 106
-    Top = 106
-    Width = 144
+    Left = 4
+    Height = 124
+    Top = 128
+    Width = 166
     Align = alTop
     AutoSize = True
     Caption = ' Silence '
-    ClientHeight = 88
-    ClientWidth = 140
+    ChildSizing.LeftRightSpacing = 4
+    ChildSizing.TopBottomSpacing = 4
+    ClientHeight = 104
+    ClientWidth = 162
     TabOrder = 2
     object txtSilenceStart: TMLabeledSpinEdit
-      Left = 0
-      Height = 25
-      Top = 19
-      Width = 140
+      Left = 4
+      Height = 27
+      Top = 23
+      Width = 154
       Align = alTop
+      BorderSpacing.Bottom = 4
       Control.Left = 0
-      Control.Height = 21
+      Control.Height = 23
       Control.Top = 4
       Control.Width = 50
       Control.Align = alLeft
       Control.MaxValue = 100
       Control.TabOrder = 0
       object Label3: TLabel
-        Left = 53
-        Height = 21
+        Left = 54
+        Height = 23
         Top = 4
-        Width = 39
+        Width = 43
         Align = alLeft
-        BorderSpacing.Left = 3
+        BorderSpacing.Left = 4
         Caption = 'seconds'
         Layout = tlCenter
         ParentColor = False
       end
     end
     object txtSilenceEnd: TMLabeledSpinEdit
-      Left = 0
-      Height = 25
-      Top = 63
-      Width = 140
+      Left = 4
+      Height = 27
+      Top = 73
+      Width = 154
       Align = alTop
       Control.Left = 0
-      Control.Height = 21
+      Control.Height = 23
       Control.Top = 4
       Control.Width = 50
       Control.Align = alLeft
       Control.MaxValue = 100
       Control.TabOrder = 0
       object Label4: TLabel
-        Left = 53
-        Height = 21
+        Left = 54
+        Height = 23
         Top = 4
-        Width = 39
+        Width = 43
         Align = alLeft
-        BorderSpacing.Left = 3
+        BorderSpacing.Left = 4
         Caption = 'seconds'
         Layout = tlCenter
         ParentColor = False
       end
     end
     object chkSilenceStart: TCheckBox
-      Left = 0
+      Left = 4
       Height = 19
-      Top = 0
-      Width = 140
+      Top = 4
+      Width = 154
       Align = alTop
       Caption = 'Add silence at beginning:'
       OnChange = chkChange
       TabOrder = 2
     end
     object chkSilenceEnd: TCheckBox
-      Left = 0
+      Left = 4
       Height = 19
-      Top = 44
-      Width = 140
+      Top = 54
+      Width = 154
       Align = alTop
       Caption = 'Add silence at end:'
       OnChange = chkChange
@@ -249,21 +257,23 @@ object frmConfigureSoX: TfrmConfigureSoX
     end
   end
   object GroupBox3: TGroupBox
-    Left = 0
-    Height = 37
-    Top = 212
-    Width = 144
+    Left = 4
+    Height = 47
+    Top = 252
+    Width = 166
     Align = alClient
     AutoSize = True
     Caption = ' Misc '
-    ClientHeight = 19
-    ClientWidth = 140
+    ChildSizing.LeftRightSpacing = 4
+    ChildSizing.TopBottomSpacing = 4
+    ClientHeight = 27
+    ClientWidth = 162
     TabOrder = 3
     object chkNormalize: TCheckBox
-      Left = 0
+      Left = 4
       Height = 19
-      Top = 0
-      Width = 140
+      Top = 4
+      Width = 154
       Align = alClient
       Caption = 'Normalize'
       OnClick = chkChange

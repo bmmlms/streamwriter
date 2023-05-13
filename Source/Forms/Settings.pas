@@ -33,6 +33,7 @@ uses
   ComCtrls,
   CommCtrl,
   ConfigureEncoder,
+  MSpeedButton,
   Constants,
   Controls,
   DataManager,
@@ -123,10 +124,10 @@ type
     btnAddRegEx: TButton;
     btnBlacklistRemove: TButton;
     btnConfigure: TButton;
-    btnConfigureEncoder: TSpeedButton;
-    btnHelpPostProcess: TSpeedButton;
-    btnMoveDown: TSpeedButton;
-    btnMoveUp: TSpeedButton;
+    btnConfigureEncoder: TMSpeedButton;
+    btnHelpPostProcess: TMSpeedButton;
+    btnMoveDown: TMSpeedButton;
+    btnMoveUp: TMSpeedButton;
     btnRemove: TButton;
     btnRemoveIgnoreTitlePattern: TButton;
     btnRemoveRegEx: TButton;
@@ -270,6 +271,7 @@ type
     procedure FormActivate(Sender: TObject);
     procedure lstOutputFormatSelect(Sender: TObject);
     procedure lstPostProcessSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
+    procedure pnlBandwidthClick(Sender: TObject);
     procedure txtFilePatternChange(Sender: TObject);
     procedure chkSkipShortClick(Sender: TObject);
     procedure chkSearchSilenceClick(Sender: TObject);
@@ -485,8 +487,8 @@ procedure TfrmSettings.DoCreate;
 begin
   inherited;
 
-  Width := 600;
-  Height := 440;
+  Width := 620;
+  Height := 470;
 end;
 
 procedure TfrmSettings.EnablePanel(Panel: TPanel; Enable: Boolean);
@@ -1237,6 +1239,11 @@ begin
   end;
 
   btnConfigure.Enabled := (Item <> nil) and Item.Checked and TPostProcessBase(Item.Data).CanConfigure;
+end;
+
+procedure TfrmSettings.pnlBandwidthClick(Sender: TObject);
+begin
+
 end;
 
 procedure TfrmSettings.lstRegExesChange(Sender: TObject; Item: TListItem; Change: TItemChange);
@@ -3008,7 +3015,7 @@ begin
   txtLogFile.Visible := False;
 
   btnReset := TBitBtn.Create(Self);
-  btnReset.Width := MulDiv(210, Screen.PixelsPerInch, 96);
+  btnReset.Width := Scale96ToFont(240);
   btnReset.Align := alLeft;
   btnReset.Parent := pnlNav;
   btnReset.Caption := _('A&pply general settings');

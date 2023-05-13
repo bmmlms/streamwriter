@@ -48,7 +48,7 @@
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
             <Libraries Value="D:\msys64\mingw32\i686-w64-mingw32\lib\;D:\msys64\mingw32\lib\gcc\i686-w64-mingw32\10.2.0\;..\SubModules\mbedtls\library"/>
-            <OtherUnitFiles Value="..\SubModules\fpc-common;controls;..\SubModules\fpc-common\forms;audio;streaming;Forms;..\SubModules\fpc-common\sockets;postprocess;addon;..\SubModules\TRegExpr\src"/>
+            <OtherUnitFiles Value="..\SubModules\fpc-common;controls;..\SubModules\fpc-common\forms;audio;streaming;Forms;..\SubModules\fpc-common\sockets;postprocess;addon;..\SubModules\TRegExpr\src;..\SubModules\DDetours\Source"/>
             <UnitOutputDirectory Value="..\Build\Units\$(TargetCPU)\$(BuildMode)"/>
           </SearchPaths>
           <Parsing>
@@ -649,7 +649,7 @@
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
       <Libraries Value="D:\msys64\mingw32\i686-w64-mingw32\lib\;D:\msys64\mingw32\lib\gcc\i686-w64-mingw32\10.2.0\;..\SubModules\mbedtls\library"/>
-      <OtherUnitFiles Value="..\SubModules\fpc-common;controls;..\SubModules\fpc-common\forms;audio;streaming;Forms;..\SubModules\fpc-common\sockets;postprocess;addon;..\SubModules\TRegExpr\src"/>
+      <OtherUnitFiles Value="..\SubModules\fpc-common;controls;..\SubModules\fpc-common\forms;audio;streaming;Forms;..\SubModules\fpc-common\sockets;postprocess;addon;..\SubModules\TRegExpr\src;..\SubModules\DDetours\Source"/>
       <UnitOutputDirectory Value="..\Build\Units\$(TargetCPU)\$(BuildMode)"/>
     </SearchPaths>
     <Parsing>

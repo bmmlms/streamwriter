@@ -1,43 +1,48 @@
 object frmChartsTabAdjustTitleName: TfrmChartsTabAdjustTitleName
   Left = 0
-  Height = 81
+  Height = 96
   Top = 0
-  Width = 213
+  Width = 300
   AutoSize = True
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
+  BorderWidth = 4
   Caption = 'Change title name'
-  ClientHeight = 81
-  ClientWidth = 213
+  ClientHeight = 96
+  ClientWidth = 300
   Color = clBtnFace
+  Constraints.MinWidth = 300
   KeyPreview = True
   OnCreate = FormCreate
   OnShow = FormShow
   Position = poOwnerFormCenter
   object pnlNav: TPanel
-    Left = 0
-    Height = 40
-    Top = 41
-    Width = 213
+    Left = 4
+    Height = 39
+    Top = 53
+    Width = 292
     Align = alBottom
+    AutoSize = True
+    BorderSpacing.Top = 8
     BevelOuter = bvNone
-    ClientHeight = 40
-    ClientWidth = 213
+    ClientHeight = 39
+    ClientWidth = 292
     TabOrder = 0
     object Bevel2: TBevel
       Left = 0
-      Height = 5
+      Height = 4
       Top = 0
-      Width = 213
+      Width = 292
       Align = alTop
       Shape = bsTopLine
     end
     object btnOK: TBitBtn
-      Left = 113
+      Left = 192
       Height = 35
-      Top = 5
+      Top = 4
       Width = 100
       Align = alRight
+      AutoSize = True
       Caption = '&OK'
       Constraints.MinHeight = 35
       Constraints.MinWidth = 100
@@ -46,16 +51,16 @@ object frmChartsTabAdjustTitleName: TfrmChartsTabAdjustTitleName
     end
   end
   object txtTitle: TMLabeledEdit
-    Left = 0
+    Left = 4
     Height = 41
-    Top = 0
-    Width = 213
+    Top = 4
+    Width = 292
     Align = alClient
     Caption = 'Please enter the name of the title to add:'
     Control.Left = 0
     Control.Height = 23
     Control.Top = 18
-    Control.Width = 213
+    Control.Width = 292
     Control.Align = alClient
     Control.TabOrder = 0
   end

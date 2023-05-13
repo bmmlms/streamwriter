@@ -1099,7 +1099,6 @@ begin
   FSearchPanel.BevelOuter := bvNone;
   FSearchPanel.Align := alTop;
   FSearchPanel.AutoSize := True;
-  FSearchPanel.BorderSpacing.Bottom := 4;
   FSearchPanel.Parent := Self;
 
   FSearchLabel := TLabel.Create(Self);
@@ -1157,6 +1156,7 @@ begin
 
   FTree := TTitleTree.Create(Self);
   FTree.Align := alClient;
+  FTree.BorderSpacing.Top := 4;
   FTree.OnChange := TreeChange;
   FTree.OnSelectionChange := TreeSelectionChange;
   FTree.OnKeyDown := TreeKeyDown;

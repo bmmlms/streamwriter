@@ -33,6 +33,7 @@ uses
   MControlFocuser,
   MControls,
   MLabeledEdit,
+  MSpeedButton,
   PostProcess,
   StdCtrls,
   SysUtils;
@@ -42,7 +43,7 @@ type
   { TfrmConfigureSetTags }
 
   TfrmConfigureSetTags = class(TForm)
-    btnResetCommentPattern: TSpeedButton;
+    btnResetCommentPattern: TMSpeedButton;
     Label1: TLabel;
     Panel1: TPanel;
     txtComment: TMemo;
@@ -50,7 +51,7 @@ type
     txtArtist: TMLabeledEditButton;
     txtTitle: TMLabeledEditButton;
     lblPattern: TLabel;
-    btnResetAlbumPattern: TSpeedButton;
+    btnResetAlbumPattern: TMSpeedButton;
     pnlNav: TPanel;
     Bevel2: TBevel;
     btnOK: TBitBtn;

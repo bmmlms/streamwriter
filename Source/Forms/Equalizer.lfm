@@ -5,6 +5,7 @@ object frmEqualizer: TfrmEqualizer
   Width = 220
   BorderIcons = [biSystemMenu]
   BorderStyle = bsToolWindow
+  BorderWidth = 4
   Caption = 'Equalizer'
   ClientHeight = 140
   ClientWidth = 220
@@ -13,48 +14,47 @@ object frmEqualizer: TfrmEqualizer
   OnCreate = FormCreate
   OnKeyDown = FormKeyDown
   OnShow = FormShow
-  ShowHint = True
-  LCLVersion = '2.2.6.0'
   object pnlEqualizer: TPanel
-    Left = 0
-    Height = 119
-    Top = 21
-    Width = 220
+    Left = 4
+    Height = 105
+    Top = 31
+    Width = 212
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 0
   end
   object Panel1: TPanel
-    Left = 0
-    Height = 21
-    Top = 0
-    Width = 220
+    Left = 4
+    Height = 23
+    Top = 4
+    Width = 212
     Align = alTop
     AutoSize = True
+    BorderSpacing.Bottom = 4
     BevelOuter = bvNone
-    ClientHeight = 21
-    ClientWidth = 220
+    ClientHeight = 23
+    ClientWidth = 212
     TabOrder = 1
     object chkEqualizer: TCheckBox
       Left = 0
-      Height = 21
+      Height = 23
       Top = 0
-      Width = 95
+      Width = 101
       Align = alLeft
       Caption = 'Equalizer active'
       OnClick = chkEqualizerClick
       TabOrder = 0
     end
-    object btnReset: TSpeedButton
-      Left = 195
-      Height = 21
+    object btnReset: TMSpeedButton
+      Left = 189
+      Height = 23
       Hint = 'Reset'
       Top = 0
-      Width = 25
+      Width = 23
       Align = alRight
       AutoSize = True
-      Constraints.MinHeight = 21
-      Constraints.MinWidth = 25
+      Constraints.MinHeight = 23
+      Constraints.MinWidth = 23
       Flat = True
       Images = modSharedData.imgImages
       ImageIndex = 2

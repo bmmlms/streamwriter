@@ -614,12 +614,14 @@ begin
   FToolbarPanel.Align := alTop;
   FToolbarPanel.BevelOuter := bvNone;
   FToolbarPanel.Top := -100;
-  FToolbarPanel.BorderSpacing.Top := 4;
+  FToolbarPanel.ChildSizing.TopBottomSpacing := 4;
+  FToolbarPanel.ChildSizing.VerticalSpacing := 4;
   FToolbarPanel.AutoSize := True;
   FToolbarPanel.Parent := Self;
 
   FAddressBar := TClientAddressBar.Create(Self);
   FAddressBar.Align := alTop;
+  FAddressBar.Top := 0;
   FAddressBar.AutoSize := True;
   FAddressBar.OnStart := AddressBarStart;
   FAddressBar.Parent := Self;
@@ -684,6 +686,7 @@ begin
 
   FSideBar := TSidebar.Create(Self);
   FSideBar.Align := alRight;
+  FSideBar.BorderSpacing.Top := 4;
   FSideBar.FDebugView.DebugView.OnClear := DebugClear;
   FSideBar.FBrowserView.StreamTree.OnAction := StreamBrowserAction;
   FSideBar.FBrowserView.StreamTree.OnIsInClientList := StreamBrowserIsInClientList;
@@ -694,6 +697,7 @@ begin
   FClientView := TMClientView.Create(Self, Popup, FSideBar.FBrowserView.StreamTree);
   FClientView.Align := alClient;
   FClientView.Images := modSharedData.imgImages;
+  FClientView.BorderSpacing.Top := 4;
   FClientView.OnSelectionChange := FClientViewSelectionChange;
   FClientView.OnNodeDblClick := FClientViewNodeDblClick;
   FClientView.OnKeyPress := FClientViewKeyPress;
