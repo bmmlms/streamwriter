@@ -275,7 +275,6 @@ type
     procedure lstHotkeysResize(Sender: TObject);
     procedure lstOutputFormatSelect(Sender: TObject);
     procedure lstPostProcessSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
-    procedure MenuItem1Click(Sender: TObject);
     procedure txtFilePatternChange(Sender: TObject);
     procedure chkSkipShortClick(Sender: TObject);
     procedure chkSearchSilenceClick(Sender: TObject);
@@ -1188,6 +1187,8 @@ begin
   if Item.Data = nil then
     Exit;
 
+  chkOnlyIfCut.Enabled := (Item <> nil) and Item.Checked and Item.Selected;
+
   if TObject(Item.Data) is TInternalPostProcess then
   begin
     lstPostProcess.OnItemChecked := nil;
@@ -1228,7 +1229,7 @@ begin
   UpdatePostProcessUpDown;
 
   chkOnlyIfCut.Checked := (Item <> nil) and Selected and TPostProcessBase(Item.Data).OnlyIfCut;
-  chkOnlyIfCut.Enabled := (Item <> nil) and Selected;
+  chkOnlyIfCut.Enabled := (Item <> nil) and Selected and Item.Checked;
 
   if Selected and (TPostProcessBase(Item.Data) is TExternalPostProcess) then
   begin
@@ -1248,12 +1249,7 @@ begin
     btnRemove.Enabled := False;
   end;
 
-  btnConfigure.Enabled := (Item <> nil) and Item.Selected and Item.Checked and TPostProcessBase(Item.Data).CanConfigure;
-end;
-
-procedure TfrmSettings.MenuItem1Click(Sender: TObject);
-begin
-
+  btnConfigure.Enabled := (Item <> nil) and Selected and Item.Checked and TPostProcessBase(Item.Data).CanConfigure;
 end;
 
 procedure TfrmSettings.lstRegExesChange(Sender: TObject; Item: TListItem; Change: TItemChange);
