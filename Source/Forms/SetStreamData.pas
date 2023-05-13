@@ -254,6 +254,7 @@ begin
   FTitleTree.Align := alLeft;
   FTitleTree.Images := modSharedData.imgImages;
   FTitleTree.Width := 350;
+  FTitleTree.BorderSpacing.Right := 8;
   FTitleTree.Parent := Self;
 
   FTitleTree.NodeDataSize := SizeOf(TTitleNodeData);

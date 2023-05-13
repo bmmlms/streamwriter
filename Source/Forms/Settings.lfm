@@ -686,16 +686,17 @@ inherited frmSettings: TfrmSettings
             OnClick = btnRemoveClick
             TabOrder = 0
           end
-          object btnAdd: TButton
-            Left = 73
+          object btnAdd: TMDropdownButton
+            Left = 65
             Height = 25
             Top = 0
-            Width = 57
+            Width = 65
             Anchors = [akRight, akBottom]
             AutoSize = True
             Caption = '&Add...'
-            OnClick = btnAddClick
+            PopupMenu = PopupMenuAddPostprocessor
             TabOrder = 1
+            Split = False
           end
         end
         object FlowPanel5: TFlowPanel
@@ -1482,7 +1483,6 @@ inherited frmSettings: TfrmSettings
       ClientWidth = 292
       TabOrder = 8
       Visible = False
-      OnClick = pnlBandwidthClick
       object Label22: TLabel
         Left = 19
         Height = 90
@@ -1736,15 +1736,13 @@ inherited frmSettings: TfrmSettings
         Top = 1
         Width = 291
         Align = alClient
-        AutoWidthLastColumn = True
         Columns = <        
           item
-            AutoSize = True
             Caption = 'Action'
           end        
           item
             Caption = 'Hotkey'
-            Width = 237
+            Width = 53
           end>
         ReadOnly = True
         RowSelect = True
@@ -1752,6 +1750,7 @@ inherited frmSettings: TfrmSettings
         TabOrder = 0
         ViewStyle = vsReport
         OnChange = lstHotkeysChange
+        OnResize = lstHotkeysResize
       end
       object txtHotkey: TMLabeledHotkeyEdit
         Left = 1
@@ -2244,5 +2243,17 @@ inherited frmSettings: TfrmSettings
     )
     Left = 684
     Top = 312
+  end
+  object PopupMenuAddPostprocessor: TPopupMenu[8]
+    Left = 510
+    Top = 738
+    object MenuItem1: TMenuItem
+      Caption = '...processing when in WAVE-format'
+      OnClick = mnuAddPostProcessorClick
+    end
+    object MenuItem2: TMenuItem
+      Caption = '...processing after conversion to destination format'
+      OnClick = mnuAddPostProcessorClick
+    end
   end
 end

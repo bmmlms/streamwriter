@@ -129,26 +129,29 @@ begin
   BevelOuter := bvNone;
 
   FDebug := TDebugView.Create(Self);
-  FDebug.Parent := Self;
   FDebug.Align := alClient;
+  FDebug.Parent := Self;
 
   FPanelBottom := TPanel.Create(Self);
-  FPanelBottom.Parent := Self;
   FPanelBottom.Align := alBottom;
+  FPanelBottom.BorderSpacing.Top := 4;
   FPanelBottom.BevelOuter := bvNone;
   FPanelBottom.AutoSize := True;
+  FPanelBottom.Parent := Self;
 
   FBtnCopy := TButton.Create(Self);
   FBtnCopy.Caption := '&Copy';
+  FBtnCopy.AutoSize := True;
   FBtnCopy.Align := alRight;
-  FBtnCopy.Parent := FPanelBottom;
   FBtnCopy.OnClick := BtnCopyClick;
+  FBtnCopy.Parent := FPanelBottom;
 
   FBtnClear := TButton.Create(Self);
   FBtnClear.Caption := 'C&lear';
+  FBtnClear.AutoSize := True;
   FBtnClear.Align := alRight;
-  FBtnClear.Parent := FPanelBottom;
   FBtnClear.OnClick := BtnClearClick;
+  FBtnClear.Parent := FPanelBottom;
 end;
 
 destructor TMStreamDebugPanel.Destroy;

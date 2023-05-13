@@ -33,7 +33,6 @@ uses
   ComCtrls,
   CommCtrl,
   ConfigureEncoder,
-  MSpeedButton,
   Constants,
   Controls,
   DataManager,
@@ -53,12 +52,13 @@ uses
   Logging,
   MControlFocuser,
   MControls,
+  MDropdownButton,
   Menus,
   MHotkeyEdit,
   MLabeledEdit,
   MsgDlg,
+  MSpeedButton,
   PostProcess,
-  SettingsAddPostProcessor,
   SettingsBase,
   SharedData,
   ShlObj,
@@ -119,7 +119,7 @@ type
 
   TfrmSettings = class(TfrmSettingsBase, IPreTranslatable)
     Bevel1: TBevel;
-    btnAdd: TButton;
+    btnAdd: TMDropdownButton;
     btnAddIgnoreTitlePattern: TButton;
     btnAddRegEx: TButton;
     btnBlacklistRemove: TButton;
@@ -205,6 +205,8 @@ type
     lstPostProcess: TListView;
     lstRegExes: TListView;
     lstSoundDevice: TMLabeledComboBoxEx;
+    MenuItem1: TMenuItem;
+    MenuItem2: TMenuItem;
     optAdjustBackward: TRadioButton;
     optAdjustForward: TRadioButton;
     optClose: TRadioButton;
@@ -237,6 +239,7 @@ type
     pnlPostProcess: TPanel;
     pnlStreams: TPanel;
     pnlStreamsAdvanced: TPanel;
+    PopupMenuAddPostprocessor: TPopupMenu;
     txtAdjustTrackOffset: TSpinEdit;
     txtApp: TMLabeledEditButton;
     txtAppParams: TMLabeledEdit;
@@ -269,15 +272,16 @@ type
     txtSongBuffer: TMLabeledSpinEdit;
     txtStreamFilePattern: TMLabeledEditButton;
     procedure FormActivate(Sender: TObject);
+    procedure lstHotkeysResize(Sender: TObject);
     procedure lstOutputFormatSelect(Sender: TObject);
     procedure lstPostProcessSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
-    procedure pnlBandwidthClick(Sender: TObject);
+    procedure MenuItem1Click(Sender: TObject);
     procedure txtFilePatternChange(Sender: TObject);
     procedure chkSkipShortClick(Sender: TObject);
     procedure chkSearchSilenceClick(Sender: TObject);
     procedure chkTrayClick(Sender: TObject);
     procedure btnBrowseAppClick(Sender: TObject);
-    procedure btnAddClick(Sender: TObject);
+    procedure mnuAddPostProcessorClick(Sender: TObject);
     procedure txtAppParamsChange(Sender: TObject);
     procedure btnRemoveClick(Sender: TObject);
     procedure btnHelpClick(Sender: TObject);
@@ -487,7 +491,7 @@ procedure TfrmSettings.DoCreate;
 begin
   inherited;
 
-  Width := 620;
+  Width := 640;
   Height := 470;
 end;
 
@@ -992,6 +996,12 @@ begin
   FBrowseDir := False;
 end;
 
+procedure TfrmSettings.lstHotkeysResize(Sender: TObject);
+begin
+  lstHotkeys.Column[0].Width := Trunc(lstHotkeys.ClientWidth / 2);
+  lstHotkeys.Column[1].Width := Trunc(lstHotkeys.ClientWidth / 2);
+end;
+
 procedure TfrmSettings.GetExportData(Stream: TMemoryStream);
 begin
   inherited;
@@ -1241,7 +1251,7 @@ begin
   btnConfigure.Enabled := (Item <> nil) and Item.Checked and TPostProcessBase(Item.Data).CanConfigure;
 end;
 
-procedure TfrmSettings.pnlBandwidthClick(Sender: TObject);
+procedure TfrmSettings.MenuItem1Click(Sender: TObject);
 begin
 
 end;
@@ -2127,7 +2137,7 @@ begin
   RemoveGray(lstRegExes);
 end;
 
-procedure TfrmSettings.btnAddClick(Sender: TObject);
+procedure TfrmSettings.mnuAddPostProcessorClick(Sender: TObject);
 
   function HighestGroupIndex(GroupID: Integer): Integer;
   var
@@ -2142,43 +2152,39 @@ procedure TfrmSettings.btnAddClick(Sender: TObject);
   end;
 
 var
-  i: Integer;
+  i, Grp: Integer;
   Item: TListItem;
   PostProcessor: TExternalPostProcess;
-  AddPostProcessorForm: TfrmSettingsAddPostProcessor;
 begin
   if not FInitialized then
     Exit;
 
   RemoveGray(lstPostProcess);
 
-  AddPostProcessorForm := TfrmSettingsAddPostProcessor.Create(Self);
-  try
-    AddPostProcessorForm.ShowModal;
-    if AddPostProcessorForm.Result <= 1 then
-      if dlgOpen.Execute then
-        if FileExists(dlgOpen.FileName) then
-        begin
-          Item := lstPostProcess.Items.Insert(HighestGroupIndex(AddPostProcessorForm.Result) + 1);
-          Item.Caption := ExtractFileName(dlgOpen.FileName);
-          PostProcessor := TExternalPostProcess.Create(dlgOpen.FileName, '"%filename%"', True, False, GetNewID, 100000, AddPostProcessorForm.Result);
-          PostProcessor.IsNew := True;
-          FTemporaryPostProcessors.Insert(HighestGroupIndex(AddPostProcessorForm.Result) + 1, PostProcessor);
+  if Sender = MenuItem1 then
+    Grp := 0
+  else
+    Grp := 1;
 
-          if PostProcessor.NeedsWave then
-            ShowEncoderNeededMessage;
+  if dlgOpen.Execute and FileExists(dlgOpen.FileName) then
+  begin
+    Item := lstPostProcess.Items.Insert(HighestGroupIndex(Grp) + 1);
+    Item.Caption := ExtractFileName(dlgOpen.FileName);
+    PostProcessor := TExternalPostProcess.Create(dlgOpen.FileName, '"%filename%"', True, False, GetNewID, 100000, Grp);
+    PostProcessor.IsNew := True;
+    FTemporaryPostProcessors.Insert(HighestGroupIndex(Grp) + 1, PostProcessor);
 
-          RebuildPostProcessingList;
+    if PostProcessor.NeedsWave then
+      ShowEncoderNeededMessage;
 
-          for i := 0 to lstPostProcess.Items.Count - 1 do
-            if TPostProcessBase(lstPostProcess.Items[i].Data) = PostProcessor then
-            begin
-              lstPostProcess.Items[i].Selected := True;
-              Break;
-            end;
-        end;
-  finally
-    AddPostProcessorForm.Free;
+    RebuildPostProcessingList;
+
+    for i := 0 to lstPostProcess.Items.Count - 1 do
+      if TPostProcessBase(lstPostProcess.Items[i].Data) = PostProcessor then
+      begin
+        lstPostProcess.Items[i].Selected := True;
+        Break;
+      end;
   end;
 end;
 
