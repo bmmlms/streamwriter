@@ -491,7 +491,7 @@ begin
   inherited;
 
   Width := 640;
-  Height := 470;
+  Height := 450;
 end;
 
 procedure TfrmSettings.EnablePanel(Panel: TPanel; Enable: Boolean);

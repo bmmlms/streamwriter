@@ -78,6 +78,7 @@ type
     Label4: TLabel;
     Panel2: TPanel;
     Panel4: TPanel;
+    Panel5: TPanel;
     Panel6: TPanel;
     pnlNav: TPanel;
     Bevel2: TBevel;

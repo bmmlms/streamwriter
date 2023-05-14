@@ -886,9 +886,10 @@ begin
   FClientManager := TClientManager.Create;
 
   pagMain := TMainPageControl.Create(Self);
-  pagMain.Parent := Self;
   pagMain.Align := alClient;
   pagMain.Images := modSharedData.imgImages;
+  pagMain.MaxTabWidth := Scale96ToFont(250);
+  pagMain.Parent := Self;
 
   tabClients := TClientTab.Create(pagMain, tbClients, ActionList1, FClientManager, mnuStreamPopup);
   tabClients.PageControl := pagMain;
