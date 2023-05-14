@@ -126,7 +126,7 @@ type
     function Copy: TStreamBrowserEntry;
 
     class function Load(Stream: TStream; Version: Integer): TStreamBrowserEntry;
-    class function LoadFromHome(Stream: TMemoryStream; Version: Integer): TStreamBrowserEntry;
+    class function LoadFromHome(Stream: TMemoryStream; CommandVersion: Cardinal): TStreamBrowserEntry;
     procedure Save(Stream: TMemoryStream);
 
     // The unique ID of the stream
@@ -673,7 +673,7 @@ type
     constructor Create(ID, PlayedLastDay, PlayedLastWeek, PlayedLast: Cardinal);
     function Copy: TChartStream;
 
-    class function Load(Stream: TStream; Version: Integer): TChartStream;
+    class function LoadFromHome(Stream: TStream; CommandVersion: Cardinal): TChartStream;
 
     property ID: Cardinal read FID;
     property Stream: TStreamBrowserEntry read FStream write FStream;
@@ -714,7 +714,7 @@ type
     procedure Assign(Source: TChartEntry);
     function Copy: TChartEntry;
 
-    class function LoadFromHome(Stream: TMemoryStream; Version: Integer): TChartEntry;
+    class function LoadFromHome(Stream: TMemoryStream; CommandVersion: Cardinal): TChartEntry;
 
     procedure LoadStreams;
 
@@ -746,7 +746,7 @@ type
     constructor Create(Name: string; ID: Cardinal); overload;
 
     class function Load(Stream: TStream; Version: Integer): TGenre;
-    class function LoadFromHome(Stream: TMemoryStream; Version: Integer): TGenre;
+    class function LoadFromHome(Stream: TMemoryStream; CommandVersion: Cardinal): TGenre;
     procedure Save(Stream: TMemoryStream);
 
     property ID: Cardinal read FID write FID;
@@ -2248,7 +2248,7 @@ begin
     Stream.Read(Result.FCanSetRegExps);
 end;
 
-class function TStreamBrowserEntry.LoadFromHome(Stream: TMemoryStream; Version: Integer): TStreamBrowserEntry;
+class function TStreamBrowserEntry.LoadFromHome(Stream: TMemoryStream; CommandVersion: Cardinal): TStreamBrowserEntry;
 var
   i: Integer;
   B: Byte;
@@ -2256,20 +2256,20 @@ var
   E: string;
 begin
   Result := TStreamBrowserEntry.Create;
-  Stream.Read(Result.FID, IfThen<Boolean>(Version > 68, True, False));
-  Stream.Read(Result.FName, IfThen<Boolean>(Version > 68, True, False));
-  Stream.Read(Result.FGenre, IfThen<Boolean>(Version > 68, True, False));
-  Stream.Read(Result.FURL, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FID, False);
+  Stream.Read(Result.FName, False);
+  Stream.Read(Result.FGenre, False);
+  Stream.Read(Result.FURL, False);
 
-  Stream.Read(Count, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Count, False);
   for i := 0 to Count - 1 do
   begin
-    Stream.Read(E, IfThen<Boolean>(Version > 68, True, False));
+    Stream.Read(E, False);
     Result.URLs.Add(E);
   end;
 
-  Stream.Read(Result.FWebsite, IfThen<Boolean>(Version > 68, True, False));
-  Stream.Read(Result.FBitrate, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FWebsite, False);
+  Stream.Read(Result.FBitrate, False);
   Stream.Read(B);
   Result.FAudioType := TAudioTypes(B);
   Stream.Read(Result.FMetaData);
@@ -2277,17 +2277,17 @@ begin
   Stream.Read(Result.FRating);
   Stream.Read(Result.FRecordingOkay);
 
-  Stream.Read(Count, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Count, False);
   for i := 0 to Count - 1 do
   begin
-    Stream.Read(E, IfThen<Boolean>(Version > 68, True, False));
+    Stream.Read(E, False);
     Result.FRegExes.Add(E);
   end;
 
-  Stream.Read(Count, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Count, False);
   for i := 0 to Count - 1 do
   begin
-    Stream.Read(E, IfThen<Boolean>(Version > 68, True, False));
+    Stream.Read(E, False);
     Result.FIgnoreTitles.Add(E);
   end;
 
@@ -2394,30 +2394,25 @@ begin
   FStreams := TList<TChartStream>.Create;
 end;
 
-class function TChartEntry.LoadFromHome(Stream: TMemoryStream; Version: Integer): TChartEntry;
+class function TChartEntry.LoadFromHome(Stream: TMemoryStream; CommandVersion: Cardinal): TChartEntry;
 var
   i: Integer;
   C: Cardinal;
 begin
   Result := TChartEntry.Create;
-  Stream.Read(Result.FServerHash, IfThen<Boolean>(Version > 68, True, False));
-  Stream.Read(Result.FServerArtistHash, IfThen<Boolean>(Version > 68, True, False));
-  Stream.Read(Result.FName, IfThen<Boolean>(Version > 68, True, False));
-  Stream.Read(Result.FArtist, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FServerHash, False);
+  Stream.Read(Result.FServerArtistHash, False);
+  Stream.Read(Result.FName, False);
+  Stream.Read(Result.FArtist, False);
 
-  Stream.Read(Result.FPlayedLastDay, IfThen<Boolean>(Version > 68, True, False));
-  Stream.Read(Result.FPlayedLastWeek, IfThen<Boolean>(Version > 68, True, False));
-  Stream.Read(Result.FPlayedLast, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FPlayedLastDay, False);
+  Stream.Read(Result.FPlayedLastWeek, False);
+  Stream.Read(Result.FPlayedLast, False);
 
-  if Result.FPlayedLast > 86400 then
-    Result.FPlayedLastDay := 0;
-  if Result.FPlayedLast > 604800 then
-    Result.FPlayedLastWeek := 0;
-
-  Stream.Read(C, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(C, False);
 
   for i := 0 to C - 1 do
-    Result.Streams.Add(TChartStream.Load(Stream, Version));
+    Result.Streams.Add(TChartStream.LoadFromHome(Stream, CommandVersion));
 end;
 
 procedure TChartEntry.LoadStreams;
@@ -2475,13 +2470,13 @@ begin
   end;
 end;
 
-class function TGenre.LoadFromHome(Stream: TMemoryStream; Version: Integer): TGenre;
+class function TGenre.LoadFromHome(Stream: TMemoryStream; CommandVersion: Cardinal): TGenre;
 begin
   Result := TGenre.Create;
 
-  Stream.Read(Result.FID, IfThen<Boolean>(Version > 68, True, False));
-  Stream.Read(Result.FName, IfThen<Boolean>(Version > 68, True, False));
-  Stream.Read(Result.FStreamCount, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FID, False);
+  Stream.Read(Result.FName, False);
+  Stream.Read(Result.FStreamCount, False);
 end;
 
 procedure TGenre.Save(Stream: TMemoryStream);
@@ -2546,22 +2541,18 @@ begin
   FPlayedLast := PlayedLast;
 end;
 
-class function TChartStream.Load(Stream: TStream; Version: Integer): TChartStream;
+class function TChartStream.LoadFromHome(Stream: TStream; CommandVersion: Cardinal): TChartStream;
 begin
   Result := TChartStream.Create(0, 0, 0, 0);
-  Stream.Read(Result.FID, IfThen<Boolean>(Version > 68, True, False));
-  Stream.Read(Result.FPlayedLastDay, IfThen<Boolean>(Version > 68, True, False));
-  Stream.Read(Result.FPlayedLastWeek, IfThen<Boolean>(Version > 68, True, False));
+  Stream.Read(Result.FID, False);
+  Stream.Read(Result.FPlayedLastDay, False);
+  Stream.Read(Result.FPlayedLastWeek, False);
+  Stream.Read(Result.FPlayedLast, False);
 
-  if (Version >= 50) or (Version = 1) then
-  begin
-    Stream.Read(Result.FPlayedLast, IfThen<Boolean>(Version > 68, True, False));
-
-    if Result.FPlayedLast > 86400 then
-      Result.FPlayedLastDay := 0;
-    if Result.FPlayedLast > 604800 then
-      Result.FPlayedLastWeek := 0;
-  end;
+  if Result.FPlayedLast > 86400 then
+    Result.FPlayedLastDay := 0;
+  if Result.FPlayedLast > 604800 then
+    Result.FPlayedLastWeek := 0;
 end;
 
 { TStreamBrowserList }
