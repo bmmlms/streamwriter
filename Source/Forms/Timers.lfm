@@ -356,20 +356,21 @@ object frmTimers: TfrmTimers
           end
         end
         object Panel5: TPanel
-          Left = 407
+          Left = 424
           Height = 42
           Top = 0
-          Width = 65
+          Width = 48
           Align = alRight
+          AutoSize = True
           BevelOuter = bvNone
           ClientHeight = 42
-          ClientWidth = 65
+          ClientWidth = 48
           TabOrder = 2
           object btnAdd: TButton
             Left = 0
             Height = 25
             Top = 17
-            Width = 65
+            Width = 48
             Align = alBottom
             AutoSize = True
             Caption = '&Add'
