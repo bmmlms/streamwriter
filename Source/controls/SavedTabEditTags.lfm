@@ -1,6 +1,6 @@
 object frmEditTags: TfrmEditTags
   Left = 0
-  Height = 397
+  Height = 396
   Top = 0
   Width = 250
   AutoSize = True
@@ -8,7 +8,8 @@ object frmEditTags: TfrmEditTags
   BorderStyle = bsSingle
   BorderWidth = 4
   Caption = 'Edit tags and data'
-  ClientHeight = 397
+  ChildSizing.VerticalSpacing = 4
+  ClientHeight = 396
   ClientWidth = 250
   Color = clBtnFace
   Constraints.MinWidth = 250
@@ -17,14 +18,14 @@ object frmEditTags: TfrmEditTags
   ShowHint = True
   object pnlNav: TPanel
     Left = 4
-    Height = 39
-    Top = 354
+    Height = 34
+    Top = 358
     Width = 242
     Align = alBottom
     AutoSize = True
     BorderSpacing.Top = 8
     BevelOuter = bvNone
-    ClientHeight = 39
+    ClientHeight = 34
     ClientWidth = 242
     TabOrder = 1
     object Bevel2: TBevel
@@ -37,7 +38,7 @@ object frmEditTags: TfrmEditTags
     end
     object btnClose: TBitBtn
       Left = 142
-      Height = 35
+      Height = 30
       Top = 4
       Width = 100
       Align = alRight
@@ -51,7 +52,7 @@ object frmEditTags: TfrmEditTags
   object grpData: TGroupBox
     Left = 4
     Height = 69
-    Top = 277
+    Top = 281
     Width = 242
     Align = alBottom
     AutoSize = True
