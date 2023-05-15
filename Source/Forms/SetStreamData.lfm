@@ -149,7 +149,7 @@ object frmSetStreamData: TfrmSetStreamData
       Caption = 'Regular expression to add:'
       Control.Left = 0
       Control.Height = 23
-      Control.Hint = 'Reset pattern to default'
+      Control.ButtonHint = 'Reset pattern to default'
       Control.Top = 18
       Control.Width = 416
       Control.Align = alClient

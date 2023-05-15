@@ -744,6 +744,7 @@ inherited frmSettings: TfrmSettings
         Control.Top = 18
         Control.Width = 292
         Control.Align = alClient
+        Control.ButtonHint = 'Browse...'
         Control.ButtonWidth = 23
         Control.Color = 15790320
         Control.Flat = True
@@ -2098,10 +2099,8 @@ inherited frmSettings: TfrmSettings
     end
   end
   inherited pnlNav: TPanel
-    Height = 34
     Top = 843
     Width = 1568
-    ClientHeight = 34
     ClientWidth = 1568
     TabOrder = 1
     inherited Bevel2: TBevel
@@ -2109,7 +2108,6 @@ inherited frmSettings: TfrmSettings
     end
     inherited btnOK: TBitBtn
       Left = 1468
-      Height = 30
     end
   end
   inherited pnlLeft: TPanel
@@ -2125,7 +2123,7 @@ inherited frmSettings: TfrmSettings
     ClientWidth = 312
     inherited lblPortable: TLabel
       Height = 15
-      Top = 206
+      Top = 188
       Width = 310
       Align = alBottom
       Anchors = [akLeft, akBottom]
@@ -2148,35 +2146,14 @@ inherited frmSettings: TfrmSettings
       Width = 310
       Control.Width = 310
     end
-    inherited FlowPanelSettingsBase1: TFlowPanel
-      Top = 225
-      Width = 310
-      inherited btnCopyProfile: TButton
-        Width = 120
-        Constraints.MinWidth = 120
-      end
-      inherited btnExportProfile: TButton
-        Left = 120
-        Width = 120
-        Constraints.MinWidth = 120
-      end
-    end
-    inherited FlowPanelSettingsBase2: TFlowPanel
-      Top = 254
-      Width = 310
-      inherited btnDeleteProfile: TButton
-        Width = 120
-        Constraints.MinWidth = 120
-      end
-      inherited btnImportProfile: TButton
-        Left = 120
-        Width = 120
-        Constraints.MinWidth = 120
-      end
-    end
     inherited txtPort: TMLabeledSpinEdit
       Width = 310
       Control.Width = 310
+    end
+    inherited pnlProfileBottom: TPanel
+      Top = 167
+      Width = 310
+      ClientWidth = 310
     end
   end
   object pnlAddons: TPanel[4]
