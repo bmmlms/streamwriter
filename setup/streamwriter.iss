@@ -42,7 +42,7 @@ InternalCompressLevel=ultra
 AppName=streamWriter
 AppVerName=streamWriter
 PrivilegesRequired=admin
-DefaultDirName={commonpf}\streamWriter
+DefaultDirName={autopf}\streamWriter
 AllowNetworkDrive=no
 DefaultGroupName=streamWriter
 ShowLanguageDialog=yes
@@ -59,6 +59,7 @@ UninstallDisplayIcon={app}\streamwriter.exe
 AppPublisher=Alexander Nottelmann
 AppPublisherURL=https://streamwriter.org
 CloseApplications=no
+PrivilegesRequiredOverridesAllowed=commandline dialog
 
 [Run]
 Filename: {app}\streamwriter.exe; WorkingDir: {app}; Flags: waituntilidle postinstall skipifsilent; Description: "{cm:Launch}"
