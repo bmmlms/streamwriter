@@ -229,6 +229,7 @@ begin
 
   Caption := 'Please select at least one stream.';
   BevelOuter := bvNone;
+  WordWrap := True;
   Align := alClient;
 
   FInfoView := TMStreamInfoViewPanel.Create(Self);

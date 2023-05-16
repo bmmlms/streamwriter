@@ -180,6 +180,7 @@ begin
 
   Caption := 'Please select a stream.';
   BevelOuter := bvNone;
+  WordWrap := True;
   Align := alClient;
 
   FDebugView := TMStreamDebugPanel.Create(Self);
