@@ -13,7 +13,6 @@ inherited frmSettings: TfrmSettings
   inherited FlowPanelPages: TFlowPanel
     Height = 831
     Width = 1467
-    BevelOuter = bvRaised
     ControlList = <    
       item
         Control = pnlMain
@@ -84,12 +83,17 @@ inherited frmSettings: TfrmSettings
         Control = pnlAutoRecord
         WrapAfter = waAuto
         Index = 13
+      end    
+      item
+        Control = pnlCutDisabled
+        WrapAfter = waAuto
+        Index = 14
       end>
     TabOrder = 4
     object pnlMain: TPanel[0]
-      Left = 1
+      Left = 0
       Height = 323
-      Top = 1
+      Top = 0
       Width = 291
       Anchors = []
       ChildSizing.VerticalSpacing = 4
@@ -266,9 +270,9 @@ inherited frmSettings: TfrmSettings
       end
     end
     object pnlStreams: TPanel[1]
-      Left = 292
+      Left = 291
       Height = 293
-      Top = 1
+      Top = 0
       Width = 293
       Anchors = []
       ChildSizing.VerticalSpacing = 4
@@ -279,7 +283,7 @@ inherited frmSettings: TfrmSettings
       object chkDeleteStreams: TCheckBox
         Left = 19
         Height = 19
-        Top = 70
+        Top = 24
         Width = 273
         Align = alTop
         BorderSpacing.Left = 18
@@ -300,7 +304,7 @@ inherited frmSettings: TfrmSettings
       object chkSeparateTracks: TCheckBox
         Left = 1
         Height = 19
-        Top = 24
+        Top = 47
         Width = 291
         Align = alTop
         Caption = 'Save separated tracks'
@@ -320,7 +324,7 @@ inherited frmSettings: TfrmSettings
       object chkOnlySaveFull: TCheckBox
         Left = 19
         Height = 19
-        Top = 47
+        Top = 70
         Width = 273
         Align = alTop
         BorderSpacing.Left = 18
@@ -460,9 +464,9 @@ inherited frmSettings: TfrmSettings
       end
     end
     object pnlPostProcess: TPanel[2]
-      Left = 585
+      Left = 584
       Height = 301
-      Top = 1
+      Top = 0
       Width = 294
       Anchors = []
       ChildSizing.VerticalSpacing = 4
@@ -758,9 +762,9 @@ inherited frmSettings: TfrmSettings
       end
     end
     object pnlStreamsAdvanced: TPanel[3]
-      Left = 879
+      Left = 878
       Height = 353
-      Top = 1
+      Top = 0
       Width = 293
       Anchors = []
       ClientHeight = 353
@@ -970,9 +974,9 @@ inherited frmSettings: TfrmSettings
       end
     end
     object pnlFilenames: TPanel[4]
-      Left = 1
+      Left = 0
       Height = 268
-      Top = 354
+      Top = 353
       Width = 293
       Anchors = []
       ChildSizing.VerticalSpacing = 4
@@ -1145,9 +1149,9 @@ inherited frmSettings: TfrmSettings
       end
     end
     object pnlCut: TPanel[5]
-      Left = 294
+      Left = 293
       Height = 258
-      Top = 354
+      Top = 353
       Width = 290
       Anchors = []
       ChildSizing.VerticalSpacing = 4
@@ -1155,15 +1159,6 @@ inherited frmSettings: TfrmSettings
       ClientWidth = 290
       TabOrder = 6
       Visible = False
-      object lblPanelCut: TLabel
-        Left = 1
-        Height = 15
-        Top = 1
-        Width = 61
-        Alignment = taCenter
-        Caption = 'lblPanelCut'
-        ParentColor = False
-      end
       object txtSongBuffer: TMLabeledSpinEdit
         Left = 19
         Height = 41
@@ -1383,9 +1378,9 @@ inherited frmSettings: TfrmSettings
       end
     end
     object pnlAdvanced: TPanel[6]
-      Left = 584
+      Left = 583
       Height = 194
-      Top = 354
+      Top = 353
       Width = 241
       Anchors = []
       ChildSizing.VerticalSpacing = 4
@@ -1478,9 +1473,9 @@ inherited frmSettings: TfrmSettings
       end
     end
     object pnlBandwidth: TPanel[7]
-      Left = 825
+      Left = 824
       Height = 160
-      Top = 354
+      Top = 353
       Width = 292
       Anchors = []
       ChildSizing.VerticalSpacing = 4
@@ -1537,9 +1532,9 @@ inherited frmSettings: TfrmSettings
       end
     end
     object pnlAppearance: TPanel[8]
-      Left = 1117
+      Left = 1116
       Height = 182
-      Top = 354
+      Top = 353
       Width = 228
       Anchors = []
       ChildSizing.VerticalSpacing = 4
@@ -1725,9 +1720,9 @@ inherited frmSettings: TfrmSettings
       end
     end
     object pnlHotkeys: TPanel[9]
-      Left = 1
+      Left = 0
       Height = 77
-      Top = 622
+      Top = 621
       Width = 293
       Anchors = []
       ChildSizing.VerticalSpacing = 4
@@ -1774,9 +1769,9 @@ inherited frmSettings: TfrmSettings
       end
     end
     object pnlCommunityBlacklist: TPanel[10]
-      Left = 294
+      Left = 293
       Height = 90
-      Top = 622
+      Top = 621
       Width = 299
       Anchors = []
       ClientHeight = 90
@@ -1836,9 +1831,9 @@ inherited frmSettings: TfrmSettings
       end
     end
     object pnlFilenamesExt: TPanel[11]
-      Left = 593
+      Left = 592
       Height = 103
-      Top = 622
+      Top = 621
       Width = 261
       Anchors = []
       AutoSize = True
@@ -1897,9 +1892,9 @@ inherited frmSettings: TfrmSettings
       end
     end
     object pnlAutoRecord: TPanel[12]
-      Left = 854
+      Left = 853
       Height = 177
-      Top = 622
+      Top = 621
       Width = 293
       Anchors = []
       ChildSizing.VerticalSpacing = 4
@@ -1920,7 +1915,7 @@ inherited frmSettings: TfrmSettings
       object chkAutoTuneInConsiderIgnore: TCheckBox
         Left = 19
         Height = 19
-        Top = 24
+        Top = 160
         Width = 273
         Align = alTop
         BorderSpacing.Left = 18
@@ -1931,7 +1926,7 @@ inherited frmSettings: TfrmSettings
       object chkAutoTuneInAddToIgnore: TCheckBox
         Left = 19
         Height = 19
-        Top = 47
+        Top = 24
         Width = 273
         Align = alTop
         BorderSpacing.Left = 18
@@ -1941,7 +1936,7 @@ inherited frmSettings: TfrmSettings
       object chkAutoRemoveSavedFromWishlist: TCheckBox
         Left = 19
         Height = 19
-        Top = 70
+        Top = 47
         Width = 273
         Align = alTop
         BorderSpacing.Left = 18
@@ -1951,7 +1946,7 @@ inherited frmSettings: TfrmSettings
       object lstMinQuality: TMLabeledComboBoxEx
         Left = 19
         Height = 41
-        Top = 93
+        Top = 70
         Width = 273
         Align = alTop
         BorderSpacing.Left = 18
@@ -1977,7 +1972,7 @@ inherited frmSettings: TfrmSettings
       object lstFormat: TMLabeledComboBoxEx
         Left = 19
         Height = 41
-        Top = 138
+        Top = 115
         Width = 273
         Align = alTop
         BorderSpacing.Left = 18
@@ -2002,9 +1997,9 @@ inherited frmSettings: TfrmSettings
       end
     end
     object pnlCommunity: TPanel[13]
-      Left = 1172
+      Left = 1171
       Height = 337
-      Top = 1
+      Top = 0
       Width = 293
       Anchors = []
       ClientHeight = 337
@@ -2096,6 +2091,18 @@ inherited frmSettings: TfrmSettings
         Control.MaxValue = 99
         Control.TabOrder = 0
       end
+    end
+    object pnlCutDisabled: TPanel[14]
+      Left = 1176
+      Height = 50
+      Top = 621
+      Width = 170
+      Anchors = []
+      BorderSpacing.Left = 30
+      BorderSpacing.Right = 30
+      Caption = 'pnlCutDisabled'
+      TabOrder = 14
+      Wordwrap = True
     end
   end
   inherited pnlNav: TPanel

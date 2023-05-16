@@ -193,7 +193,6 @@ type
     lblAppParams: TLabel;
     lblFilePattern: TLabel;
     lblIgnoreTitles: TLabel;
-    lblPanelCut: TLabel;
     lstDefaultAction: TMLabeledComboBoxEx;
     lstDefaultActionNewStream: TMLabeledComboBoxEx;
     lstDefaultFilter: TMLabeledComboBoxEx;
@@ -219,6 +218,7 @@ type
     Panel6: TPanel;
     Panel7: TPanel;
     Panel8: TPanel;
+    pnlCutDisabled: TPanel;
     pnlAdjustTrackOffset: TPanel;
     pnlAdvanced: TPanel;
     pnlAppearance: TPanel;
@@ -495,28 +495,19 @@ begin
 end;
 
 procedure TfrmSettings.EnablePanel(Panel: TPanel; Enable: Boolean);
-var
-  i: Integer;
 begin
-  for i := 0 to Panel.ControlCount - 1 do
+  if (Panel = pnlCut) and (FSettingsType <> stStream) then
   begin
-    Panel.Controls[i].Visible := Enable;
-
-    if (Panel = pnlCut) and (FSettingsType <> stStream) then
-    begin
-      chkAdjustTrackOffset.Visible := False;
-      pnlAdjustTrackOffset.Visible := False;
-      optAdjustBackward.Visible := False;
-      optAdjustForward.Visible := False;
-    end;
+    chkAdjustTrackOffset.Visible := False;
+    pnlAdjustTrackOffset.Visible := False;
+    optAdjustBackward.Visible := False;
+    optAdjustForward.Visible := False;
   end;
 
   if Enable then
     Panel.Tag := 0
   else
     Panel.Tag := 1;
-
-  lblPanelCut.Visible := not Enable;
 end;
 
 function ComparePostProcessors(constref L, R: TPostProcessBase): Integer;
@@ -1920,6 +1911,13 @@ procedure TfrmSettings.SetPage(Page: TPage);
 begin
   inherited;
 
+  if Page.Panel = pnlCut then
+  begin
+    pnlCut.Visible := pnlCut.Tag = 0;
+    pnlCutDisabled.Visible := pnlCut.Tag = 1;
+    pnlCutDisabled.BringToFront;
+  end;
+
   if Page = FPageList.Find(pnlFilenames) then
     txtPreview.Control.Text := '';
 
@@ -2763,7 +2761,6 @@ begin
     chkOnlySaveFull.Enabled := chkSeparateTracks.Checked;
     chkOnlySaveFull.Checked := chkSeparateTracks.Checked and FStreamSettings[0].OnlySaveFull;
 
-    pnlCut.Enabled := False;
     if (not chkSeparateTracks.Checked) or (not chkSaveStreamsToDisk.Checked) then
       chkDeleteStreams.Checked := False;
 
@@ -2862,10 +2859,7 @@ begin
       CreateStreams(AOwner);
   end;
 
-  lblPanelCut.Caption := _('Settings for cutting are only available'#13#10'if ''Save separated tracks'' is enabled.');
-  lblPanelCut.Align := alClient;
-  lblPanelCut.Layout := tlCenter;
-  lblPanelCut.Alignment := taCenter;
+  pnlCutDisabled.Caption := _('Settings for cutting are only available'#13#10'if ''Save separated tracks'' is enabled.');
 
   FInitialized := True;
 end;
