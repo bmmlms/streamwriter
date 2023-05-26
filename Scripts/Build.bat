@@ -91,9 +91,9 @@ goto end
   if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
 
   type "%OUTDIR%\%APPNAME%_setup.exe" | "%PLINK%" -batch gaia osslsigncode-sign.sh > "%OUTDIR%\%APPNAME%_setup-signed.exe"
-  IF ERRORLEVEL 1 GOTO FAIL
+  if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
   move /y "%OUTDIR%\%APPNAME%_setup-signed.exe" "%OUTDIR%\%APPNAME%_setup.exe"
-  IF ERRORLEVEL 1 GOTO FAIL
+  if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
 
   exit /b 0
 
