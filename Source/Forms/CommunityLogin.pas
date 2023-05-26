@@ -52,6 +52,7 @@ type
 
   TfrmCommunityLogin = class(TForm)
     txtPassword: TMLabeledEdit;
+    lblText: TLabel;
     txtUsername: TMLabeledEdit;
     pnlNav: TPanel;
     Bevel2: TBevel;
@@ -61,7 +62,6 @@ type
     lblConnecting: TLabel;
     prgConnecting: TProgressBar;
     pnlConnect: TPanel;
-    txtText: TMemo;
     lblSignup: TLabel;
     procedure FormCreate(Sender: TObject);
     procedure btnCancelClick(Sender: TObject);
@@ -128,7 +128,7 @@ begin
   pnlConnecting.Align := alClient;
   pnlConnect.Align := alClient;
 
-  txtText.Text := _('Logging in to the streamWriter community gives you some more options, for example setting ratings for streams.'#13#10 +
+  lblText.Caption := _('Logging in to the streamWriter community gives you some more options, for example setting ratings for streams.'#13#10 +
     'More community features may get introduced in the future. If you don''t have an account yet, click the link below to signup for free.');
 
   txtUsername.Control.Text := AppGlobals.User;

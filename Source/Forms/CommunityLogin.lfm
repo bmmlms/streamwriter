@@ -1,15 +1,15 @@
 object frmCommunityLogin: TfrmCommunityLogin
   Left = 0
-  Height = 250
+  Height = 188
   Top = 0
-  Width = 350
+  Width = 336
   AutoSize = True
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   BorderWidth = 4
   Caption = 'Community logon'
-  ClientHeight = 250
-  ClientWidth = 350
+  ClientHeight = 188
+  ClientWidth = 336
   Color = clBtnFace
   Constraints.MinHeight = 250
   Constraints.MinWidth = 350
@@ -21,27 +21,27 @@ object frmCommunityLogin: TfrmCommunityLogin
   ShowHint = True
   object pnlNav: TPanel
     Left = 4
-    Height = 39
-    Top = 207
-    Width = 342
+    Height = 34
+    Top = 150
+    Width = 328
     Align = alBottom
     AutoSize = True
     BorderSpacing.Top = 8
     BevelOuter = bvNone
-    ClientHeight = 39
-    ClientWidth = 342
+    ClientHeight = 34
+    ClientWidth = 328
     TabOrder = 0
     object Bevel2: TBevel
       Left = 0
       Height = 4
       Top = 0
-      Width = 342
+      Width = 328
       Align = alTop
       Shape = bsTopLine
     end
     object btnOK: TBitBtn
-      Left = 242
-      Height = 35
+      Left = 228
+      Height = 30
       Top = 4
       Width = 100
       Align = alRight
@@ -55,7 +55,7 @@ object frmCommunityLogin: TfrmCommunityLogin
     end
     object btnCancel: TBitBtn
       Left = 0
-      Height = 35
+      Height = 30
       Top = 4
       Width = 100
       Align = alLeft
@@ -113,20 +113,20 @@ object frmCommunityLogin: TfrmCommunityLogin
   end
   object pnlConnect: TPanel
     Left = 4
-    Height = 126
+    Height = 112
     Top = 4
-    Width = 152
+    Width = 82
     AutoSize = True
     ChildSizing.VerticalSpacing = 4
-    ClientHeight = 126
-    ClientWidth = 152
+    ClientHeight = 112
+    ClientWidth = 82
     TabOrder = 2
     object lblSignup: TLabel
       Cursor = crHandPoint
       Left = 1
       Height = 15
-      Top = 20
-      Width = 150
+      Top = 6
+      Width = 80
       Align = alBottom
       Alignment = taRightJustify
       Caption = 'Signup'
@@ -136,48 +136,46 @@ object frmCommunityLogin: TfrmCommunityLogin
       ParentFont = False
       OnClick = lblSignupClick
     end
-    object txtText: TMemo
-      Left = 1
-      Height = 15
-      Top = 1
-      Width = 150
-      Align = alClient
-      BorderStyle = bsNone
-      Color = clBtnFace
-      ReadOnly = True
-      ScrollBars = ssVertical
-      TabOrder = 0
-      TabStop = False
-    end
     object txtUsername: TMLabeledEdit
       Left = 1
       Height = 41
-      Top = 39
-      Width = 150
+      Top = 25
+      Width = 80
       Align = alBottom
       Caption = 'Username:'
       Control.Left = 0
       Control.Height = 23
       Control.Top = 18
-      Control.Width = 150
+      Control.Width = 80
       Control.Align = alClient
       Control.TabOrder = 0
     end
     object txtPassword: TMLabeledEdit
       Left = 1
       Height = 41
-      Top = 84
-      Width = 150
+      Top = 70
+      Width = 80
       Align = alBottom
       Caption = 'Password:'
       Control.Left = 0
       Control.Height = 23
       Control.Top = 18
-      Control.Width = 150
+      Control.Width = 80
       Control.Align = alClient
       Control.EchoMode = emPassword
       Control.PasswordChar = '*'
       Control.TabOrder = 0
+    end
+    object lblText: TLabel
+      Left = 1
+      Height = 1
+      Top = 1
+      Width = 80
+      Align = alClient
+      Color = clBtnFace
+      ParentColor = False
+      Transparent = False
+      WordWrap = True
     end
   end
 end

@@ -47,7 +47,6 @@ type
   TMStreamInfoViewPanel = class(TPanel)
   private
     FEntries: TStreamList;
-    FTopPanel: TPanel;
     FName: TLabel;
     FInfo: TMemo;
 
@@ -87,25 +86,19 @@ begin
 
   BevelOuter := bvNone;
 
-  FTopPanel := TPanel.Create(Self);
-  FTopPanel.Parent := Self;
-  FTopPanel.Align := alClient;
-  FTopPanel.Height := 110;
-  FTopPanel.BevelOuter := bvNone;
-
   FName := TLabel.Create(Self);
-  FName.Parent := FTopPanel;
   FName.Align := alTop;
   FName.Font.Size := 10;
   FName.Font.Style := [fsBold];
+  FName.Parent := Self;
 
   FInfo := TMemo.Create(Self);
-  FInfo.Parent := FTopPanel;
   FInfo.Align := alClient;
   FInfo.BorderStyle := bsNone;
   FInfo.Color := clWindow;
   FInfo.ScrollBars := ssVertical;
   FInfo.ReadOnly := True;
+  FInfo.Parent := Self;
 
   Align := alClient;
 end;
