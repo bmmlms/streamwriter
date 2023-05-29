@@ -33,6 +33,7 @@ uses
   Classes,
   ComboEx,
   ComCtrls,
+  Constants,
   Controls,
   DataManager,
   DateUtils,
@@ -255,6 +256,8 @@ begin
 
   FChartsTree := TChartsTree.Create(Self);
   FChartsTree.Align := alClient;
+  FChartsTree.Images := modSharedData.imgImages;
+  FChartsTree.PopupMenu.Images := modSharedData.imgImages;
   FChartsTree.OnSelectionChange := ChartsTreeSelectionChange;
   FChartsTree.Parent := Self;
 
@@ -273,11 +276,6 @@ begin
   FSearchPanel.FSearch.OnSelect := SearchSelect;
 
   FSearchPanel.FSearchButton.OnClick := SearchButtonClick;
-
-  FChartsTree.Images := modSharedData.imgImages;
-
-  if Screen.PixelsPerInch = 96 then
-    FChartsTree.PopupMenu.Images := modSharedData.imgImages;
 
   FSearchPanel.FButtonAddToWishlist.OnClick := ButtonClick;
   FSearchPanel.FButtonRemoveFromWishlist.OnClick := ButtonClick;
@@ -625,7 +623,7 @@ begin
   FProgressBar := TProgressBar.Create(Self);
   FProgressBar.Parent := Self;
   FProgressBar.Width := 200;
-  FProgressBar.Height := 24;
+  FProgressBar.Height := Scale96ToFont(PROGRESSBAR_HEIGHT);
   FProgressBar.Style := pbstMarquee;
   FProgressBar.Visible := False;
   FProgressBar.AnchorSideLeft.Control := Self;
@@ -963,11 +961,11 @@ begin
       Header.Columns[i].Width := AppGlobals.ChartHeaderWidth[i]
   else
   begin
-    FColLastPlayed.Width := TMStringFunctions.GetTextSize(FColLastPlayed.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
-    FColChance.Width := TMStringFunctions.GetTextSize(FColChance.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
+    FColLastPlayed.Width := TMStringFunctions.GetTextSize(FColLastPlayed.Text, Font).cx + Scale96ToFont(50);
+    FColChance.Width := TMStringFunctions.GetTextSize(FColChance.Text, Font).cx + Scale96ToFont(50);
   end;
 
-  FColImages.Width := Max(Margin * 2 + 3 * 16 + 2 * 2, TMStringFunctions.GetTextSize(FColImages.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96));
+  FColImages.Width := Max(Margin * 2 + 3 * 16 + 2 * 2, TMStringFunctions.GetTextSize(FColImages.Text, Font).cx + Scale96ToFont(50));
 
   if AppGlobals.ChartHeaderPositionLoaded then
     for i := 1 to Header.Columns.Count - 1 do
@@ -1157,7 +1155,7 @@ begin
       csSearching:
       begin
         Msg := _(TEXT_SEARCHING) + FDots;
-        Canvas.TextOut(FTextLeft, FProgressBar.Top - Canvas.GetTextHeight(MeasureTextHeightString) - MulDiv(2, Screen.PixelsPerInch, 96), Msg);
+        Canvas.TextOut(FTextLeft, FProgressBar.Top - Canvas.GetTextHeight(MeasureTextHeightString) - Scale96ToFont(2), Msg);
       end;
       csSearchError:
       begin

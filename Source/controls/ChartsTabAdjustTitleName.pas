@@ -120,6 +120,8 @@ begin
   modSharedData.imgImages.GetIcon(TImages.TEXTFIELD_RENAME, Icon);
 
   txtTitle.Control.Text := Title;
+
+  Constraints.MinWidth := Scale96ToFont(Constraints.MinWidth);
 end;
 
 end.

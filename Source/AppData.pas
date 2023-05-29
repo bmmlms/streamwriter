@@ -389,8 +389,8 @@ begin
   FCodename := 'Innominatam';
 
   // Adjust dimensions of the main-form
-  W := 900;
-  H := 500;
+  W := MulDiv(900, Screen.PrimaryMonitor.PixelsPerInch, 96);
+  H := MulDiv(500, Screen.PrimaryMonitor.PixelsPerInch, 96);
   if Screen.WorkAreaWidth < W then
     W := Screen.WorkAreaWidth - 20;
   if Screen.WorkAreaHeight < H then
@@ -823,8 +823,8 @@ begin
 
   FStorage.Read('LogFilterTypes', FLogFilterTypes, 7);
 
-  FStorage.Read('SetDataWidth', FSetDataWidth, 750);
-  FStorage.Read('SetDataHeight', FSetDataHeight, 420);
+  FStorage.Read('SetDataWidth', FSetDataWidth, MulDiv(750, Screen.PrimaryMonitor.PixelsPerInch, 96));
+  FStorage.Read('SetDataHeight', FSetDataHeight, MulDiv(420, Screen.PrimaryMonitor.PixelsPerInch, 96));
 
   FStorage.Read('IntroShown', FIntroShown, False);
 end;

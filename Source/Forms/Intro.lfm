@@ -1,6 +1,6 @@
 object frmIntro: TfrmIntro
   Left = 0
-  Height = 279
+  Height = 274
   Top = 0
   Width = 512
   AutoSize = True
@@ -8,7 +8,7 @@ object frmIntro: TfrmIntro
   BorderStyle = bsSingle
   BorderWidth = 4
   Caption = 'Introduction'
-  ClientHeight = 279
+  ClientHeight = 274
   ClientWidth = 512
   Color = clBtnFace
   Constraints.MaxWidth = 600
@@ -43,14 +43,14 @@ object frmIntro: TfrmIntro
   end
   object pnlNav: TPanel
     Left = 4
-    Height = 39
+    Height = 34
     Top = 236
     Width = 504
     Align = alBottom
     AutoSize = True
     BorderSpacing.Top = 8
     BevelOuter = bvNone
-    ClientHeight = 39
+    ClientHeight = 34
     ClientWidth = 504
     TabOrder = 0
     object Bevel2: TBevel
@@ -63,7 +63,7 @@ object frmIntro: TfrmIntro
     end
     object btnClose: TBitBtn
       Left = 404
-      Height = 35
+      Height = 30
       Top = 4
       Width = 100
       Align = alRight

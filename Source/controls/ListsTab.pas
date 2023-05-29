@@ -1137,7 +1137,7 @@ begin
   FAddCombo := TComboBoxEx.Create(Self);
   FAddCombo.Align := alClient;
   FAddCombo.Images := modSharedData.imgImages;
-  FAddCombo.ItemHeight := 17;
+  FAddCombo.ItemHeight := Scale96ToFont(17);
   FAddCombo.Parent := FToolbarPanel;
 
   FToolbar := TTitleToolbar.Create(Self);
@@ -1725,8 +1725,7 @@ begin
   TMTreeColumnPopup(Header.PopupMenu).OnAction := MenuColsAction;
 
   FPopupMenu := TTitlePopup.Create(Self);
-  if Screen.PixelsPerInch = 96 then
-    FPopupMenu.Images := modSharedData.imgImages;
+  FPopupMenu.Images := modSharedData.imgImages;
   FPopupMenu.FRemove.OnClick := PopupMenuClick;
   FPopupMenu.FRename.OnClick := PopupMenuClick;
   FPopupMenu.FShowSaved.OnClick := PopupMenuClick;
@@ -1757,8 +1756,8 @@ begin
       Header.Columns[i].Width := AppGlobals.ListHeaderWidth[i]
   else
   begin
-    FColSaved.Width := MulDiv(120, Screen.PixelsPerInch, 96);
-    FColAdded.Width := MulDiv(130, Screen.PixelsPerInch, 96);
+    FColSaved.Width := Scale96ToFont(120);
+    FColAdded.Width := Scale96ToFont(130);
   end;
 
   if AppGlobals.ListHeaderPositionLoaded then

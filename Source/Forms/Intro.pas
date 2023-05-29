@@ -78,6 +78,9 @@ end;
 procedure TfrmIntro.FormCreate(Sender: TObject);
 begin
   Language.Translate(Self);
+
+  Constraints.MinWidth := Scale96ToFont(Constraints.MinWidth);
+  Constraints.MinHeight := Scale96ToFont(Constraints.MinHeight);
 end;
 
 procedure TfrmIntro.pbLogoPaint(Sender: TObject);

@@ -16,6 +16,7 @@ object frmChartsTabAdjustTitleName: TfrmChartsTabAdjustTitleName
   OnCreate = FormCreate
   OnShow = FormShow
   Position = poOwnerFormCenter
+  LCLVersion = '2.2.6.0'
   object pnlNav: TPanel
     Left = 4
     Height = 34

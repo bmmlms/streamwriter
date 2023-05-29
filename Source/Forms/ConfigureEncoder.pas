@@ -122,6 +122,8 @@ begin
   lstVBR.Enabled := optVBR.Checked;
 
   Language.Translate(Self);
+
+  Constraints.MinWidth := Scale96ToFont(Constraints.MinWidth);
 end;
 
 procedure TfrmConfigureEncoder.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);

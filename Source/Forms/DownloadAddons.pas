@@ -79,6 +79,8 @@ begin
   FDownloadPackage := Addon.DownloadPackage;
 
   Language.Translate(Self);
+
+  Constraints.MinWidth := Scale96ToFont(Constraints.MinWidth);
 end;
 
 procedure TfrmDownloadAddons.DownloaderDownloaded(Sender: TObject);

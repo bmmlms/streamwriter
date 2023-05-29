@@ -32,6 +32,7 @@ uses
   ComboEx,
   ComCtrls,
   Commands,
+  Constants,
   Controls,
   DataManager,
   DragDrop,
@@ -499,7 +500,7 @@ begin
   FProgressBar := TProgressBar.Create(Self);
   FProgressBar.Parent := Self;
   FProgressBar.Width := 150;
-  FProgressBar.Height := 24;
+  FProgressBar.Height := Scale96ToFont(PROGRESSBAR_HEIGHT);
   FProgressBar.Visible := False;
   FProgressBar.Max := 100;
   FProgressBar.Min := 0;
@@ -825,7 +826,7 @@ begin
 
     R := ClientRect;
     R.Left := (R.Right div 2) - (Canvas.TextWidth(TmpText) div 2);
-    R.Top := FProgressBar.Top - Canvas.GetTextHeight(MeasureTextHeightString) - MulDiv(2, Screen.PixelsPerInch, 96);
+    R.Top := FProgressBar.Top - Canvas.GetTextHeight(MeasureTextHeightString) - Scale96ToFont(2);
 
     Canvas.TextRect(R, R.Left, R.Top, TmpText + FDots);
   end;
@@ -1473,7 +1474,7 @@ begin
   P := CreatePanel(_('Type') + ':');
   FTypeList := TComboBoxEx.Create(Self);
   FTypeList.Align := alClient;
-  FTypeList.ItemHeight := 17;
+  FTypeList.ItemHeight := Scale96ToFont(17);
   FTypeList.Parent := P;
 
   FTypeList.ItemsEx.AddItem(_('- No type -'));
@@ -1484,7 +1485,7 @@ begin
   P := CreatePanel(_('Kbps') + ':');
   FKbpsList := TComboBoxEx.Create(Self);
   FKbpsList.Align := alClient;
-  FKbpsList.ItemHeight := 17;
+  FKbpsList.ItemHeight := Scale96ToFont(17);
   FKbpsList.Parent := P;
 
   FKbpsList.ItemsEx.AddItem(_('- No kbps -'));
@@ -1499,7 +1500,7 @@ begin
   FGenreList := TComboBoxEx.Create(Self);
   FGenreList.Align := alClient;
   FGenreList.DropDownCount := 16;
-  FGenreList.ItemHeight := 17;
+  FGenreList.ItemHeight := Scale96ToFont(17);
   FGenreList.Parent := P;
 
   P := CreatePanel(_('Search') + ':');

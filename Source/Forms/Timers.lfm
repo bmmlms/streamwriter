@@ -59,6 +59,7 @@ object frmTimers: TfrmTimers
   OnShow = FormShow
   Position = poOwnerFormCenter
   ShowHint = True
+  LCLVersion = '2.2.6.0'
   object pnlNav: TPanel
     Left = 4
     Height = 34

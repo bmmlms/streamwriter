@@ -135,6 +135,9 @@ begin
   txtPassword.Control.Text := AppGlobals.Pass;
 
   modSharedData.imgImages.GetIcon(TImages.USER, Icon);
+
+  Constraints.MinWidth := Scale96ToFont(Constraints.MinWidth);
+  Constraints.MinHeight := Scale96ToFont(Constraints.MinHeight);
 end;
 
 procedure TfrmCommunityLogin.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);

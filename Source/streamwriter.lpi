@@ -13,11 +13,15 @@
       </Flags>
       <SessionStorage Value="InIDEConfig"/>
       <Title Value="streamWriter"/>
+      <Scaled Value="True"/>
       <UseAppBundle Value="False"/>
       <ResourceType Value="res"/>
       <UseXPManifest Value="True"/>
       <XPManifest>
+        <DpiAware Value="True"/>
         <AnsiUTF8 Value="True"/>
+        <TextName Value="mistake.streamWriter.streamWriter"/>
+        <TextDesc Value="streamWriter"/>
       </XPManifest>
       <Resources Count="8">
         <Resource_0 FileName="..\Resources\bass\bass.dll" Type="RCDATA" ResourceName="BASS"/>
@@ -677,9 +681,6 @@
         <ShowDebugInfo Value="True"/>
       </Verbosity>
       <CustomOptions Value="-dDEBUG"/>
-      <OtherDefines Count="1">
-        <Define0 Value="DEBUG"/>
-      </OtherDefines>
     </Other>
   </CompilerOptions>
   <Debugging>

@@ -690,8 +690,7 @@ begin
   FSideBar.FDebugView.DebugView.OnClear := DebugClear;
   FSideBar.FBrowserView.StreamTree.OnAction := StreamBrowserAction;
   FSideBar.FBrowserView.StreamTree.OnIsInClientList := StreamBrowserIsInClientList;
-  if Screen.PixelsPerInch = 96 then
-    FSideBar.FBrowserView.StreamTree.PopupMenu2.Images := modSharedData.imgImages;
+  FSideBar.FBrowserView.StreamTree.PopupMenu2.Images := modSharedData.imgImages;
   FSideBar.Parent := Self;
 
   FClientView := TMClientView.Create(Self, Popup, FSideBar.FBrowserView.StreamTree);
@@ -707,8 +706,8 @@ begin
 
   MsgBus.AddSubscriber(MessageReceived);
 
-  FSplitter.Width := MulDiv(4, Screen.PixelsPerInch, 96);
-  FSplitter.MinSize := MulDiv(220, Screen.PixelsPerInch, 96);
+  FSplitter.Width := Scale96ToFont(4);
+  FSplitter.MinSize := Scale96ToFont(220);
   FSplitter.Left := FSideBar.Left - FSplitter.Width - 5;
   FSideBar.Width := AppGlobals.SidebarWidth;
 end;

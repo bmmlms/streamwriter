@@ -24,7 +24,12 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     Height = 23
     Top = 0
     Width = 872
+    AutoSize = True
+    ButtonHeight = 24
+    ButtonWidth = 23
+    EdgeBorders = []
     Images = modSharedData.imgImages
+    Indent = 0
     TabOrder = 0
     Transparent = True
     object ToolButton5: TToolButton

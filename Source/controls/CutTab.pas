@@ -97,7 +97,7 @@ type
 
     function CanClose: Boolean; override;
 
-    function ProcessShortCut(Msg: TWMKey): Boolean; override;
+    function ProcessShortcut(Msg: TWMKey): Boolean; override;
 
     property Filename: string read FFilename;
 
@@ -273,7 +273,7 @@ begin
   end;
 end;
 
-function TCutTab.ProcessShortCut(Msg: TWMKey): Boolean;
+function TCutTab.ProcessShortcut(Msg: TWMKey): Boolean;
 var
   Button: TToolButton;
 begin

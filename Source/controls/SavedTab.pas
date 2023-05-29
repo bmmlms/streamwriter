@@ -30,6 +30,7 @@ uses
   Buttons,
   Classes,
   ComCtrls,
+  Constants,
   Controls,
   DataManager,
   Dialogs,
@@ -718,8 +719,7 @@ begin
 
   FSavedTree.Images := modSharedData.imgImages;
   FSavedTree.StateImages := modSharedData.imgImages;
-  if Screen.PixelsPerInch = 96 then
-    FSavedTree.FPopupMenu.Images := modSharedData.imgImages;
+  FSavedTree.FPopupMenu.Images := modSharedData.imgImages;
 
   // Panel oben komplett
   FTopPanel := TPanel.Create(Self);
@@ -732,7 +732,7 @@ begin
   // Panel links
   FTopLeftPanel := TPanel.Create(Self);
   FTopLeftPanel.Align := alLeft;
-  FTopLeftPanel.Width := MulDiv(460, Screen.PixelsPerInch, 96);
+  FTopLeftPanel.Width := Scale96ToFont(460);
   FTopLeftPanel.BevelOuter := bvNone;
   FTopLeftPanel.AutoSize := True;
   FTopLeftPanel.Parent := FTopPanel;
@@ -2437,14 +2437,14 @@ begin
       Header.Columns[i].Width := AppGlobals.SavedHeaderWidth[i]
   else
   begin
-    FColSize.Width := TMStringFunctions.GetTextSize('111,11 KB', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
-    FColLength.Width := TMStringFunctions.GetTextSize('00:00', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
-    FColBitrate.Width := TMStringFunctions.GetTextSize('320 VBR', font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
-    FColStream.Width := MulDiv(200, Screen.PixelsPerInch, 96);
-    FColSaved.Width := MulDiv(130, Screen.PixelsPerInch, 96);
+    FColSize.Width := TMStringFunctions.GetTextSize('111,11 KB', Font).cx + Scale96ToFont(20);
+    FColLength.Width := TMStringFunctions.GetTextSize('00:00', Font).cx + Scale96ToFont(20);
+    FColBitrate.Width := TMStringFunctions.GetTextSize('320 VBR', font).cx + Scale96ToFont(20);
+    FColStream.Width := Scale96ToFont(200);
+    FColSaved.Width := Scale96ToFont(130);
   end;
 
-  FColImages.Width := Max(Indent + Margin * 2 + 16 * 4 + 3 * 2, TMStringFunctions.GetTextSize(FColImages.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96));
+  FColImages.Width := Max(Indent + Margin * 2 + 16 * 4 + 3 * 2, TMStringFunctions.GetTextSize(FColImages.Text, Font).cx + Scale96ToFont(50));
 
   if AppGlobals.SavedHeaderPositionLoaded then
     for i := 1 to Header.Columns.Count - 1 do
@@ -2902,7 +2902,7 @@ begin
   ProgressBar := TProgressBar.Create(Self);
   ProgressBar.Align := alClient;
   ProgressBar.BorderSpacing.Bottom := 8;
-  ProgressBar.Constraints.MinHeight := 24;
+  ProgressBar.Constraints.MinHeight := Scale96ToFont(PROGRESSBAR_HEIGHT);
   ProgressBar.Style := pbstMarquee;
   ProgressBar.AutoSize := True;
   ProgressBar.Parent := Self;

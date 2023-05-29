@@ -214,6 +214,9 @@ begin
   modSharedData.imgImages.GetIcon(TImages.Time, Icon);
 
   FEntry := Entry.Copy;
+
+  Constraints.MinWidth := Scale96ToFont(Constraints.MinWidth);
+  Constraints.MinHeight := Scale96ToFont(Constraints.MinHeight);
 end;
 
 destructor TfrmTimers.Destroy;

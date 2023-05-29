@@ -297,7 +297,7 @@ type
     procedure mnuPlayerClick(Sender: TObject);
     procedure actEqualizerExecute(Sender: TObject);
     procedure mnuStreamsClick(Sender: TObject);
-    procedure FormShortCut(var Msg: TWMKey; var Handled: Boolean);
+    procedure FormShortcut(var Msg: TWMKey; var Handled: Boolean);
   private
     FPrevWndProc: Windows.WNDPROC;
 
@@ -1018,9 +1018,9 @@ begin
     actHelp.Execute;
 end;
 
-procedure TfrmStreamWriterMain.FormShortCut(var Msg: TWMKey; var Handled: Boolean);
+procedure TfrmStreamWriterMain.FormShortcut(var Msg: TWMKey; var Handled: Boolean);
 begin
-  Handled := TMTabSheet(pagMain.ActivePage).ProcessShortCut(Msg);
+  Handled := pagMain.ProcessShortcut(Msg) or TMTabSheet(pagMain.ActivePage).ProcessShortcut(Msg);
 end;
 
 procedure TfrmStreamWriterMain.FormShow(Sender: TObject);
@@ -1487,11 +1487,11 @@ begin
   UpdateButtons;
 end;
 
-procedure ShortCutToHotKey(const HotKey: TShortCut; out Key: Word; out Modifiers: Uint);
+procedure ShortcutToHotKey(const HotKey: TShortcut; out Key: Word; out Modifiers: Uint);
 var
   Shift: TShiftState;
 begin
-  ShortCutToKey(HotKey, Key, Shift);
+  ShortcutToKey(HotKey, Key, Shift);
   Modifiers := 0;
   if (ssShift in Shift) then
     Modifiers := Modifiers or MOD_SHIFT;
@@ -1520,49 +1520,49 @@ var
 begin
   if AppGlobals.ShortcutPlay > 0 then
   begin
-    ShortCutToHotKey(AppGlobals.ShortcutPlay, K, M);
+    ShortcutToHotKey(AppGlobals.ShortcutPlay, K, M);
     RegisterHotKey(Handle, 0, M, K);
   end;
 
   if AppGlobals.ShortcutPause > 0 then
   begin
-    ShortCutToHotKey(AppGlobals.ShortcutPause, K, M);
+    ShortcutToHotKey(AppGlobals.ShortcutPause, K, M);
     RegisterHotKey(Handle, 1, M, K);
   end;
 
   if AppGlobals.ShortcutStop > 0 then
   begin
-    ShortCutToHotKey(AppGlobals.ShortcutStop, K, M);
+    ShortcutToHotKey(AppGlobals.ShortcutStop, K, M);
     RegisterHotKey(Handle, 2, M, K);
   end;
 
   if AppGlobals.ShortcutNext > 0 then
   begin
-    ShortCutToHotKey(AppGlobals.ShortcutNext, K, M);
+    ShortcutToHotKey(AppGlobals.ShortcutNext, K, M);
     RegisterHotKey(Handle, 3, M, K);
   end;
 
   if AppGlobals.ShortcutPrev > 0 then
   begin
-    ShortCutToHotKey(AppGlobals.ShortcutPrev, K, M);
+    ShortcutToHotKey(AppGlobals.ShortcutPrev, K, M);
     RegisterHotKey(Handle, 4, M, K);
   end;
 
   if AppGlobals.ShortcutVolUp > 0 then
   begin
-    ShortCutToHotKey(AppGlobals.ShortcutVolUp, K, M);
+    ShortcutToHotKey(AppGlobals.ShortcutVolUp, K, M);
     RegisterHotKey(Handle, 5, M, K);
   end;
 
   if AppGlobals.ShortcutVolDown > 0 then
   begin
-    ShortCutToHotKey(AppGlobals.ShortcutVolDown, K, M);
+    ShortcutToHotKey(AppGlobals.ShortcutVolDown, K, M);
     RegisterHotKey(Handle, 6, M, K);
   end;
 
   if AppGlobals.ShortcutMute > 0 then
   begin
-    ShortCutToHotKey(AppGlobals.ShortcutMute, K, M);
+    ShortcutToHotKey(AppGlobals.ShortcutMute, K, M);
     RegisterHotkey(Handle, 7, M, K);
   end;
 end;
@@ -2609,13 +2609,6 @@ end;
 constructor TfrmStreamWriterMain.Create(AOwner: TComponent);
 begin
   inherited;
-
-  if Screen.PixelsPerInch <> 96 then
-  begin
-    mnuMain.Images := nil;
-    mnuStreamPopup.Images := nil;
-    mnuTray.Images := nil;
-  end;
 
   SetWindowLongPtrW(Handle, GWLP_USERDATA, Windows.HANDLE(Self));
 

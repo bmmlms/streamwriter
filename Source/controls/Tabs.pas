@@ -83,7 +83,7 @@ constructor TMainPageControl.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
 
-  TabHeight := MulDiv(22, Screen.PixelsPerInch, 96);
+  TabHeight := Scale96ToFont(22);
 end;
 
 function TMainPageControl.FindCut(Filename: string): TMainTabSheet;

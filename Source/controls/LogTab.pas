@@ -272,6 +272,8 @@ begin
 
   FLogTree := TLogTree.Create(Self);
   FLogTree.Align := alClient;
+  FLogTree.Images := modSharedData.imgImages;
+  FLogTree.PopupMenu.Images := modSharedData.imgImages;
   FLogTree.OnSelectionChange := LogTreeSelectionChange;
   FLogTree.Parent := Self;
 
@@ -283,11 +285,6 @@ begin
   FLogTree.FPopupMenu.ItemClear.OnClick := PopupMenuClick;
 
   ShowCloseButton := False;
-
-  FLogTree.Images := modSharedData.imgImages;
-
-  if Screen.PixelsPerInch = 96 then
-    FLogTree.PopupMenu.Images := modSharedData.imgImages;
 
   FLogPanel.FSearch.OnChange := TextChange;
   FLogPanel.FButtonDebug.OnClick := ButtonClick;
@@ -513,12 +510,12 @@ begin
   begin
     for i := 1 to Header.Columns.Count - 1 do
       Header.Columns[i].Width := AppGlobals.LogHeaderWidth[i];
-    FColType.Width := TMStringFunctions.GetTextSize(FColType.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
+    FColType.Width := TMStringFunctions.GetTextSize(FColType.Text, Font).cx + Scale96ToFont(50);
   end else
   begin
-    FColType.Width := TMStringFunctions.GetTextSize(FColType.Text, Font).cx + MulDiv(50, Screen.PixelsPerInch, 96);
-    FColTime.Width := TMStringFunctions.GetTextSize('00-00-00', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
-    FColSource.Width := TMStringFunctions.GetTextSize('wwwwwwwwwwwwwww', Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
+    FColType.Width := TMStringFunctions.GetTextSize(FColType.Text, Font).cx + Scale96ToFont(50);
+    FColTime.Width := TMStringFunctions.GetTextSize('00-00-00', Font).cx + Scale96ToFont(20);
+    FColSource.Width := TMStringFunctions.GetTextSize('wwwwwwwwwwwwwww', Font).cx + Scale96ToFont(20);
   end;
 
   if AppGlobals.LogHeaderPositionLoaded then

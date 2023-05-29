@@ -660,11 +660,11 @@ inherited frmSettings: TfrmSettings
         ClientWidth = 292
         TabOrder = 4
         object FlowPanel4: TFlowPanel
-          Left = 93
+          Left = 88
           Height = 25
           Top = 0
-          Width = 199
-          Align = alRight
+          Width = 204
+          Align = alClient
           BevelOuter = bvNone
           ControlList = <          
             item
@@ -681,7 +681,7 @@ inherited frmSettings: TfrmSettings
           FlowStyle = fsRightLeftTopBottom
           TabOrder = 0
           object btnRemove: TButton
-            Left = 130
+            Left = 135
             Height = 25
             Top = 0
             Width = 69
@@ -693,7 +693,7 @@ inherited frmSettings: TfrmSettings
             TabOrder = 0
           end
           object btnAdd: TMDropdownButton
-            Left = 65
+            Left = 70
             Height = 25
             Top = 0
             Width = 65

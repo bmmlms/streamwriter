@@ -19,14 +19,14 @@ object frmSetStreamData: TfrmSetStreamData
   ShowHint = True
   object pnlNav: TPanel
     Left = 4
-    Height = 39
-    Top = 357
+    Height = 34
+    Top = 362
     Width = 757
     Align = alBottom
     AutoSize = True
     BorderSpacing.Top = 8
     BevelOuter = bvNone
-    ClientHeight = 39
+    ClientHeight = 34
     ClientWidth = 757
     TabOrder = 0
     object Bevel2: TBevel
@@ -39,7 +39,7 @@ object frmSetStreamData: TfrmSetStreamData
     end
     object btnOK: TBitBtn
       Left = 657
-      Height = 35
+      Height = 30
       Top = 4
       Width = 100
       Align = alRight
@@ -52,7 +52,7 @@ object frmSetStreamData: TfrmSetStreamData
     end
     object btnCancel: TBitBtn
       Left = 0
-      Height = 35
+      Height = 30
       Top = 4
       Width = 100
       Align = alLeft
@@ -76,7 +76,7 @@ object frmSetStreamData: TfrmSetStreamData
     object Label21: TLabel
       Left = 0
       Height = 30
-      Top = 130
+      Top = 128
       Width = 416
       Align = alTop
       Anchors = [akTop, akRight]
@@ -87,12 +87,11 @@ object frmSetStreamData: TfrmSetStreamData
     end
     object Label1: TLabel
       Left = 0
-      Height = 17
+      Height = 15
       Top = 0
       Width = 416
       Align = alTop
       Anchors = [akTop, akRight]
-      AutoSize = False
       BorderSpacing.Bottom = 3
       Caption = 'Regular expressions set by other users:'
       ParentColor = False
@@ -100,8 +99,8 @@ object frmSetStreamData: TfrmSetStreamData
     end
     object lstRegExps: TListView
       Left = 0
-      Height = 95
-      Top = 163
+      Height = 97
+      Top = 161
       Width = 416
       Align = alClient
       Anchors = [akTop, akRight, akBottom]
@@ -122,7 +121,7 @@ object frmSetStreamData: TfrmSetStreamData
     object lstOtherRegExps: TListView
       Left = 0
       Height = 106
-      Top = 20
+      Top = 18
       Width = 416
       Align = alTop
       Anchors = [akTop, akRight]
@@ -149,10 +148,10 @@ object frmSetStreamData: TfrmSetStreamData
       Caption = 'Regular expression to add:'
       Control.Left = 0
       Control.Height = 23
-      Control.ButtonHint = 'Reset pattern to default'
       Control.Top = 18
       Control.Width = 416
       Control.Align = alClient
+      Control.ButtonHint = 'Reset pattern to default'
       Control.ButtonWidth = 23
       Control.Flat = True
       Control.Images = modSharedData.imgImages

@@ -109,14 +109,14 @@ begin
   FTimer.Interval := 1000;
   FTimer.Enabled := True;
 
-  FSpace := MulDiv(TMStringFunctions.GetTextSize('WWW', Font).cx, Screen.PixelsPerInch, 96);
+  FSpace := Scale96ToFont(TMStringFunctions.GetTextSize('WWW', Font).cx);
 
   P := Panels.Add;
   P.Width := 2 + 56 + TMStringFunctions.GetTextSize(_('Connecting...'), Font).cx + FSpace;
   P.Style := psOwnerDraw;
 
   P := Panels.Add;
-  P.Width := 18 + 4 + 18 + TMStringFunctions.GetTextSize('00000000', Font).cx + MulDiv(TMStringFunctions.GetTextSize('W', Font).cx, Screen.PixelsPerInch, 96) + 10;
+  P.Width := 18 + 4 + 18 + TMStringFunctions.GetTextSize('00000000', Font).cx + Scale96ToFont(TMStringFunctions.GetTextSize('W', Font).cx) + 10;
   P.Style := psOwnerDraw;
 
   P := Panels.Add;
@@ -229,8 +229,8 @@ begin
 
   PanelRect := R;
 
-  ImageTop := PanelRect.Top + (PanelRect.Bottom - PanelRect.Top) div 2 - MulDiv(16, Screen.PixelsPerInch, 96) div 2;
-  TextTop := PanelRect.Top + ((PanelRect.Bottom - PanelRect.Top) div 2) - Canvas.TextHeight(MeasureTextHeightString) div 2;
+  ImageTop := PanelRect.Top + PanelRect.Height div 2 - 16 div 2;
+  TextTop := PanelRect.Top + PanelRect.Height div 2 - Canvas.TextHeight(MeasureTextHeightString) div 2;
 
   Canvas.Brush.Color := clBtnFace;
   Canvas.FillRect(PanelRect);

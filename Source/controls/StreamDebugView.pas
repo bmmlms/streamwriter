@@ -247,7 +247,7 @@ begin
   Header.Options := [hoAutoResize];
 
   Header.Columns.Add;
-  Header.Columns[0].MinWidth := TMStringFunctions.GetTextSize('00-00-00', Font).cx + MulDiv(16 + Margin * 2 + TextMargin, Screen.PixelsPerInch, 96);
+  Header.Columns[0].MinWidth := TMStringFunctions.GetTextSize('00-00-00', Font).cx + Scale96ToFont(16 + Margin * 2 + TextMargin);
   Header.Columns[0].MaxWidth := Header.Columns[0].MinWidth;
   Header.Columns[0].Options := Header.Columns[0].Options - [coResizable];
   Header.Columns.Add;

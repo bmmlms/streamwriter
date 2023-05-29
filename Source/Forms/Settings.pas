@@ -490,8 +490,11 @@ procedure TfrmSettings.DoCreate;
 begin
   inherited;
 
-  Width := 640;
-  Height := 450;
+  Width := Scale96ToFont(640);
+  Height := Scale96ToFont(450);
+
+  // Strangely this SpinEdit is not scaled on high DPI
+  txtSilenceBufferSeconds.Width := Scale96ToFont(txtSilenceBufferSeconds.Width);
 end;
 
 procedure TfrmSettings.EnablePanel(Panel: TPanel; Enable: Boolean);
@@ -1085,7 +1088,7 @@ begin
   txtHotkey.Enabled := lstHotkeys.Selected <> nil;
   if txtHotkey.Enabled then
   begin
-    txtHotkey.Control.HotKey := TShortCut(lstHotkeys.Selected.Data);
+    txtHotkey.Control.HotKey := TShortcut(lstHotkeys.Selected.Data);
   end else
     txtHotkey.Control.HotKey := 0;
 end;
@@ -1985,7 +1988,7 @@ begin
       ListItem.Data := nil;
     end;
 
-  lstHotkeys.Selected.SubItems[0] := ShortCutToText(txtHotkey.Control.HotKey);
+  lstHotkeys.Selected.SubItems[0] := ShortcutToText(txtHotkey.Control.HotKey);
   lstHotkeys.Selected.Data := Pointer(txtHotkey.Control.HotKey);
 end;
 
@@ -2436,42 +2439,42 @@ begin
   if lstHotkeys.Items.Count = 0 then
   begin
     Item := lstHotkeys.Items.Add;
-    Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutPlay));
+    Item.SubItems.Add(ShortcutToText(AppGlobals.ShortcutPlay));
     Item.Data := Pointer(AppGlobals.ShortcutPlay);
     Item.ImageIndex := TImages.KEYBOARD;
 
     Item := lstHotkeys.Items.Add;
-    Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutPause));
+    Item.SubItems.Add(ShortcutToText(AppGlobals.ShortcutPause));
     Item.Data := Pointer(AppGlobals.ShortcutPause);
     Item.ImageIndex := TImages.KEYBOARD;
 
     Item := lstHotkeys.Items.Add;
-    Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutStop));
+    Item.SubItems.Add(ShortcutToText(AppGlobals.ShortcutStop));
     Item.Data := Pointer(AppGlobals.ShortcutStop);
     Item.ImageIndex := TImages.KEYBOARD;
 
     Item := lstHotkeys.Items.Add;
-    Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutNext));
+    Item.SubItems.Add(ShortcutToText(AppGlobals.ShortcutNext));
     Item.Data := Pointer(AppGlobals.ShortcutNext);
     Item.ImageIndex := TImages.KEYBOARD;
 
     Item := lstHotkeys.Items.Add;
-    Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutPrev));
+    Item.SubItems.Add(ShortcutToText(AppGlobals.ShortcutPrev));
     Item.Data := Pointer(AppGlobals.ShortcutPrev);
     Item.ImageIndex := TImages.KEYBOARD;
 
     Item := lstHotkeys.Items.Add;
-    Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutVolUp));
+    Item.SubItems.Add(ShortcutToText(AppGlobals.ShortcutVolUp));
     Item.Data := Pointer(AppGlobals.ShortcutVolUp);
     Item.ImageIndex := TImages.KEYBOARD;
 
     Item := lstHotkeys.Items.Add;
-    Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutVolDown));
+    Item.SubItems.Add(ShortcutToText(AppGlobals.ShortcutVolDown));
     Item.Data := Pointer(AppGlobals.ShortcutVolDown);
     Item.ImageIndex := TImages.KEYBOARD;
 
     Item := lstHotkeys.Items.Add;
-    Item.SubItems.Add(ShortCutToText(AppGlobals.ShortcutMute));
+    Item.SubItems.Add(ShortcutToText(AppGlobals.ShortcutMute));
     Item.Data := Pointer(AppGlobals.ShortcutMute);
     Item.ImageIndex := TImages.KEYBOARD;
   end;

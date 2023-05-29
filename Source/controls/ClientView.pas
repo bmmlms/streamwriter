@@ -509,11 +509,11 @@ begin
         Header.Columns[i].Width := AppGlobals.ClientHeaderWidth[i];
   end else
   begin
-    FColRcvd.Width := Max(TMStringFunctions.GetTextSize(FColRcvd.Text, Font).cx, TMStringFunctions.GetTextSize('111,11 KB', Font).cx) + MulDiv(20, Screen.PixelsPerInch, 96);
-    FColSpeed.Width := Max(TMStringFunctions.GetTextSize(FColSpeed.Text, Font).cx, TMStringFunctions.GetTextSize('11,11 KB/s', Font).cx) + MulDiv(20, Screen.PixelsPerInch, 96);
-    FColSongs.Width := TMStringFunctions.GetTextSize(FColSongs.Text, Font).cx + MulDiv(20, Screen.PixelsPerInch, 96);
-    FColStatus.Width := Max(TMStringFunctions.GetTextSize(FColStatus.Text, Font).cx, MulDiv(80, Screen.PixelsPerInch, 96)) + MulDiv(20, Screen.PixelsPerInch, 96);
-    FColName.Width := MulDiv(150, Screen.PixelsPerInch, 96);
+    FColRcvd.Width := Max(TMStringFunctions.GetTextSize(FColRcvd.Text, Font).cx, TMStringFunctions.GetTextSize('111,11 KB', Font).cx) + Scale96ToFont(20);
+    FColSpeed.Width := Max(TMStringFunctions.GetTextSize(FColSpeed.Text, Font).cx, TMStringFunctions.GetTextSize('11,11 KB/s', Font).cx) + Scale96ToFont(20);
+    FColSongs.Width := TMStringFunctions.GetTextSize(FColSongs.Text, Font).cx + Scale96ToFont(20);
+    FColStatus.Width := Max(TMStringFunctions.GetTextSize(FColStatus.Text, Font).cx, Scale96ToFont(80)) + Scale96ToFont(20);
+    FColName.Width := Scale96ToFont(150);
   end;
 
   if AppGlobals.ClientHeaderPositionLoaded then
