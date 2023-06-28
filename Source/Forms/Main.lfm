@@ -1,10 +1,10 @@
 object frmStreamWriterMain: TfrmStreamWriterMain
   Left = 549
-  Height = 370
+  Height = 520
   Top = 450
   Width = 870
   Caption = 'streamWriter'
-  ClientHeight = 370
+  ClientHeight = 520
   ClientWidth = 870
   Color = clBtnFace
   Constraints.MinHeight = 370
@@ -18,6 +18,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
   OnShortCut = FormShortCut
   OnShow = FormShow
   ShowHint = True
+  LCLVersion = '2.2.6.0'
   object tbClients: TMToolbarForcedHorizontal
     Left = 0
     Height = 23
@@ -38,7 +39,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     end
     object ToolButton7: TToolButton
       Left = 23
-      Height = 24
+      Height = 8
       Top = 0
       ImageIndex = 13
       Style = tbsSeparator
@@ -60,7 +61,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     end
     object ToolButton3: TToolButton
       Left = 100
-      Height = 24
+      Height = 8
       Top = 0
       Caption = '-'
       ImageIndex = 7
@@ -84,7 +85,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     end
     object ToolButton1: TToolButton
       Left = 177
-      Height = 24
+      Height = 8
       Top = 0
       Caption = '-'
       ImageIndex = 7
@@ -102,7 +103,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     end
     object ToolButton2: TToolButton
       Left = 231
-      Height = 24
+      Height = 8
       Top = 0
       Caption = '-'
       ImageIndex = 10
@@ -130,7 +131,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     end
     object ToolButton10: TToolButton
       Left = 331
-      Height = 24
+      Height = 8
       Top = 0
       Caption = 'ToolButton10'
       ImageIndex = 12
@@ -153,7 +154,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     end
     object ToolButton8: TToolButton
       Left = 408
-      Height = 24
+      Height = 8
       Top = 0
       Caption = 'ToolButton8'
       ImageIndex = 12
@@ -176,7 +177,7 @@ object frmStreamWriterMain: TfrmStreamWriterMain
     end
     object ToolButton4: TToolButton
       Left = 485
-      Height = 24
+      Height = 8
       Top = 0
       Caption = '-'
       ImageIndex = 9

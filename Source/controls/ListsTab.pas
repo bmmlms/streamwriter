@@ -514,7 +514,7 @@ procedure TTitlePanel.RemoveEntry(Text: string; ServerTitleHash: Cardinal; ListT
 var
   i: Integer;
   Title: TTitleInfo;
-  List: TList<TTitleInfo>;
+  List: TSaveIgnoreList;
 begin
   case ListType of
     ltSave:
@@ -566,11 +566,11 @@ var
   NodeData: PTitleNodeData;
   Dlg: TSaveDialog;
   Lst: TStringList;
-  ExportList: TList<TTitleInfo>;
+  ExportList: TSaveIgnoreList;
 begin
   Node := FTree.GetFirstSelected;
 
-  ExportList := TList<TTitleInfo>.Create;
+  ExportList := TSaveIgnoreList.Create;
   try
     if (Node <> nil) then
     begin
@@ -693,7 +693,7 @@ var
   Dlg: TOpenDialog;
   Lst: TStringList;
   Title: TTitleInfo;
-  List: TList<TTitleInfo>;
+  List: TSaveIgnoreList;
   ParentNode: PVirtualNode;
   ImportData, NewImportData: TList<TImportListEntry>;
   Hashes: TSyncWishlistRecordArray = [];
@@ -1317,7 +1317,7 @@ end;
 
 procedure TTitlePanel.TreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
 var
-  List: TList<TTitleInfo>;
+  List: TSaveIgnoreList;
   NodeData: PTitleNodeData;
   i: Integer;
 begin
@@ -2030,8 +2030,7 @@ var
   Node: PVirtualNode;
   NodeData, ParentNodeData: PTitleNodeData;
   Title: TTitleInfo;
-  List: TList<TTitleInfo>;
-
+  List: TSaveIgnoreList;
   S: string;
   Strings, Files: TStringArray;
 begin

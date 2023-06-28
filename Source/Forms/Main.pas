@@ -2116,7 +2116,7 @@ var
   Hash: Cardinal;
   Found: Boolean;
   T: TTitleInfo;
-  List: TList<TTitleInfo>;
+  List: TSaveIgnoreList;
 begin
   if Client = nil then
     if ListType = ltSave then
@@ -2154,7 +2154,7 @@ end;
 procedure TfrmStreamWriterMain.tabClientsRemoveTitleFromList(Sender: TObject; Client: TICEClient; ListType: TListType; Title: string; ServerTitleHash: Cardinal);
 var
   i: Integer;
-  List: TList<TTitleInfo>;
+  List: TSaveIgnoreList;
   T: TTitleInfo;
 begin
   if Client = nil then

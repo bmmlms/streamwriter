@@ -825,7 +825,7 @@ end;
 
 procedure TClientTab.ClientManagerTitleAllowed(Sender: TObject; Title: string; var Allowed: Boolean; var Match: string; var Filter: Integer);
 
-  function ContainsTitle(List: TList<TTitleInfo>; Title: string; var Match: string): Boolean;
+  function ContainsTitle(List: TSaveIgnoreList; Title: string; var Match: string): Boolean;
   var
     i: Integer;
   begin
