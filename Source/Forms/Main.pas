@@ -869,7 +869,9 @@ begin
   DefW := Scale96ToFont(Width);
   DefH := Scale96ToFont(Height);
 
-  if (AppGlobals.MainWidth <> -1) and (AppGlobals.MainHeight <> -1) and (AppGlobals.MainLeft <> -1) and (AppGlobals.MainTop <> -1) then
+  if (AppGlobals.MainWidth >= Constraints.MinWidth) and (AppGlobals.MainHeight >= Constraints.MinHeight) and
+     (AppGlobals.MainWidth <= Screen.WorkAreaWidth) and (AppGlobals.MainHeight <= Screen.WorkAreaHeight) and
+     (AppGlobals.MainLeft <> -1) and (AppGlobals.MainTop <> -1) then
   begin
     Width := AppGlobals.MainWidth;
     Height := AppGlobals.MainHeight;
