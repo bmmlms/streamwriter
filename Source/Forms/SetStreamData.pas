@@ -76,7 +76,9 @@ type
     procedure btnAddRegExClick(Sender: TObject);
     procedure btnRemoveRegExClick(Sender: TObject);
     procedure btnResetTitlePatternClick(Sender: TObject);
+    procedure lstOtherRegExpsResize(Sender: TObject);
     procedure lstRegExpsChange(Sender: TObject; Item: TListItem; Change: TItemChange);
+    procedure lstRegExpsResize(Sender: TObject);
     procedure txtRegExChange(Sender: TObject);
     procedure btnOKClick(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -138,7 +140,7 @@ begin
 
   LineHeight := Canvas.GetTextHeight(MeasureTextHeightString);
 
-  CellRect.Top := CellRect.Top + 2;
+  CellRect.Top := CellRect.Top + Scale96ToFont(2);
   DrawFormat := DT_TOP or DT_LEFT;
 
   MaxTextWidth := ClientWidth - PaintInfo.ContentRect.Left - TextMargin * 2;
@@ -149,7 +151,7 @@ begin
 
   inherited DoTextDrawing(PaintInfo, NewText, CellRect, DrawFormat);
 
-  CellRect.Top := CellRect.Top + 2 + LineHeight;
+  CellRect.Top := CellRect.Top + Scale96ToFont(2) + LineHeight;
 
   NewText := Format('%s %s', [_('Artist:'), NodeData.ParsedArtist]);
   if TMStringFunctions.GetTextSize(NewText, Font).Width > MaxTextWidth then
@@ -157,7 +159,7 @@ begin
 
   inherited DoTextDrawing(PaintInfo, NewText, CellRect, DrawFormat);
 
-  CellRect.Top := CellRect.Top + 2 + LineHeight;
+  CellRect.Top := CellRect.Top + Scale96ToFont(2) + LineHeight;
 
   NewText := Format('%s %s', [_('Title:'), NodeData.ParsedTitle]);
   if TMStringFunctions.GetTextSize(NewText, Font).Width > MaxTextWidth then
@@ -242,6 +244,11 @@ begin
   txtRegEx.ApplyFocus;
 end;
 
+procedure TfrmSetStreamData.lstOtherRegExpsResize(Sender: TObject);
+begin
+  lstOtherRegExps.Columns[0].Width := lstOtherRegExps.Width - GetSystemMetrics(SM_CXVSCROLL) - GetSystemMetrics(SM_CXEDGE) * 2;
+end;
+
 constructor TfrmSetStreamData.Create(AOwner: TComponent; StreamID: Integer);
 begin
   inherited Create(AOwner);
@@ -253,13 +260,13 @@ begin
   FTitleTree := TTitleTree.Create(Self);
   FTitleTree.Align := alLeft;
   FTitleTree.Images := modSharedData.imgImages;
-  FTitleTree.Width := 350;
-  FTitleTree.BorderSpacing.Right := 8;
+  FTitleTree.Width := Scale96ToFont(350);
+  FTitleTree.BorderSpacing.Right := Scale96ToFont(8);
   FTitleTree.Parent := Self;
 
   FTitleTree.NodeDataSize := SizeOf(TTitleNodeData);
   FTitleTree.IncrementalSearch := isVisibleOnly;
-  FTitleTree.DefaultNodeHeight := Trunc(TMStringFunctions.GetTextSize(MeasureTextHeightString, FTitleTree.Font).cy * 3) + 8;
+  FTitleTree.DefaultNodeHeight := Trunc(TMStringFunctions.GetTextSize(MeasureTextHeightString, FTitleTree.Font).Height * 3) + Scale96ToFont(8);
 
   FTitleTree.TreeOptions.SelectionOptions := [toDisableDrawSelection, toRightClickSelect, toFullRowSelect];
   FTitleTree.TreeOptions.PaintOptions := [toThemeAware, toHideFocusRect];
@@ -365,6 +372,11 @@ end;
 procedure TfrmSetStreamData.lstRegExpsChange(Sender: TObject; Item: TListItem; Change: TItemChange);
 begin
   btnRemoveRegEx.Enabled := lstRegExps.Selected <> nil;
+end;
+
+procedure TfrmSetStreamData.lstRegExpsResize(Sender: TObject);
+begin
+  lstRegExps.Columns[0].Width := lstRegExps.Width - GetSystemMetrics(SM_CXVSCROLL) - GetSystemMetrics(SM_CXEDGE) * 2;
 end;
 
 procedure TfrmSetStreamData.lstRegExpsEdited(Sender: TObject; Item: TListItem; var S: string);

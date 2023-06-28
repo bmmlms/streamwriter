@@ -646,7 +646,7 @@ begin
   FTimeLabel.Align := alRight;
   FTimeLabel.Layout := tlCenter;
   FTimeLabel.Alignment := taCenter;
-  FTimeLabel.BorderSpacing.Right := 4;
+  FTimeLabel.BorderSpacing.Right := Scale96ToFont(4);
   FTimeLabel.Parent := FToolbarPanel;
 
   FActionPlay := GetAction('actPlay');
@@ -686,7 +686,7 @@ begin
 
   FSideBar := TSidebar.Create(Self);
   FSideBar.Align := alRight;
-  FSideBar.BorderSpacing.Top := 4;
+  FSideBar.BorderSpacing.Top := Scale96ToFont(4);
   FSideBar.FDebugView.DebugView.OnClear := DebugClear;
   FSideBar.FBrowserView.StreamTree.OnAction := StreamBrowserAction;
   FSideBar.FBrowserView.StreamTree.OnIsInClientList := StreamBrowserIsInClientList;
@@ -696,7 +696,7 @@ begin
   FClientView := TMClientView.Create(Self, Popup, FSideBar.FBrowserView.StreamTree);
   FClientView.Align := alClient;
   FClientView.Images := modSharedData.imgImages;
-  FClientView.BorderSpacing.Top := 4;
+  FClientView.BorderSpacing.Top := Scale96ToFont(4);
   FClientView.OnSelectionChange := FClientViewSelectionChange;
   FClientView.OnNodeDblClick := FClientViewNodeDblClick;
   FClientView.OnKeyPress := FClientViewKeyPress;
@@ -708,7 +708,7 @@ begin
 
   FSplitter.Width := Scale96ToFont(4);
   FSplitter.MinSize := Scale96ToFont(220);
-  FSplitter.Left := FSideBar.Left - FSplitter.Width - 5;
+  FSplitter.Left := FSideBar.Left - FSplitter.Width - Scale96ToFont(5);
   FSideBar.Width := AppGlobals.SidebarWidth;
 end;
 

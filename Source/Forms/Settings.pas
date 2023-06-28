@@ -1108,7 +1108,7 @@ end;
 
 procedure TfrmSettings.lstIgnoreTitlesResize(Sender: TObject);
 begin
-  lstIgnoreTitles.Columns[0].Width := lstIgnoreTitles.ClientWidth - 25;
+  lstIgnoreTitles.Columns[0].Width := lstIgnoreTitles.Width - GetSystemMetrics(SM_CXVSCROLL) - GetSystemMetrics(SM_CXEDGE) * 2;
 end;
 
 procedure TfrmSettings.lstOutputFormatSelect(Sender: TObject);
@@ -1166,7 +1166,7 @@ end;
 
 procedure TfrmSettings.lstAddonsResize(Sender: TObject);
 begin
-  lstAddons.Columns[0].Width := lstAddons.ClientWidth;
+  lstAddons.Columns[0].Width := lstAddons.Width - GetSystemMetrics(SM_CXVSCROLL) - GetSystemMetrics(SM_CXEDGE) * 2;
 end;
 
 procedure TfrmSettings.lstPostProcessItemChecked(Sender: TObject; Item: TListItem);
@@ -1207,7 +1207,7 @@ end;
 
 procedure TfrmSettings.lstPostProcessResize(Sender: TObject);
 begin
-  lstPostProcess.Columns[0].Width := lstPostProcess.ClientWidth - 25;
+  lstPostProcess.Columns[0].Width := lstPostProcess.Width - GetSystemMetrics(SM_CXVSCROLL) - GetSystemMetrics(SM_CXEDGE) * 2;
 end;
 
 procedure TfrmSettings.lstPostProcessSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
@@ -1264,7 +1264,7 @@ end;
 
 procedure TfrmSettings.lstRegExesResize(Sender: TObject);
 begin
-  lstRegExes.Columns[0].Width := lstRegExes.ClientWidth - 25;
+  lstRegExes.Columns[0].Width := lstRegExes.Width - GetSystemMetrics(SM_CXVSCROLL) - GetSystemMetrics(SM_CXEDGE) * 2;
 end;
 
 procedure TfrmSettings.optAdjustClick(Sender: TObject);
@@ -3046,8 +3046,8 @@ begin
     begin
       if TPanel(Self.Controls[i]) = pnlLeft then
         Continue;
-      Self.Controls[i].Left := 96;
-      Self.Controls[i].Top := 36;
+      Self.Controls[i].Left := Scale96ToFont(96);
+      Self.Controls[i].Top := Scale96ToFont(36);
       TPanel(Self.Controls[i]).BevelOuter := bvNone;
     end;
 

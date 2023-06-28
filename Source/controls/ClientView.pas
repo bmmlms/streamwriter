@@ -509,10 +509,10 @@ begin
         Header.Columns[i].Width := AppGlobals.ClientHeaderWidth[i];
   end else
   begin
-    FColRcvd.Width := Max(TMStringFunctions.GetTextSize(FColRcvd.Text, Font).cx, TMStringFunctions.GetTextSize('111,11 KB', Font).cx) + Scale96ToFont(20);
-    FColSpeed.Width := Max(TMStringFunctions.GetTextSize(FColSpeed.Text, Font).cx, TMStringFunctions.GetTextSize('11,11 KB/s', Font).cx) + Scale96ToFont(20);
-    FColSongs.Width := TMStringFunctions.GetTextSize(FColSongs.Text, Font).cx + Scale96ToFont(20);
-    FColStatus.Width := Max(TMStringFunctions.GetTextSize(FColStatus.Text, Font).cx, Scale96ToFont(80)) + Scale96ToFont(20);
+    FColRcvd.FitColumn('111,11 KB');
+    FColSpeed.FitColumn('11,11 KB/s');
+    FColSongs.FitColumn;
+    FColStatus.FitColumn(_('Stopped'));
     FColName.Width := Scale96ToFont(150);
   end;
 

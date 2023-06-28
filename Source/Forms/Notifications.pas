@@ -139,8 +139,8 @@ begin
 
       Width := FBitmap.Width;
       Height := FBitmap.Height;
-      Left := Screen.PrimaryMonitor.WorkareaRect.Right - Width - 15;
-      Top := Screen.PrimaryMonitor.WorkareaRect.Bottom - Height - 15;
+      Left := Screen.PrimaryMonitor.WorkareaRect.Right - Width - Scale96ToFont(15);
+      Top := Screen.PrimaryMonitor.WorkareaRect.Bottom - Height - Scale96ToFont(15);
 
       if Visible then
         Invalidate;

@@ -39,6 +39,7 @@ uses
   Math,
   MControls,
   Menus,
+  MStringFunctions,
   MVirtualTree,
   SharedData,
   SysUtils,
@@ -47,7 +48,6 @@ uses
   Windows;
 
 type
-
   TMenuColEvent = procedure(Sender: TVirtualStringTree; Index: Integer; Checken: Boolean) of object;
 
   TMTreeColumnPopup = class(TPopupMenu)
@@ -71,6 +71,14 @@ type
     procedure PostTranslate; virtual;
   end;
 
+  { TVirtualTreeColumnHelper }
+
+  TVirtualTreeColumnHelper = class helper for TVirtualTreeColumn
+  public
+    procedure FitColumn(const LongestContentString: string = ''); overload;
+    procedure FitColumn(const IconCount: Integer); overload;
+  end;
+
 implementation
 
 { TMSWVirtualTree }
@@ -87,7 +95,6 @@ begin
   end else
     ResetColors;
 end;
-
 
 { TMTreeColumnPopup }
 
@@ -122,6 +129,23 @@ begin
 
   for i := 0 to Items.Count - 1 do
     Items[i].Checked := coVisible in TVirtualTreeColumn(Items[i].Tag).Options;
+end;
+
+{ TVirtualTreeColumnHelper }
+
+procedure TVirtualTreeColumnHelper.FitColumn(const LongestContentString: string);
+begin
+  Width := IfThen(Index = 0, TVirtualStringTree(Owner.Header.Treeview).Indent, 0)
+    + Margin * 2
+    + Spacing * 2
+    + Max(TMStringFunctions.GetTextSize(Text, Owner.Header.Font).Width + Spacing + Owner.Header.Treeview.Scale96ToFont(16), TMStringFunctions.GetTextSize(LongestContentString, Owner.Header.Treeview.Font).Width);
+end;
+
+procedure TVirtualTreeColumnHelper.FitColumn(const IconCount: Integer);
+begin
+  Width := IfThen(Index = 0, TVirtualStringTree(Owner.Header.Treeview).Indent, 0)
+    + Margin * 2
+    + Max(Spacing * 2 + TMStringFunctions.GetTextSize(Text, Owner.Header.Font).Width + Spacing + Owner.Header.Treeview.Scale96ToFont(16), Owner.Header.Treeview.Scale96ToFont(IconCount * 16 + (IconCount - 1) * 2));
 end;
 
 end.

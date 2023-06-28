@@ -99,8 +99,8 @@ begin
       FEqualizers[i].GripperVisible := True;
       FEqualizers[i].Top := 0;
       FEqualizers[i].Max := 30;
-      FEqualizers[i].BorderSpacing.Left := 1;
-      FEqualizers[i].BorderSpacing.Right := 1;
+      FEqualizers[i].BorderSpacing.Left := Scale96ToFont(1);
+      FEqualizers[i].BorderSpacing.Right := Scale96ToFont(1);
       FEqualizers[i].OnPositionChanged := EQPositionChanged;
       FEqualizers[i].Parent := Self;
 
@@ -209,8 +209,11 @@ begin
   inherited;
 
   FEqualizer := TEqualizer.Create(Self);
-  FEqualizer.Parent := pnlEqualizer;
   FEqualizer.Align := alClient;
+  FEqualizer.Parent := pnlEqualizer;
+
+  Width := Scale96ToFont(Width);
+  Height := Scale96ToFont(Height);
 end;
 
 procedure TfrmEqualizer.FormCreate(Sender: TObject);

@@ -159,7 +159,6 @@ type
 
   TCutPaintBox = class(TCustomControl)
   const
-    ScrollbarHeight = 12;
     MinimumDisplayedSampleCount = 30;
   private
     FWaveBuf: Graphics.TBitmap;
@@ -176,6 +175,9 @@ type
 
     FMouseOldX, FMouseOldY, FMouseMoveStartX: Integer;
     FControlMode: TControlMode;
+    FScrollbarHeight: Integer;
+    FSpacing: Integer;
+    FEdge: Integer;
 
     procedure BuildBuffer;
     procedure BuildDrawBuffer;
@@ -423,7 +425,7 @@ begin
 
   FProgressBarLoad := TProgressBar.Create(Self);
   FProgressBarLoad.Max := 100;
-  FProgressBarLoad.Width := 300;
+  FProgressBarLoad.Width := Scale96ToFont(300);
   FProgressBarLoad.Height := Scale96ToFont(PROGRESSBAR_HEIGHT);
   FProgressBarLoad.Parent := Self;
   FProgressBarLoad.AnchorHorizontalCenterTo(Self);
@@ -1352,7 +1354,7 @@ procedure TCutPaintBox.BuildBuffer;
       originalMode := Pen.Mode;
       Pen.Mode := TPenMode.pmNotXor;
       Brush.Color := FillColor;
-      Rectangle(rectStart, 0, rectEnd, FWaveBuf.Height - ScrollbarHeight - 2);
+      Rectangle(RectStart, 0, RectEnd, FWaveBuf.Height - FScrollbarHeight - FEdge);
       Pen.Mode := originalMode;
     end;
   end;
@@ -1360,13 +1362,13 @@ procedure TCutPaintBox.BuildBuffer;
   procedure DrawScrollBar(Color: TColor);
   var
     StartX, StartY, EndX: Integer;
-    y: Cardinal;
+    Y: Cardinal;
   begin
     with FWaveBuf.Canvas do
     begin
       //Draw Outline
       Pen.Color := Color;
-      StartY := Height - 2 - ScrollbarHeight;
+      StartY := Height - 2 - FScrollbarHeight;
       MoveTo(1, StartY);
       LineTo(Width - 2, StartY);
       LineTo(Width - 2, Height - 2);
@@ -1378,7 +1380,7 @@ procedure TCutPaintBox.BuildBuffer;
       EndX := Trunc((FCutView.FWaveData.ZoomEnd * (FWaveBuf.Width - 6)) / High(FCutView.FWaveData.WaveArray)) + 3;
       if StartX = EndX then
         EndX := StartX + 1;
-      for y := 0 to ScrollbarHeight - 4 do
+      for y := 0 to FScrollbarHeight - 4 do
       begin
         MoveTo(StartX, StartY + y + 2);
         LineTo(EndX, StartY + y + 2);
@@ -1393,7 +1395,6 @@ var
   LBuf, RBuf: Cardinal;
   Added: Cardinal;
   HT: Cardinal;
-  TS: TSize;
   ArrayFrom, ArrayTo: Cardinal;
   L1, L2: Cardinal;
   CS, CE: Cardinal;
@@ -1424,10 +1425,9 @@ begin
 
   if TextWrite <> '' then
   begin
-    TS := TMStringFunctions.GetTextSize(TextWrite, Canvas.Font);
     FWaveBuf.Canvas.Font.Color := clWhite;
     SetBkMode(FWaveBuf.Canvas.Handle, TRANSPARENT);
-    FWaveBuf.Canvas.TextOut(FWaveBuf.Width div 2 - TS.cx div 2, FWaveBuf.Height div 2 - TS.cy - Scale96ToFont(PROGRESSBAR_HEIGHT) div 2 - 4, TextWrite);
+    FWaveBuf.Canvas.TextOut(FWaveBuf.Width div 2 - Canvas.GetTextWidth(TextWrite) div 2, FWaveBuf.Height div 2 - Canvas.GetTextHeight(TextWrite) - Scale96ToFont(PROGRESSBAR_HEIGHT) div 2 - FSpacing, TextWrite);
     Exit;
   end;
 
@@ -1437,7 +1437,7 @@ begin
   if Length(FCutView.FWaveData.WaveArray) = 0 then
     Exit;
 
-  ht := (FWaveBuf.Height div 2) - ScrollbarHeight - 1;
+  ht := (FWaveBuf.Height div 2) - FScrollbarHeight - 1;
 
   LBuf := 0;
   RBuf := 0;
@@ -1473,7 +1473,7 @@ begin
 
     FWaveBuf.Canvas.Brush.Color := clGray;
     FWaveBuf.Canvas.FillRect(Classes.Rect(L1, 0, L2, ht - 1));
-    FWaveBuf.Canvas.FillRect(Classes.Rect(L1, ht + 1, L2, FWaveBuf.Height - ScrollbarHeight - 3));
+    FWaveBuf.Canvas.FillRect(Classes.Rect(L1, ht + 1, L2, FWaveBuf.Height - FScrollbarHeight - FEdge));
   end;
 
   ArrayFrom := FCutView.FWaveData.ZoomStart;
@@ -1545,26 +1545,21 @@ procedure TCutPaintBox.BuildDrawBuffer;
     L := Trunc(((ArrayIdx - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FDrawBuf.Width);
 
     FDrawBuf.Canvas.Pen.Color := Color;
-    FDrawBuf.Canvas.MoveTo(L, 0);
-    FDrawBuf.Canvas.LineTo(L, FDrawBuf.Height - ScrollbarHeight - 2);
-
-    FDrawBuf.Canvas.Brush.Color := clBlack;
+    FDrawBuf.Canvas.Line(L, FEdge, L, FDrawBuf.Height - FScrollbarHeight - FEdge * 2);
   end;
 
-  procedure DrawLineText(ArrayIdx, X: Cardinal);
+  procedure DrawLineText(ArrayIdx, Y: Cardinal);
   var
     L, TextWidth: Integer;
     SecText: string;
   begin
     L := Trunc(((ArrayIdx - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FDrawBuf.Width);
     SecText := BuildTime(FCutView.FWaveData.WaveArray[ArrayIdx].Sec, True);
-    FDrawBuf.Canvas.Font.Color := clWhite;
-    SetBkMode(FDrawBuf.Canvas.Handle, TRANSPARENT);
     TextWidth := FDrawBuf.Canvas.GetTextWidth(SecText);
-    if FDrawBuf.Width < L + 4 + TextWidth then
-      FDrawBuf.Canvas.TextOut(L - 4 - TextWidth, X, SecText)
+    if FDrawBuf.Width < L + FSpacing + TextWidth then
+      FDrawBuf.Canvas.TextOut(L - FSpacing - TextWidth, Y, SecText)
     else
-      FDrawBuf.Canvas.TextOut(L + 4, X, SecText);
+      FDrawBuf.Canvas.TextOut(L + FSpacing, Y, SecText);
   end;
 
 begin
@@ -1579,16 +1574,16 @@ begin
   begin
     DrawLine(FStartLine, FStartColor);
     DrawLine(FEndLine, FEndColor);
-
-    DrawLineText(FStartLine, 16);
-    DrawLineText(FEndLine, 28);
-
     DrawLine(FPlayLine, FPlayColor);
-    DrawLineText(FPlayLine, 40);
 
     FDrawBuf.Canvas.Font.Color := clWhite;
+    SetBkMode(FDrawBuf.Canvas.Handle, TRANSPARENT);
 
-    FDrawBuf.Canvas.TextOut(4, 4, BuildTime(FCutView.FWaveData.Secs, True) + ' - ' + TFunctions.RemoveFileExt(ExtractFileName(FCutView.FOriginalFilename)));
+    FDrawBuf.Canvas.TextOut(FSpacing, FSpacing, BuildTime(FCutView.FWaveData.Secs, True) + ' - ' + TFunctions.RemoveFileExt(ExtractFileName(FCutView.FOriginalFilename)));
+
+    DrawLineText(FPlayLine, FSpacing * 2 + FDrawBuf.Canvas.GetTextHeight('Ay'));
+    DrawLineText(FStartLine, FSpacing * 3 + FDrawBuf.Canvas.GetTextHeight('Ay') * 2);
+    DrawLineText(FEndLine, FSpacing * 4 + FDrawBuf.Canvas.GetTextHeight('Ay') * 3);
   end;
 end;
 
@@ -1606,6 +1601,9 @@ begin
 
   FControlMode := cmNone;
   TabStop := True;
+  FScrollbarHeight := GetSystemMetrics(SM_CYHSCROLL);
+  FSpacing := Scale96ToFont(4);
+  FEdge := GetSystemMetrics(SM_CXEDGE);
 
   FCutView := TCutView(AOwner);
   if FWaveBuf = nil then
@@ -1657,7 +1655,7 @@ end;
 
 function TCutPaintBox.GetControlMode(Y: Integer): TControlMode;
 begin
-  if Y >= Height - ScrollbarHeight - 2 then
+  if Y >= Height - FScrollbarHeight - FEdge then
     Result := cmScroll
   else
     Result := cmView;

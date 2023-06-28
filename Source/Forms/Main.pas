@@ -661,8 +661,8 @@ procedure TfrmStreamWriterMain.actEqualizerExecute(Sender: TObject);
 begin
   if not FEqualizer.Visible then
   begin
-    FEqualizer.Left := Left + 15;
-    FEqualizer.Top := Top + Height - addStatus.Height - FEqualizer.Height - 5;
+    FEqualizer.Left := Left + Scale96ToFont(15);
+    FEqualizer.Top := Top + Height - addStatus.Height - FEqualizer.Height - Scale96ToFont(5);
   end;
   FEqualizer.Show;
 end;
@@ -873,7 +873,6 @@ begin
 
   if not Bass.EffectsAvailable then
   begin
-    actEqualizer.Enabled := False;
     Players.EQEnabled := False;
     AppGlobals.EQEnabled := False;
   end;

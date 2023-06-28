@@ -1110,7 +1110,7 @@ begin
 
   FSearchText := TEdit.Create(Self);
   FSearchText.Align := alLeft;
-  FSearchText.Width := 200;
+  FSearchText.Width := Scale96ToFont(200);
   FSearchText.OnChange := SearchTextChange;
   FSearchText.Parent := FSearchPanel;
 
@@ -1130,7 +1130,7 @@ begin
 
   FAddEdit := TEdit.Create(Self);
   FAddEdit.Align := alLeft;
-  FAddEdit.Width := 200;
+  FAddEdit.Width := Scale96ToFont(200);
   FAddEdit.OnKeyPress := AddEditKeyPress;
   FAddEdit.Parent := FToolbarPanel;
 
@@ -1156,7 +1156,7 @@ begin
 
   FTree := TTitleTree.Create(Self);
   FTree.Align := alClient;
-  FTree.BorderSpacing.Top := 4;
+  FTree.BorderSpacing.Top := Scale96ToFont(4);
   FTree.OnChange := TreeChange;
   FTree.OnSelectionChange := TreeSelectionChange;
   FTree.OnKeyDown := TreeKeyDown;
@@ -1182,9 +1182,9 @@ begin
   inherited ControlsAligned;
 
   if FAddLabel.Width > FSearchLabel.Width then
-    FSearchLabel.BorderSpacing.Right := FAddLabel.Width - FSearchLabel.Width + 4
+    FSearchLabel.BorderSpacing.Right := FAddLabel.Width - FSearchLabel.Width + Scale96ToFont(4)
   else
-    FAddLabel.BorderSpacing.Right := FSearchLabel.Width - FAddLabel.Width + 4;
+    FAddLabel.BorderSpacing.Right := FSearchLabel.Width - FAddLabel.Width + Scale96ToFont(4);
 end;
 
 procedure TTitlePanel.SelectIgnoredClick(Sender: TObject);
@@ -1756,8 +1756,8 @@ begin
       Header.Columns[i].Width := AppGlobals.ListHeaderWidth[i]
   else
   begin
-    FColSaved.Width := Scale96ToFont(120);
-    FColAdded.Width := Scale96ToFont(130);
+    FColSaved.FitColumn;
+    FColAdded.FitColumn(DateToStr(Now));
   end;
 
   if AppGlobals.ListHeaderPositionLoaded then

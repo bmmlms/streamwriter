@@ -68,7 +68,6 @@ begin
 
   FStart := TMSpeedButton.Create(Self);
   FStart.Align := alRight;
-  FStart.Width := 23;
   FStart.Flat := True;
   FStart.Enabled := False;
   FStart.Hint := 'Add';

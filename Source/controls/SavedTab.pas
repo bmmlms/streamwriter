@@ -748,7 +748,7 @@ begin
   FTopRightLeftPanel.Align := alRight;
   FTopRightLeftPanel.BevelOuter := bvNone;
   FTopRightLeftPanel.AutoSize := True;
-  FTopRightLeftPanel.BorderSpacing.Right := 4;
+  FTopRightLeftPanel.BorderSpacing.Right := Scale96ToFont(4);
   FTopRightLeftPanel.Parent := FTopRightPanel;
 
   FTopRightRightPanel := TPanel.Create(Self);
@@ -804,6 +804,9 @@ begin
   FSeek.Align := alTop;
   FSeek.OnPositionChanged := SeekChange;
   FSeek.Parent := FTopRightLeftPanel;
+
+  FSeek.Constraints.MinHeight := Scale96ToFont(23);
+  FSeek.Constraints.MaxHeight := Scale96ToFont(23);
 
   FVolume := TMVolumePanel.Create(Self);
   FVolume.Align := alTop;
@@ -1579,15 +1582,21 @@ begin
       Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.MUSIC);
 
     if NodeData.Track.IsAuto then
+    begin
+      L += Scale96ToFont(16 + 2);
+
       if NodeData.Track.RecordBecauseArtist then
-        Images.Draw(PaintInfo.Canvas, L + 18, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.USER_GRAY_COOL)
+        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.USER_GRAY_COOL)
       else
-        Images.Draw(PaintInfo.Canvas, L + 18, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.BRICKS);
+        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.BRICKS);
+    end;
+
+    L += Scale96ToFont(16 + 2);
 
     if NodeData.Track.Finalized then
-      Images.Draw(PaintInfo.Canvas, L + 18 * 2, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.TICK)
+      Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.TICK)
     else if NodeData.Track.WasCut then
-      Images.Draw(PaintInfo.Canvas, L + 18 * 2, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.CUT);
+      Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.CUT);
   end;
 end;
 
@@ -2437,14 +2446,14 @@ begin
       Header.Columns[i].Width := AppGlobals.SavedHeaderWidth[i]
   else
   begin
-    FColSize.Width := TMStringFunctions.GetTextSize('111,11 KB', Font).cx + Scale96ToFont(20);
-    FColLength.Width := TMStringFunctions.GetTextSize('00:00', Font).cx + Scale96ToFont(20);
-    FColBitrate.Width := TMStringFunctions.GetTextSize('320 VBR', font).cx + Scale96ToFont(20);
-    FColStream.Width := Scale96ToFont(200);
-    FColSaved.Width := Scale96ToFont(130);
+    FColSize.FitColumn('111,11 KB');
+    FColLength.FitColumn('00:00');
+    FColBitrate.FitColumn('320 VBR');
+    FColStream.Width := Scale96ToFont(150);
+    FColSaved.FitColumn(DateTimeToStr(Now));
   end;
 
-  FColImages.Width := Max(Indent + Margin * 2 + 16 * 4 + 3 * 2, TMStringFunctions.GetTextSize(FColImages.Text, Font).cx + Scale96ToFont(50));
+  FColImages.FitColumn(4);
 
   if AppGlobals.SavedHeaderPositionLoaded then
     for i := 1 to Header.Columns.Count - 1 do
@@ -2729,18 +2738,18 @@ begin
   inherited;
 
   BevelOuter := bvNone;
-  BorderSpacing.Top := 4;
+  BorderSpacing.Top := Scale96ToFont(4);
 
   FLabel := TLabel.Create(Self);
   FLabel.Align := alLeft;
   FLabel.Layout := tlCenter;
   FLabel.Caption := 'Search:';
-  FLabel.BorderSpacing.Right := 4;
+  FLabel.BorderSpacing.Right := Scale96ToFont(4);
   FLabel.Parent := Self;
 
   FSearch := TEdit.Create(Self);
   FSearch.Align := alLeft;
-  FSearch.Width := 200;
+  FSearch.Width := Scale96ToFont(200);
   FSearch.Parent := Self;
 
   FLabel.Left := -100;
@@ -2893,7 +2902,7 @@ begin
 
   LabelFilename := TLabel.Create(Self);
   LabelFilename.Align := alTop;
-  LabelFilename.BorderSpacing.Bottom := 4;
+  LabelFilename.BorderSpacing.Bottom := Scale96ToFont(4);
   LabelFilename.Alignment := taCenter;
   LabelFilename.Caption := _('Searching files...');
   LabelFilename.AutoSize := True;
@@ -2901,7 +2910,7 @@ begin
 
   ProgressBar := TProgressBar.Create(Self);
   ProgressBar.Align := alClient;
-  ProgressBar.BorderSpacing.Bottom := 8;
+  ProgressBar.BorderSpacing.Bottom := Scale96ToFont(8);
   ProgressBar.Constraints.MinHeight := Scale96ToFont(PROGRESSBAR_HEIGHT);
   ProgressBar.Style := pbstMarquee;
   ProgressBar.AutoSize := True;

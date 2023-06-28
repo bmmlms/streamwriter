@@ -263,7 +263,7 @@ begin
 
   FResultLabel := TLabel.Create(Self);
   FResultLabel.Align := alBottom;
-  FResultLabel.BorderSpacing.Top := 2;
+  FResultLabel.BorderSpacing.Top := Scale96ToFont(2);
   FResultLabel.Caption := Format(_(TEXT_RESULTS), [0]);
   FResultLabel.Parent := Self;
 
@@ -622,7 +622,7 @@ begin
 
   FProgressBar := TProgressBar.Create(Self);
   FProgressBar.Parent := Self;
-  FProgressBar.Width := 200;
+  FProgressBar.Width := Scale96ToFont(200);
   FProgressBar.Height := Scale96ToFont(PROGRESSBAR_HEIGHT);
   FProgressBar.Style := pbstMarquee;
   FProgressBar.Visible := False;
@@ -671,16 +671,16 @@ begin
       Canvas.Brush.Color := Colors.SelectionTextColor;
 
     TextWidth := Canvas.TextWidth('1000 / 1000');
-    MaxWidth := CellRect.Right - CellRect.Left - 8 - TextWidth;
-    DrawWidth := Trunc((Chance / 100) * MaxWidth) - 2;
+    MaxWidth := CellRect.Right - CellRect.Left - Scale96ToFont(8) - TextWidth;
+    DrawWidth := Trunc((Chance / 100) * MaxWidth) - Scale96ToFont(2);
 
     if DrawWidth < 1 then
       Exit;
 
-    R.Left := CellRect.Left + 2;
-    R.Top := CellRect.Top + 2;
+    R.Left := CellRect.Left + Scale96ToFont(2);
+    R.Top := CellRect.Top + Scale96ToFont(2);
     R.Right := R.Left + DrawWidth;
-    R.Bottom := CellRect.Bottom - 2;
+    R.Bottom := CellRect.Bottom - Scale96ToFont(2);
 
     Canvas.FillRect(R);
   end;
@@ -961,11 +961,11 @@ begin
       Header.Columns[i].Width := AppGlobals.ChartHeaderWidth[i]
   else
   begin
-    FColLastPlayed.Width := TMStringFunctions.GetTextSize(FColLastPlayed.Text, Font).cx + Scale96ToFont(50);
-    FColChance.Width := TMStringFunctions.GetTextSize(FColChance.Text, Font).cx + Scale96ToFont(50);
+    FColLastPlayed.FitColumn(Format(_('%d seconds ago'), [99]));
+    FColChance.FitColumn;
   end;
 
-  FColImages.Width := Max(Margin * 2 + 3 * 16 + 2 * 2, TMStringFunctions.GetTextSize(FColImages.Text, Font).cx + Scale96ToFont(50));
+  FColImages.FitColumn(3);
 
   if AppGlobals.ChartHeaderPositionLoaded then
     for i := 1 to Header.Columns.Count - 1 do
@@ -1185,11 +1185,14 @@ begin
         if NodeData.IsOnWishlist then
           Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.SCRIPT_BRICKS);
         if NodeData.IsArtistOnWishlist then
-          Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos + 18, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.SCRIPT_USER_GRAY_COOL);
+          Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos + Scale96ToFont(16 + 2), PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.SCRIPT_USER_GRAY_COOL);
 
         for i := 0 to AppGlobals.Data.SavedTitleHashes.Count - 1 do
           if AppGlobals.Data.SavedTitleHashes[i] = NodeData.Chart.ServerHash then
-            Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos + 36, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.DRIVE);
+          begin
+            Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos + Scale96ToFont((16 + 2) * 2), PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.DRIVE);
+            Break;
+          end;
       end else
       begin
         P := Parent;
@@ -1317,7 +1320,7 @@ begin
 
   FSearch := TMComboBoxExEditable.Create(Self);
   FSearch.Align := alLeft;
-  FSearch.Width := 200;
+  FSearch.Width := Scale96ToFont(200);
   FSearch.DropDownCount := 16;
   FSearch.Left := -100;
   FSearch.Parent := Self;
@@ -1325,7 +1328,6 @@ begin
   FSearch.ItemsEx.AddItem(_(SEARCH_TOP));
 
   FSearchButton := TMSpeedButton.Create(Self);
-  FSearchButton.Width := 23;
   FSearchButton.Align := alLeft;
   FSearchButton.Flat := True;
   FSearchButton.Hint := _('Search');

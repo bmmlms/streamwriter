@@ -1,6 +1,6 @@
 object frmCutTabSearchSilence: TfrmCutTabSearchSilence
   Left = 0
-  Height = 96
+  Height = 91
   Top = 0
   Width = 221
   AutoSize = True
@@ -8,21 +8,21 @@ object frmCutTabSearchSilence: TfrmCutTabSearchSilence
   BorderStyle = bsSingle
   BorderWidth = 4
   Caption = 'Silence settings'
-  ClientHeight = 96
+  ClientHeight = 91
   ClientWidth = 221
   Color = clBtnFace
   KeyPreview = True
   Position = poOwnerFormCenter
   object pnlNav: TPanel
     Left = 4
-    Height = 39
+    Height = 34
     Top = 53
     Width = 213
     Align = alBottom
     AutoSize = True
     BorderSpacing.Top = 8
     BevelOuter = bvNone
-    ClientHeight = 39
+    ClientHeight = 34
     ClientWidth = 213
     TabOrder = 0
     object Bevel2: TBevel
@@ -35,7 +35,7 @@ object frmCutTabSearchSilence: TfrmCutTabSearchSilence
     end
     object btnOK: TBitBtn
       Left = 113
-      Height = 35
+      Height = 30
       Top = 4
       Width = 100
       Align = alRight

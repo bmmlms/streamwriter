@@ -47,6 +47,10 @@ type
   { TSWStatusBar }
 
   TSWStatusBar = class(TStatusBar, IPostTranslatable)
+  private const
+    ICON_SIZE = 16;
+    MARGIN = 2;
+    SPEEDBMP_WIDTH = 35;
   private
     FConnectionState: THomeConnectionState;
     FLoggedIn: Boolean;
@@ -109,21 +113,21 @@ begin
   FTimer.Interval := 1000;
   FTimer.Enabled := True;
 
-  FSpace := Scale96ToFont(TMStringFunctions.GetTextSize('WWW', Font).cx);
+  FSpace := TMStringFunctions.GetTextSize('WW', Font).Width;
 
   P := Panels.Add;
-  P.Width := 2 + 56 + TMStringFunctions.GetTextSize(_('Connecting...'), Font).cx + FSpace;
+  P.Width := Scale96ToFont(MARGIN * 2 + (ICON_SIZE + MARGIN) * 3) + Max(TMStringFunctions.GetTextSize(_('Connecting...'), Font).Width, TMStringFunctions.GetTextSize(_('Connected'), Font).Width) + FSpace;
   P.Style := psOwnerDraw;
 
   P := Panels.Add;
-  P.Width := 18 + 4 + 18 + TMStringFunctions.GetTextSize('00000000', Font).cx + Scale96ToFont(TMStringFunctions.GetTextSize('W', Font).cx) + 10;
+  P.Width := Scale96ToFont(MARGIN * 2 + (ICON_SIZE + MARGIN) * 2) + TMStringFunctions.GetTextSize('00000000', Font).Width + FSpace;
   P.Style := psOwnerDraw;
 
   P := Panels.Add;
   P.Style := psOwnerDraw;
 
   P := Panels.Add;
-  P.Width := 2 + TMStringFunctions.GetTextSize(Format(_('%s/%s received'), ['000,00 kb', '000,00 kb']), Font).cx + FSpace;
+  P.Width := Scale96ToFont(MARGIN * 2) + TMStringFunctions.GetTextSize(Format(_('%s/%s received'), ['000,00 kb', '000,00 kb']), Font).Width + FSpace;
   P.Style := psOwnerDraw;
 
   P := Panels.Add;
@@ -149,8 +153,8 @@ var
   NewBmp: Graphics.TBitmap;
 begin
   NewBmp := Graphics.TBitmap.Create;
-  NewBmp.Width := 35;
-  NewBmp.Height := ClientHeight - 4;
+  NewBmp.Width := Scale96ToFont(SPEEDBMP_WIDTH);
+  NewBmp.Height := ClientHeight - Scale96ToFont(MARGIN * 2);
   NewBmp.Canvas.Pen.Width := 1;
   NewBmp.Canvas.Brush.Color := clBtnFace;
   NewBmp.Canvas.Pen.Color := clBlack;
@@ -251,54 +255,55 @@ begin
       case FConnectionState of
         cshConnected:
         begin
-          modSharedData.imgImages.DrawForControl(Canvas, PanelRect.Left, ImageTop, TImages.CONNECT, 16, Self, gdeNormal);
-          Canvas.TextOut(PanelRect.Left + 56, TextTop, TMStringFunctions.TruncateText(_('Connected'), PanelRect.Width - 58, Canvas.Font));
+          modSharedData.imgImages.DrawForControl(Canvas, PanelRect.Left, ImageTop, TImages.CONNECT, ICON_SIZE, Self, gdeNormal);
+          Canvas.TextOut(PanelRect.Left + Scale96ToFont(MARGIN + (ICON_SIZE + MARGIN) * 3), TextTop, TMStringFunctions.TruncateText(_('Connected'), PanelRect.Width - Scale96ToFont(MARGIN + (ICON_SIZE + MARGIN) * 3), Canvas.Font));
         end;
         cshConnectedSecure:
         begin
-          modSharedData.imgImages.DrawForControl(Canvas, PanelRect.Left, ImageTop, TImages.CONNECT_SECURE, 16, Self, gdeNormal);
-          Canvas.TextOut(PanelRect.Left + 56, TextTop, TMStringFunctions.TruncateText(_('Connected'), PanelRect.Width - 58, Canvas.Font));
+          modSharedData.imgImages.DrawForControl(Canvas, PanelRect.Left, ImageTop, TImages.CONNECT_SECURE, ICON_SIZE, Self, gdeNormal);
+          Canvas.TextOut(PanelRect.Left + Scale96ToFont(MARGIN + (ICON_SIZE + MARGIN) * 3), TextTop, TMStringFunctions.TruncateText(_('Connected'), PanelRect.Width - Scale96ToFont(MARGIN + (ICON_SIZE + MARGIN) * 3), Canvas.Font));
         end;
         cshDisconnected:
         begin
-          modSharedData.imgImages.DrawForControl(Canvas, PanelRect.Left, ImageTop, IfThen<Integer>(Length(FDots) mod 2 = 0, TImages.CONNECT, TImages.DISCONNECT), 16, Self, gdeNormal);
-          Canvas.TextOut(PanelRect.Left + 56, TextTop, TMStringFunctions.TruncateText(_('Connecting') + FDots, PanelRect.Width - 58, Canvas.Font));
+          modSharedData.imgImages.DrawForControl(Canvas, PanelRect.Left, ImageTop, IfThen<Integer>(Length(FDots) mod 2 = 0, TImages.CONNECT, TImages.DISCONNECT), ICON_SIZE, Self, gdeNormal);
+          Canvas.TextOut(PanelRect.Left + Scale96ToFont(MARGIN + (ICON_SIZE + MARGIN) * 3), TextTop, TMStringFunctions.TruncateText(_('Connecting') + FDots, PanelRect.Width - Scale96ToFont(MARGIN + (ICON_SIZE + MARGIN) * 3), Canvas.Font));
         end;
         cshFail:
         begin
-          modSharedData.imgImages.DrawForControl(Canvas, PanelRect.Left, ImageTop, TImages.DISCONNECT, 16, Self, gdeNormal);
-          Canvas.TextOut(PanelRect.Left + 56, TextTop, TMStringFunctions.TruncateText(_('Error'), PanelRect.Width - 58, Canvas.Font));
+          modSharedData.imgImages.DrawForControl(Canvas, PanelRect.Left, ImageTop, TImages.DISCONNECT, ICON_SIZE, Self, gdeNormal);
+          Canvas.TextOut(PanelRect.Left + Scale96ToFont(MARGIN + (ICON_SIZE + MARGIN) * 3), TextTop, TMStringFunctions.TruncateText(_('Error'), PanelRect.Width - Scale96ToFont(MARGIN + (ICON_SIZE + MARGIN) * 3), Canvas.Font));
         end;
       end;
 
-      modSharedData.imgImages.DrawForControl(Canvas, PanelRect.Left + 18, ImageTop, TImages.USER, 16, Self, IfThen<TGraphicsDrawEffect>(FLoggedIn, gdeNormal, gdeDisabled));
-      modSharedData.imgImages.DrawForControl(Canvas, PanelRect.Left + 36, ImageTop, TImages.BRICKS, 16, Self, IfThen<TGraphicsDrawEffect>(FNotifyTitleChanges, gdeNormal, gdeDisabled));
+      modSharedData.imgImages.DrawForControl(Canvas, PanelRect.Left + Scale96ToFont(ICON_SIZE + MARGIN), ImageTop, TImages.USER, ICON_SIZE, Self, IfThen<TGraphicsDrawEffect>(FLoggedIn, gdeNormal, gdeDisabled));
+      modSharedData.imgImages.DrawForControl(Canvas, PanelRect.Left + Scale96ToFont((ICON_SIZE + MARGIN) * 2), ImageTop, TImages.BRICKS, ICON_SIZE, Self, IfThen<TGraphicsDrawEffect>(FNotifyTitleChanges, gdeNormal, gdeDisabled));
     end;
     1:
       if ((FConnectionState = cshConnected) or (FConnectionState = cshConnectedSecure)) and (FClients > 0) then
       begin
-        modSharedData.imgImages.DrawForControl(Canvas, PanelRect.Left, ImageTop, TImages.GROUP, 16, Self, gdeNormal);
-        Canvas.TextOut(PanelRect.Left + 18, TextTop, IntToStr(FClients));
+        modSharedData.imgImages.DrawForControl(Canvas, PanelRect.Left, ImageTop, TImages.GROUP, ICON_SIZE, Self, gdeNormal);
+        Canvas.TextOut(PanelRect.Left + Scale96ToFont(ICON_SIZE + MARGIN), TextTop, IntToStr(FClients));
 
-        modSharedData.imgImages.DrawForControl(Canvas, PanelRect.Left + 18 + Canvas.TextWidth(IntToStr(FClients)) + 4, ImageTop, TImages.RECORD_RED, 16, Self, gdeNormal);
-        Canvas.TextOut(PanelRect.Left + 18 + Canvas.TextWidth(IntToStr(FClients)) + 4 + 18, TextTop, IntToStr(FRecordings));
+        modSharedData.imgImages.DrawForControl(Canvas, PanelRect.Left + Scale96ToFont(ICON_SIZE + MARGIN) + Canvas.TextWidth(IntToStr(FClients)) + Scale96ToFont(MARGIN * 2), ImageTop, TImages.RECORD_RED, ICON_SIZE, Self, gdeNormal);
+
+        Canvas.TextOut(PanelRect.Left + Scale96ToFont(MARGIN + (ICON_SIZE + MARGIN) * 2) + Canvas.TextWidth(IntToStr(FClients)), TextTop, IntToStr(FRecordings));
       end else
         Canvas.FillRect(PanelRect);
     2:
     begin
-      Canvas.TextOut(PanelRect.Left + 2, PanelRect.Top + ((PanelRect.Bottom - PanelRect.Top) div 2) - Canvas.TextHeight(TFunctions.MakeSize(FSpeed) + '/s') div 2, TFunctions.MakeSize(FSpeed) + '/s');
+      Canvas.TextOut(PanelRect.Left + Scale96ToFont(MARGIN), PanelRect.Top + ((PanelRect.Bottom - PanelRect.Top) div 2) - Canvas.TextHeight(TFunctions.MakeSize(FSpeed) + '/s') div 2, TFunctions.MakeSize(FSpeed) + '/s');
       if AppGlobals.LimitSpeed and (AppGlobals.MaxSpeed > 0) then
       begin
-        Panels[2].Width := 2 + 35 + TMStringFunctions.GetTextSize(_('0000/KBs'), Font).cx + FSpace;
+        Panels[2].Width := Scale96ToFont(MARGIN + SPEEDBMP_WIDTH) + Canvas.TextWidth(_('000.00/KBs')) + FSpace;
         if FSpeedBmp <> nil then
-          Canvas.Draw(PanelRect.Right - FSpeedBmp.Width - 2, PanelRect.Bottom - FSpeedBmp.Height, FSpeedBmp);
+          Canvas.Draw(PanelRect.Right - FSpeedBmp.Width - Scale96ToFont(MARGIN), PanelRect.Bottom - FSpeedBmp.Height, FSpeedBmp);
       end else
-        Panels[2].Width := 2 + TMStringFunctions.GetTextSize(_('0000/KBs'), Font).cx + FSpace;
+        Panels[2].Width := Scale96ToFont(MARGIN) + Canvas.TextWidth(_('000.00/KBs')) + FSpace;
     end;
     3:
-      Canvas.TextOut(PanelRect.Left + 2, TextTop, _('%s/%s received').Format([TFunctions.MakeSize(FCurrentReceived), TFunctions.MakeSize(FOverallReceived)]));
+      Canvas.TextOut(PanelRect.Left + Scale96ToFont(MARGIN), TextTop, _('%s/%s received').Format([TFunctions.MakeSize(FCurrentReceived), TFunctions.MakeSize(FOverallReceived)]));
     4:
-      Canvas.TextOut(PanelRect.Left + 2, TextTop, _('%d/%d songs saved').Format([FSongsSaved, FOverallSongsSaved]));
+      Canvas.TextOut(PanelRect.Left + Scale96ToFont(MARGIN), TextTop, _('%d/%d songs saved').Format([FSongsSaved, FOverallSongsSaved]));
   end;
 end;
 

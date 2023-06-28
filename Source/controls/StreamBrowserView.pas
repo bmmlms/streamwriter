@@ -304,14 +304,14 @@ begin
       P := Classes.Point(MouseEvent.X, MouseEvent.Y);
 
       ColRect := Columns[0].GetRect;
-      ButtonRect := TRect.Create(ColRect.Right - 18, ColRect.Top, ColRect.Right, ColRect.Bottom);
+      ButtonRect := TRect.Create(ColRect.Right - Treeview.Scale96ToFont(16 + 2), ColRect.Top, ColRect.Right, ColRect.Bottom);
 
       if ButtonRect.Contains(P) and not FIgnoreNextButtonDown then
       begin
         FSortDown := True;
         Invalidate(nil);
 
-        P := TPoint.Create(ColRect.Right - 18, ColRect.Top + ColRect.Height);
+        P := TPoint.Create(ColRect.Right - Treeview.Scale96ToFont(16 + 2), ColRect.Top + ColRect.Height);
         ClientToScreen(Treeview.Handle, P);
         PopupMenu.PopUp(P.X, P.Y);
 
@@ -354,7 +354,7 @@ begin
         P := Classes.Point(MouseMove.XPos, MouseMove.YPos);
 
         ColRect := Columns[0].GetRect;
-        ButtonRect := TRect.Create(ColRect.Right - 18, ColRect.Top, ColRect.Right, ColRect.Bottom);
+        ButtonRect := TRect.Create(ColRect.Right - Treeview.Scale96ToFont(16 + 2), ColRect.Top, ColRect.Right, ColRect.Bottom);
 
         if (ButtonRect.Contains(P) <> FSortHover) or (not ButtonRect.Contains(P) and FSortDown) then
           Invalidate(nil);
@@ -377,7 +377,7 @@ var
 begin
   inherited PaintHeader(TargetCanvas, R, Target, RTLOffset);
 
-  R := TRect.Create(Min(R.Right, TotalWidth) - 18, Max(R.Top, 0), Min(R.Right, TotalWidth), Min(R.Bottom, Header.Height));
+  R := TRect.Create(Min(R.Right, TotalWidth) - Header.Treeview.Scale96ToFont(16 + 2), Max(R.Top, 0), Min(R.Right, TotalWidth), Min(R.Bottom, Header.Height));
 
   if TStreamTreeHeader(Header).FSortDown then
     Details := ThemeServices.GetElementDetails(thHeaderItemPressed)
@@ -391,12 +391,12 @@ begin
   if TStreamTreeHeader(Header).FSortDown then
     R.Offset(1, 1);
 
-  modSharedData.imgImages.Resolution[16].Draw(TargetCanvas, R.Right - 16, R.Top, TImages.SORT, IfThen<TGraphicsDrawEffect>(Header.Treeview.Enabled, gdeNormal, gdeDisabled));
+  modSharedData.imgImages.Resolution[16].Draw(TargetCanvas, R.Right - Header.Treeview.Scale96ToFont(16), R.Top + R.Height div 2 - Header.Treeview.Scale96ToFont(16) div 2, TImages.SORT, IfThen<TGraphicsDrawEffect>(Header.Treeview.Enabled, gdeNormal, gdeDisabled));
 end;
 
 function TStreamTreeColumns.ColumnFromPosition(const P: TPoint; Relative: Boolean): TColumnIndex;
 begin
-  if P.X > Items[0].Width - 18 then
+  if P.X > Items[0].Width - Header.Treeview.Scale96ToFont(16 + 2) then
     Exit(NoColumn);
 
   Result := inherited ColumnFromPosition(P, Relative);
@@ -499,7 +499,7 @@ begin
 
   FProgressBar := TProgressBar.Create(Self);
   FProgressBar.Parent := Self;
-  FProgressBar.Width := 150;
+  FProgressBar.Width := Scale96ToFont(150);
   FProgressBar.Height := Scale96ToFont(PROGRESSBAR_HEIGHT);
   FProgressBar.Visible := False;
   FProgressBar.Max := 100;
@@ -543,7 +543,7 @@ begin
   try
     F.Assign(Font);
     F.Size := Round((Graphics.GetFontData(Font.Handle).Height * 72 / Font.PixelsPerInch) * -1) - 1;
-    NodeHeight := TMStringFunctions.GetTextSize(MeasureTextHeightString, Font).Height + TMStringFunctions.GetTextSize(MeasureTextHeightString, F).Height + 6;
+    NodeHeight := TMStringFunctions.GetTextSize(MeasureTextHeightString, Font).Height + TMStringFunctions.GetTextSize(MeasureTextHeightString, F).Height + Scale96ToFont(6);
   finally
     F.Free;
   end;
@@ -604,15 +604,16 @@ begin
 
   NodeData := GetNodeData(PaintInfo.Node);
 
-  L := 4;
+  L := PaintInfo.ImageInfo[iiNormal].XPos;
+
   if NodeData.Data.MetaData then
   begin
-    Images.Resolution[8].Draw(PaintInfo.Canvas, L, 19, TImages.TAG_GREEN, gdeNormal);
+    Images.Resolution[8].Draw(PaintInfo.Canvas, L, Scale96ToFont(19), TImages.TAG_GREEN, gdeNormal);
     L := L + 9;
   end;
 
   if NodeData.Data.ChangesTitleInSong or (not NodeData.Data.RecordingOkay) then
-    Images.Resolution[10].Draw(PaintInfo.Canvas, L, 19, TImages.CROSS, gdeNormal);
+    Images.Resolution[10].Draw(PaintInfo.Canvas, L, Scale96ToFont(19), TImages.CROSS, gdeNormal);
 end;
 
 procedure TMStreamTree.FitColumns;
@@ -757,14 +758,14 @@ begin
 
   LineHeight := PaintInfo.Canvas.GetTextHeight(MeasureTextHeightString);
 
-  CellRect.Top := CellRect.Top + 2;
+  CellRect.Top := CellRect.Top + Scale96ToFont(2);
   DrawFormat := DT_TOP or DT_LEFT;
 
   MaxTextWidth := ClientWidth - PaintInfo.ContentRect.Left - TextMargin * 2;
 
   inherited;
 
-  CellRect.Top := CellRect.Top + 2 + LineHeight;
+  CellRect.Top := CellRect.Top + Scale96ToFont(2) + LineHeight;
 
   NewText := '';
 
@@ -834,8 +835,8 @@ end;
 
 procedure TMStreamTree.PaintImage(var PaintInfo: TVTPaintInfo; ImageInfoIndex: TVTImageInfoIndex; DoOverlay: Boolean);
 begin
-  PaintInfo.ImageInfo[ImageInfoIndex].XPos := 4;
-  PaintInfo.ImageInfo[ImageInfoIndex].YPos := 2;
+  PaintInfo.ImageInfo[ImageInfoIndex].XPos := TextMargin;
+  PaintInfo.ImageInfo[ImageInfoIndex].YPos := Scale96ToFont(2);
 
   inherited;
 end;
@@ -1232,7 +1233,7 @@ begin
 
   FCountLabel := TLabel.Create(Self);
   FCountLabel.Align := alBottom;
-  FCountLabel.BorderSpacing.Top := 2;
+  FCountLabel.BorderSpacing.Top := Scale96ToFont(2);
   FCountLabel.Parent := Self;
 
   FStreamTree := TMStreamTree.Create(Self);
@@ -1457,7 +1458,7 @@ constructor TMStreamSearchPanel.Create(AOwner: TComponent);
     L.Align := alLeft;
     L.Caption := LabelText;
     L.Layout := tlCenter;
-    L.BorderSpacing.Right := 4;
+    L.BorderSpacing.Right := Scale96ToFont(4);
 
     FPanelLabels.Add(L);
   end;

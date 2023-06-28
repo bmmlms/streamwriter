@@ -43,6 +43,7 @@ uses
   Logging,
   MVirtualTree,
   PowerManagement,
+  SharedControls,
   SharedData,
   StdCtrls,
   SysUtils,
@@ -254,6 +255,9 @@ begin
 
   Tree.OnChange := TreeChange;
 
+  lstInterval.ItemHeight := Scale96ToFont(17);
+  lstDay.ItemHeight := Scale96ToFont(17);
+
   UpdateButtons;
 end;
 
@@ -432,7 +436,7 @@ begin
 
   C := Header.Columns.Add;
   C.Text := _('Remove');
-  C.Width := 70;
+  C.FitColumn;
   C.Options := C.Options - [coResizable];
 
   Header.AutoSizeIndex := 0;

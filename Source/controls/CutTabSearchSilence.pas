@@ -98,9 +98,6 @@ begin
 
   Okay := False;
 
-  txtSilenceLength.Left := Label12.Left + Label12.Width + 4;
-  Label13.Left := txtSilenceLength.Left + txtSilenceLength.Width + 4;
-
   txtSilenceLevel.Control.Value := AppGlobals.Data.StreamSettings.SilenceLevel;
   txtSilenceLength.Value := AppGlobals.Data.StreamSettings.SilenceLength;
 

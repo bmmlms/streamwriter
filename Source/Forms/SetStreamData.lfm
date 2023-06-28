@@ -107,7 +107,6 @@ object frmSetStreamData: TfrmSetStreamData
       BorderSpacing.Bottom = 4
       Columns = <      
         item
-          AutoSize = True
           Width = 0
         end>
       RowSelect = True
@@ -117,6 +116,7 @@ object frmSetStreamData: TfrmSetStreamData
       ViewStyle = vsReport
       OnChange = lstRegExpsChange
       OnEdited = lstRegExpsEdited
+      OnResize = lstRegExpsResize
     end
     object lstOtherRegExps: TListView
       Left = 0
@@ -128,7 +128,6 @@ object frmSetStreamData: TfrmSetStreamData
       BorderSpacing.Bottom = 4
       Columns = <      
         item
-          AutoSize = True
           Width = 0
         end>
       ReadOnly = True
@@ -137,6 +136,7 @@ object frmSetStreamData: TfrmSetStreamData
       SmallImages = modSharedData.imgImages
       TabOrder = 1
       ViewStyle = vsReport
+      OnResize = lstOtherRegExpsResize
     end
     object txtRegEx: TMLabeledEditButton
       Left = 0

@@ -134,7 +134,7 @@ begin
 
   FPanelBottom := TPanel.Create(Self);
   FPanelBottom.Align := alBottom;
-  FPanelBottom.BorderSpacing.Top := 4;
+  FPanelBottom.BorderSpacing.Top := Scale96ToFont(4);
   FPanelBottom.BevelOuter := bvNone;
   FPanelBottom.AutoSize := True;
   FPanelBottom.Parent := Self;

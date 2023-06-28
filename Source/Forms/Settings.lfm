@@ -551,6 +551,8 @@ inherited frmSettings: TfrmSettings
           Width = 28
           Align = alRight
           BorderSpacing.Left = 4
+          Constraints.MinHeight = 23
+          Constraints.MinWidth = 23
           Images = modSharedData.imgImages
           ImageIndex = 14
           OnClick = btnConfigureEncoderClick
@@ -572,6 +574,7 @@ inherited frmSettings: TfrmSettings
           Top = 0
           Width = 31
           Align = alRight
+          AutoSize = True
           BevelOuter = bvNone
           ControlList = <          
             item
@@ -599,6 +602,8 @@ inherited frmSettings: TfrmSettings
             Top = 0
             Width = 28
             Anchors = [akTop, akRight]
+            Constraints.MinHeight = 23
+            Constraints.MinWidth = 23
             Images = modSharedData.imgImages
             ImageIndex = 12
             OnClick = btnMoveClick
@@ -610,6 +615,8 @@ inherited frmSettings: TfrmSettings
             Top = 25
             Width = 28
             Anchors = [akTop, akRight]
+            Constraints.MinHeight = 23
+            Constraints.MinWidth = 23
             Images = modSharedData.imgImages
             ImageIndex = 11
             OnClick = btnMoveClick
@@ -621,6 +628,8 @@ inherited frmSettings: TfrmSettings
             Top = 50
             Width = 28
             Anchors = [akRight, akBottom]
+            Constraints.MinHeight = 23
+            Constraints.MinWidth = 23
             Images = modSharedData.imgImages
             ImageIndex = 53
             OnClick = btnHelpClick

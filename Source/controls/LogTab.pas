@@ -510,13 +510,13 @@ begin
   begin
     for i := 1 to Header.Columns.Count - 1 do
       Header.Columns[i].Width := AppGlobals.LogHeaderWidth[i];
-    FColType.Width := TMStringFunctions.GetTextSize(FColType.Text, Font).cx + Scale96ToFont(50);
   end else
   begin
-    FColType.Width := TMStringFunctions.GetTextSize(FColType.Text, Font).cx + Scale96ToFont(50);
-    FColTime.Width := TMStringFunctions.GetTextSize('00-00-00', Font).cx + Scale96ToFont(20);
-    FColSource.Width := TMStringFunctions.GetTextSize('wwwwwwwwwwwwwww', Font).cx + Scale96ToFont(20);
+    FColTime.FitColumn(TimeToStr(Now));
+    FColSource.FitColumn('wwwwwwwwwwwwwww');
   end;
+
+  FColType.FitColumn(3);
 
   if AppGlobals.LogHeaderPositionLoaded then
     for i := 1 to Header.Columns.Count - 1 do
@@ -593,7 +593,7 @@ begin
         Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.CONNECT);
     end;
 
-    L := L + 16;
+    L += Scale96ToFont(16 + 2);
 
     case NodeData.LogEntry.Level of
       llError:
@@ -606,7 +606,7 @@ begin
         Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.BUG);
     end;
 
-    L := L + 16;
+    L += Scale96ToFont(16 + 2);
 
     case NodeData.LogEntry.LogType of
       ltGeneral: ;
@@ -748,7 +748,7 @@ begin
   FButtonClear.Hint := 'Clear';
   FButtonClear.ImageIndex := TImages.ERASE;
 
-  FSearch.Width := 200;
+  FSearch.Width := Scale96ToFont(200);
 end;
 
 { TLogEntry }

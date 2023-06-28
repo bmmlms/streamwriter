@@ -1,6 +1,6 @@
 object frmDownloadAddons: TfrmDownloadAddons
   Left = 0
-  Height = 46
+  Height = 44
   Top = 0
   Width = 250
   AutoSize = True
@@ -8,9 +8,8 @@ object frmDownloadAddons: TfrmDownloadAddons
   BorderStyle = bsSingle
   BorderWidth = 4
   Caption = 'Download addons'
-  ClientHeight = 46
+  ClientHeight = 44
   ClientWidth = 250
-  Color = clBtnFace
   Constraints.MinWidth = 250
   OnActivate = FormActivate
   OnClose = FormClose
@@ -18,10 +17,10 @@ object frmDownloadAddons: TfrmDownloadAddons
   ShowHint = True
   object Label1: TLabel
     Left = 4
-    Height = 17
+    Height = 15
     Top = 4
     Width = 242
-    Align = alTop
+    Align = alClient
     Alignment = taCenter
     AutoSize = False
     BorderSpacing.Bottom = 4
@@ -32,9 +31,9 @@ object frmDownloadAddons: TfrmDownloadAddons
   object ProgressBar1: TProgressBar
     Left = 4
     Height = 17
-    Top = 25
+    Top = 23
     Width = 242
-    Align = alTop
+    Align = alBottom
     TabOrder = 0
   end
 end
