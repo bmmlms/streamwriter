@@ -368,7 +368,7 @@ implementation
 
 constructor TAppData.Create(AppName: string);
 var
-  i, W, H: Integer;
+  i: Integer;
   OnlyOne: Boolean;
   CommandLine: TCommandLine;
   FileVerInfo: TFileVersionInfo;
@@ -387,14 +387,6 @@ begin
   end;
 
   FCodename := 'Innominatam';
-
-  // Adjust dimensions of the main-form
-  W := MulDiv(900, Screen.PrimaryMonitor.PixelsPerInch, 96);
-  H := MulDiv(500, Screen.PrimaryMonitor.PixelsPerInch, 96);
-  if Screen.WorkAreaWidth < W then
-    W := Screen.WorkAreaWidth - 20;
-  if Screen.WorkAreaHeight < H then
-    H := Screen.WorkAreaHeight - 20;
 
   // Adjust count of column headers and initialize them.
   // Initialization is important because otherwise when finishing the wizard on
@@ -483,7 +475,7 @@ begin
   end;
 
   // Call the base-constructor with our defined variables
-  inherited Create(AppName, OnlyOne, W, H, alGPL);
+  inherited Create(AppName, OnlyOne, alGPL);
 
   // This builds a large string used to generate the about-window
   BuildThanksText;

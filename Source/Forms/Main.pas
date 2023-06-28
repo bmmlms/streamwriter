@@ -358,6 +358,7 @@ type
     procedure ProcessCommandLine(const CmdLine: TCommandLine);
     procedure SetCaptionAndTrayHint;
     procedure BuildMoveToCategoryMenu;
+    procedure SetFormDimensions;
 
     function StartupMessagesNeeded: Boolean;
     procedure ShowStartupMessages;
@@ -850,6 +851,56 @@ begin
   mnuMoveToCategory2.Enabled := (Length(Clients) > 0) and (mnuMoveToCategory2.Count > 0);
 end;
 
+procedure TfrmStreamWriterMain.SetFormDimensions;
+
+  procedure ResetForm(const W, H: Integer);
+  begin
+    Width := Scale96ToFont(Width);
+    Height := Scale96ToFont(Height);
+    Left := Screen.Width div 2 - Width div 2;
+    Top := Screen.Height div 2 - Height div 2;
+  end;
+
+var
+  F: Boolean = False;
+  i, DefW, DefH: Integer;
+  R, R2: TRect;
+begin
+  DefW := Scale96ToFont(Width);
+  DefH := Scale96ToFont(Height);
+
+  if (AppGlobals.MainWidth <> -1) and (AppGlobals.MainHeight <> -1) and (AppGlobals.MainLeft <> -1) and (AppGlobals.MainTop <> -1) then
+  begin
+    Width := AppGlobals.MainWidth;
+    Height := AppGlobals.MainHeight;
+    Left := AppGlobals.MainLeft;
+    Top := AppGlobals.MainTop;
+
+    // Wenn Fenster nicht auf Bildschirmen, Position zurücksetzen
+    R := Classes.Rect(Left + 20, Top + 20, Left + Width - 40, Top + Height - 40);
+    for i := 0 to Screen.MonitorCount - 1 do
+      if IntersectRect(R2, R, Screen.Monitors[i].WorkareaRect) then
+      begin
+        F := True;
+        Break;
+      end;
+
+    if not F then
+    begin
+      AppGlobals.MainMaximized := False;
+      ResetForm(DefW, DefH);
+    end;
+  end else
+  begin
+    AppGlobals.MainMaximized := False;
+    ResetForm(DefW, DefH);
+  end;
+
+  // Ist nun hier, damit man nicht sieht, wie sich alle Controls resizen.
+  if AppGlobals.MainMaximized then
+    WindowState := wsMaximized;
+end;
+
 procedure TfrmStreamWriterMain.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
   Action := caNone;
@@ -936,19 +987,11 @@ begin
   UpdateStatus;
   addTrayIcon.Visible := AppGlobals.Tray;
 
-  Width := AppGlobals.MainWidth;
-  Height := AppGlobals.MainHeight;
-  if (AppGlobals.MainLeft = -1) or (AppGlobals.MainTop = -1) then
-  begin
-    AppGlobals.MainLeft := Screen.Width div 2 - Width div 2;
-    AppGlobals.MainTop := Screen.Height div 2 - Height div 2;
-  end;
-  Left := AppGlobals.MainLeft;
-  Top := AppGlobals.MainTop;
+  Constraints.MinWidth := Scale96ToFont(Constraints.MinWidth);
+  Constraints.MinHeight := Scale96ToFont(Constraints.MinHeight);
 
-  // Ist nun hier, damit man nicht sieht, wie sich alle Controls resizen.
-  if AppGlobals.MainMaximized then
-    WindowState := wsMaximized;
+  SetFormDimensions;
+
   FWasMaximized := WindowState = wsMaximized;
 
   FEqualizer := TfrmEqualizer.Create(Self);
