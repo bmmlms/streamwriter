@@ -123,7 +123,12 @@ begin
 end;
 
 destructor TPlayerManager.Destroy;
+var
+  i: Integer;
 begin
+  for i := FPlayers.Count - 1 downto 0 do
+    RemovePlayer(FPlayers[i]);
+
   FreeAndNil(FDeviceNotificationListener);
   FPlayers.Free;
   FCS.Free;
