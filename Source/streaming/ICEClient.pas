@@ -127,6 +127,7 @@ type
     FOnTitleAllowed: TTitleAllowedEvent;
     FOnPlaybackStarted: TNotifyEvent;
     FOnSecondsReceived: TNotifyEvent;
+    FOnStateChange: TNotifyEvent;
 
     FOnPlay: TNotifyEvent;
     FOnPause: TNotifyEvent;
@@ -235,6 +236,7 @@ type
     property OnPlay: TNotifyEvent read FOnPlay write FOnPlay;
     property OnPause: TNotifyEvent read FOnPause write FOnPause;
     property OnStop: TNotifyEvent read FOnStop write FOnStop;
+    property OnStateChange: TNotifyEvent read FOnStateChange write FOnStateChange;
   end;
 
 implementation
@@ -311,6 +313,9 @@ begin
       Exit;
   end;
 
+  if Assigned(FOnStateChange) then
+    FOnStateChange(Self);
+
   Connect;
 
   if FICEThread <> nil then
@@ -328,6 +333,9 @@ procedure TICEClient.PausePlay;
 begin
   if FICEThread <> nil then
   begin
+    if Assigned(FOnStateChange) then
+      FOnStateChange(Self);
+
     FICEThread.PausePlay;
 
     if Assigned(FOnPause) then
@@ -366,6 +374,9 @@ procedure TICEClient.StopPlay;
 begin
   if FICEThread <> nil then
   begin
+    if Assigned(FOnStateChange) then
+      FOnStateChange(Self);
+
     FICEThread.StopPlay;
 
     MsgBus.SendMessage(TPlayingObjectStopped.Create(Self));

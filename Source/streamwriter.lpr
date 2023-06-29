@@ -102,7 +102,7 @@ begin
     if not InitAppDataStageOne then
       Exit;
 
-    InitPlayerManager;
+    Players := TPlayerManager.Create;
 
     if (AppGlobals.ShowSplashScreen) and (AppGlobals.FirstStartShown) and (AppGlobals.WasSetup) and (not TFunctions.IsVersionNewer(AppGlobals.LastUsedVersion, AppGlobals.AppVersion, False)) and
       (not HideMain) and (not AppGlobals.InstallUpdateOnStart) then
@@ -154,6 +154,7 @@ begin
     // Call Free() since exiting the main loop does not destroy forms which needs to be done before Bass.Free().
     Application.Free;
   finally
+    Players.Free;
     WSACleanup;
     TSocketThread.FreeCertificates;
     if Bass <> nil then

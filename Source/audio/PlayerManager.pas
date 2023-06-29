@@ -27,12 +27,16 @@ uses
   AppData,
   AppMessages,
   Classes,
+  DeviceNotificationListener,
   Logging,
   MessageBus,
   SyncObjs,
   SysUtils;
 
 type
+
+  { TPlayerManager }
+
   TPlayerManager = class
   private
     FCS: TCriticalSection;
@@ -41,6 +45,8 @@ type
     FVolumeBeforeMute: Integer;
     FLastPlayer: TObject;
     FEQEnabled: Boolean;
+    FResumePlaybackOnDeviceAdd: Boolean;
+    FDeviceNotificationListener: TDeviceNotificationListener;
 
     procedure Play(Player: TObject);
 
@@ -49,6 +55,9 @@ type
     function FGetAnyPlayingOrPaused: Boolean;
     function FGetAnyPlaying: Boolean;
     procedure FSetEQEnabled(Value: Boolean);
+
+    procedure PlayerOnStateChange(Sender: TObject);
+    procedure DeviceNotificationListenerDeviceNotification(const NotificationType: TDeviceNotificationType; const DeviceClass: TGUID; const DeviceName: string);
   public
     constructor Create;
     destructor Destroy; override;
@@ -77,8 +86,6 @@ type
 var
   Players: TPlayerManager;
 
-procedure InitPlayerManager;
-
 implementation
 
 uses
@@ -88,7 +95,17 @@ uses
 { TPlayerManager }
 
 procedure TPlayerManager.AddPlayer(Player: TObject);
+var
+  P: TPlayer absolute Player;
+  IP: TICEClient absolute Player;
 begin
+  if Player is TPlayer then
+    P.OnStateChange := PlayerOnStateChange
+  else if Player is TICEClient then
+    IP.OnStateChange := PlayerOnStateChange
+  else
+    raise Exception.Create('Invalid player added');
+
   FPlayers.Add(Player);
 end;
 
@@ -97,8 +114,21 @@ begin
   FCS := TCriticalSection.Create;
   FPlayers := TList.Create;
 
+  FDeviceNotificationListener := TDeviceNotificationListener.Create;
+  FDeviceNotificationListener.OnDeviceNotification := DeviceNotificationListenerDeviceNotification;
+  FDeviceNotificationListener.Start;
+
   FVolume := AppGlobals.PlayerVolume;
   FVolumeBeforeMute := AppGlobals.PlayerVolumeBeforeMute;
+end;
+
+destructor TPlayerManager.Destroy;
+begin
+  FreeAndNil(FDeviceNotificationListener);
+  FPlayers.Free;
+  FCS.Free;
+
+  inherited;
 end;
 
 procedure TPlayerManager.IncreaseVolume;
@@ -117,13 +147,6 @@ end;
 procedure TPlayerManager.DecreaseVolume;
 begin
   Volume := FVolume - 10;
-end;
-
-destructor TPlayerManager.Destroy;
-begin
-  FPlayers.Free;
-  FCS.Free;
-  inherited;
 end;
 
 function TPlayerManager.FGetAllStoppedOrPaused: Boolean;
@@ -340,7 +363,15 @@ begin
 end;
 
 procedure TPlayerManager.RemovePlayer(Player: TObject);
+var
+  P: TPlayer absolute Player;
+  IP: TICEClient absolute Player;
 begin
+  if Player is TPlayer then
+    P.OnStateChange := nil
+  else if Player is TICEClient then
+    IP.OnStateChange := nil;
+
   if FLastPlayer = Player then
     FLastPlayer := nil;
   FPlayers.Remove(Player);
@@ -386,14 +417,25 @@ begin
   FLastPlayer := nil;
 end;
 
-procedure InitPlayerManager;
+procedure TPlayerManager.PlayerOnStateChange(Sender: TObject);
 begin
-  Players := TPlayerManager.Create;
+  FResumePlaybackOnDeviceAdd := False;
 end;
 
-initialization
+procedure TPlayerManager.DeviceNotificationListenerDeviceNotification(const NotificationType: TDeviceNotificationType; const DeviceClass: TGUID; const DeviceName: string);
+const
+  GUID_DEVINTERFACE_AUDIO_PLAYBACK_DEVICE: TGUID = '{e6327cad-dcec-4949-ae8a-991e976a79d2}';
+begin
+  if not IsEqualGUID(DeviceClass, GUID_DEVINTERFACE_AUDIO_PLAYBACK_DEVICE) then
+    Exit;
 
-finalization
-  FreeAndNil(Players);
+  if (NotificationType = dntAdded) and Assigned(FLastPlayer) and FResumePlaybackOnDeviceAdd then
+    Play(FLastPlayer)
+  else if (NotificationType = dntRemoved) and AnyPlaying then
+  begin
+    PauseAll;
+    FResumePlaybackOnDeviceAdd := True;
+  end;
+end;
 
 end.

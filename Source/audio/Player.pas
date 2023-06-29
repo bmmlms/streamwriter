@@ -60,6 +60,7 @@ type
     FOnPlay: TNotifyEvent;
     FOnPause: TNotifyEvent;
     FOnStop: TNotifyEvent;
+    FOnStateChange: TNotifyEvent;
 
     procedure CreatePlayer;
     procedure FreeStream(Player: Cardinal);
@@ -77,7 +78,6 @@ type
     function FGetPositionTime: Double;
     procedure FSetFilename(Value: string);
     procedure FSetPosToReach(Value: Cardinal);
-    procedure FSetEndPos(Value: Cardinal);
     procedure FSetPositionByte(Value: Cardinal);
     procedure FSetPositionTime(Value: Double);
   public
@@ -100,7 +100,6 @@ type
     property PositionByte: Cardinal read FGetPositionByte write FSetPositionByte;
     property PositionTime: Double read FGetPositionTime write FSetPositionTime;
     property PosToReach: Cardinal read FPosToReach write FSetPosToReach;
-    property EndPos: Cardinal read FEndPos write FSetEndPos;
     property Tag: TTagData read FTag;
     property ShowTitle: Boolean read FShowTitle write FShowTitle;
 
@@ -109,6 +108,7 @@ type
     property OnPlay: TNotifyEvent read FOnPlay write FOnPlay;
     property OnPause: TNotifyEvent read FOnPause write FOnPause;
     property OnStop: TNotifyEvent read FOnStop write FOnStop;
+    property OnStateChange: TNotifyEvent read FOnStateChange write FOnStateChange;
   end;
 
 implementation
@@ -292,14 +292,6 @@ begin
   BASSStreamFree(FPlayer);
 end;
 
-procedure TPlayer.FSetEndPos(Value: Cardinal);
-begin
-  if FSyncPos > 0 then
-    BASSChannelRemoveSync(FPlayer, FSyncEnd);
-  if Value > 0 then
-    FSyncEnd := BASSChannelSetSync(FPlayer, BASS_SYNC_POS, Value, EndSyncProc, Self);
-end;
-
 procedure TPlayer.FSetEQEnabled(Value: Boolean);
 var
   i: Integer;
@@ -381,6 +373,9 @@ var
 begin
   if FPlayer > 0 then
   begin
+    if Assigned(FOnStateChange) then
+      FOnStateChange(Self);
+
     if BASSChannelIsActive(FPlayer) = BASS_ACTIVE_PLAYING then
       FPaused := True;
 
@@ -407,6 +402,9 @@ end;
 procedure TPlayer.Play;
 begin
   BASSStart;
+
+  if Assigned(FOnStateChange) then
+    FOnStateChange(Self);
 
   if FPlayer = 0 then
     CreatePlayer;
@@ -445,6 +443,9 @@ var
 begin
   if FPlayer > 0 then
   begin
+    if Assigned(FOnStateChange) then
+      FOnStateChange(Self);
+
     FStopped := True;
     FFree := Free;
 
