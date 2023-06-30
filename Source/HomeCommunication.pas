@@ -448,46 +448,54 @@ procedure THomeThread.DoServerDataReceived(CommandHeader: TCommandHeader; Comman
 var
   i: Integer;
   Count: Cardinal;
-  Stream: TMemoryStream;
-  StreamEntry, StreamEntry2: TStreamBrowserEntry;
+  DataStream: TMemoryStream;
+  Stream: TStreamBrowserEntry;
   Genre: TGenre;
   Genres: TGenreList;
   Streams: TStreamBrowserList;
+  OwnRatings: TDictionary<Integer, Byte>;
 begin
-  Stream := TMemoryStream(Command.Stream);
+  DataStream := TMemoryStream(Command.Stream);
 
   Genres := TGenreList.Create;
   Streams := TStreamBrowserList.Create;
+  OwnRatings := TDictionary<Integer, Byte>.Create;
   try
+    AppGlobals.Lock;
+    try
+      for Stream in AppGlobals.Data.BrowserList do
+        if Stream.OwnRating > 0 then
+          OwnRatings.Add(Stream.ID, Stream.OwnRating);
+    finally
+      AppGlobals.Unlock;
+    end;
+
     // Genres laden
-    Stream.Read(Count, False);
+    DataStream.Read(Count, False);
     for i := 0 to Count - 1 do
-      Genres.Add(TGenre.LoadFromHome(Stream, CommandHeader.Version));
+      Genres.Add(TGenre.LoadFromHome(DataStream, CommandHeader.Version));
+
+    // Streams laden und OwnRating synchronisieren
+    DataStream.Read(Count, False);
+    for i := 0 to Count - 1 do
+    begin
+      Stream := TStreamBrowserEntry.LoadFromHome(DataStream, CommandHeader.Version);
+
+      if OwnRatings.ContainsKey(Stream.ID) then
+        Stream.OwnRating := OwnRatings[Stream.ID];
+
+      Streams.Add(Stream);
+    end;
 
     AppGlobals.Lock;
     try
-      // Streams laden und OwnRating synchronisieren
-      Stream.Read(Count, False);
-      for i := 0 to Count - 1 do
-      begin
-        StreamEntry := TStreamBrowserEntry.LoadFromHome(Stream, CommandHeader.Version);
-
-        for StreamEntry2 in AppGlobals.Data.BrowserList do
-          if StreamEntry.ID = StreamEntry2.ID then
-          begin
-            StreamEntry.OwnRating := StreamEntry2.OwnRating;
-            Break;
-          end;
-        Streams.Add(StreamEntry);
-      end;
-
       // Wenn alles erfolgreich geladen wurde alte Listen leeren.
       // Falls hier jetzt eine Exception kommt wird es bitter...
       for Genre in AppGlobals.Data.GenreList do
         Genre.Free;
       AppGlobals.Data.GenreList.Clear;
-      for StreamEntry in AppGlobals.Data.BrowserList do
-        StreamEntry.Free;
+      for Stream in AppGlobals.Data.BrowserList do
+        Stream.Free;
       AppGlobals.Data.BrowserList.Clear;
 
       // Der Liste alle Sachen wieder hinzufügen
@@ -495,23 +503,24 @@ begin
         for Genre in Genres do
           AppGlobals.Data.GenreList.Add(Genre);
       except
-        for i := 0 to Genres.Count - 1 do
-          Genres[i].Free;
+        for Genre in Genres do
+          Genre.Free;
         AppGlobals.Data.GenreList.Clear;
       end;
 
       try
-        for StreamEntry in Streams do
-          AppGlobals.Data.BrowserList.Add(StreamEntry);
+        for Stream in Streams do
+          AppGlobals.Data.BrowserList.Add(Stream);
       except
-        for i := 0 to Streams.Count - 1 do
-          Streams[i].Free;
+        for Stream in Streams do
+          Stream.Free;
         AppGlobals.Data.BrowserList.Clear;
       end;
     finally
       AppGlobals.Unlock;
     end;
   finally
+    OwnRatings.Free;
     Genres.Free;
     Streams.Free;
   end;
