@@ -145,16 +145,20 @@ begin
 
   MaxTextWidth := ClientWidth - PaintInfo.ContentRect.Left - TextMargin * 2;
 
+  PaintInfo.Canvas.Font.Style := PaintInfo.Canvas.Font.Style + [fsBold];
+
   NewText := NodeData.Title;
-  if TMStringFunctions.GetTextSize(NewText, Font).Width > MaxTextWidth then
+  if TMStringFunctions.GetTextSize(NewText, PaintInfo.Canvas.Font).Width > MaxTextWidth then
     NewText := ShortenString(PaintInfo.Canvas.Handle, NewText, MaxTextWidth, EllipsisWidth);
 
   inherited DoTextDrawing(PaintInfo, NewText, CellRect, DrawFormat);
 
+  PaintInfo.Canvas.Font.Style := PaintInfo.Canvas.Font.Style - [fsBold];
+
   CellRect.Top := CellRect.Top + Scale96ToFont(2) + LineHeight;
 
   NewText := Format('%s %s', [_('Artist:'), NodeData.ParsedArtist]);
-  if TMStringFunctions.GetTextSize(NewText, Font).Width > MaxTextWidth then
+  if TMStringFunctions.GetTextSize(NewText, PaintInfo.Canvas.Font).Width > MaxTextWidth then
     NewText := ShortenString(PaintInfo.Canvas.Handle, NewText, MaxTextWidth, EllipsisWidth);
 
   inherited DoTextDrawing(PaintInfo, NewText, CellRect, DrawFormat);
@@ -162,7 +166,7 @@ begin
   CellRect.Top := CellRect.Top + Scale96ToFont(2) + LineHeight;
 
   NewText := Format('%s %s', [_('Title:'), NodeData.ParsedTitle]);
-  if TMStringFunctions.GetTextSize(NewText, Font).Width > MaxTextWidth then
+  if TMStringFunctions.GetTextSize(NewText, PaintInfo.Canvas.Font).Width > MaxTextWidth then
     NewText := ShortenString(PaintInfo.Canvas.Handle, NewText, MaxTextWidth, EllipsisWidth);
 
   inherited DoTextDrawing(PaintInfo, NewText, CellRect, DrawFormat);
