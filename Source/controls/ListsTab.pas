@@ -2133,7 +2133,10 @@ var
   S: string;
   Files: TStringArray;
 begin
-  Result := TFunctions.ReadDataObjectText(VTVDragManager.DataObject, S) or TFunctions.ReadDataObjectFiles(VTVDragManager.DataObject, Files);
+  if not inherited then
+    Exit(False);
+
+  Result := Assigned(GetNodeAt(Pt.X, Pt.Y)) and (TFunctions.ReadDataObjectText(VTVDragManager.DataObject, S) or TFunctions.ReadDataObjectFiles(VTVDragManager.DataObject, Files));
 end;
 
 procedure TTitleTree.DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition);

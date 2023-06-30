@@ -175,7 +175,7 @@ type
     procedure FClientViewNodeDblClick(Sender: TBaseVirtualTree; const HitInfo: THitInfo);
     procedure FClientViewKeyPress(Sender: TObject; var Key: Char);
     procedure FClientViewKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-    procedure FClientViewStartStreaming(Sender: TObject; ID, Bitrate: Cardinal; Name, URL: string; URLs, RegExes, IgnoreTitles: TStringList; Node: PVirtualNode; Mode: TVTNodeAttachMode);
+    procedure FClientViewStartStreaming(Sender: TObject; ID, Bitrate: Cardinal; Name, URL: string; URLs, RegExes, IgnoreTitles: TStringList; AddOnly: Boolean; Node: PVirtualNode; Mode: TVTNodeAttachMode);
 
     procedure StreamBrowserAction(Sender: TObject; Action: TStreamOpenActions; Streams: TStreamDataArray);
     function StreamBrowserIsInClientList(Sender: TObject; ID: Cardinal): Boolean;
@@ -1088,9 +1088,9 @@ begin
     FActionRemove.Execute;
 end;
 
-procedure TClientTab.FClientViewStartStreaming(Sender: TObject; ID, Bitrate: Cardinal; Name, URL: string; URLs, RegExes, IgnoreTitles: TStringList; Node: PVirtualNode; Mode: TVTNodeAttachMode);
+procedure TClientTab.FClientViewStartStreaming(Sender: TObject; ID, Bitrate: Cardinal; Name, URL: string; URLs, RegExes, IgnoreTitles: TStringList; AddOnly: Boolean; Node: PVirtualNode; Mode: TVTNodeAttachMode);
 begin
-  StartStreaming(TStartStreamingInfo.Create(ID, Bitrate, Name, URL, URLs, RegExes, IgnoreTitles), AppGlobals.DefaultActionNewStream, Node, Mode);
+  StartStreaming(TStartStreamingInfo.Create(ID, Bitrate, Name, URL, URLs, RegExes, IgnoreTitles), IfThen<TStreamOpenActions>(AddOnly, oaAdd, AppGlobals.DefaultActionNewStream), Node, Mode);
 end;
 
 procedure TClientTab.MessageReceived(Msg: TMessageBase);
@@ -1215,12 +1215,9 @@ function TClientTab.StartStreaming(Streams: TStartStreamingInfoArray; Action: TS
   var
     NodeData: PClientNodeData;
   begin
-    if HitNode <> nil then
-    begin
-      NodeData := FClientView.GetNodeData(HitNode);
-      if NodeData.Category <> nil then
-        NodeData.Category.Killed := False;
-    end;
+    NodeData := FClientView.GetNodeData(HitNode);
+    if Assigned(NodeData) and Assigned(NodeData.Category) then
+      NodeData.Category.Killed := False;
   end;
 
   procedure PlayStarted(Client: TICEClient);
