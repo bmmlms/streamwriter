@@ -1058,7 +1058,7 @@ begin
 
   PH := TPlaylistHandler.Create;
   try
-    Data := FICEThread.RecvStream.RecvStream.ToString;
+    Data := FICEThread.RecvStream.RecvStream.AsString;
 
     if (Copy(LowerCase(Data), 1, 10) = '[playlist]') or (Pos('audio/x-scpls', FICEThread.RecvStream.ContentType) > 0) or (Pos('application/x-scpls', FICEThread.RecvStream.ContentType) > 0) or
       (Pos('application/pls+xml', FICEThread.RecvStream.ContentType) > 0) then // .pls

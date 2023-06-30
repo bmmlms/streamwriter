@@ -26,6 +26,7 @@ uses
   AudioFunctions,
   Classes,
   Functions,
+  StreamHelper,
   StrUtils,
   SysUtils,
   Windows;
@@ -79,9 +80,9 @@ begin
     MS.LoadFromFile(Filename);
 
     if Ext = '.m3u' then
-      Result := ParsePlaylist(MS.ToString, ptM3U, '')
+      Result := ParsePlaylist(MS.AsString, ptM3U, '')
     else if Ext = '.pls' then
-      Result := ParsePlaylist(MS.ToString, ptPLS, '');
+      Result := ParsePlaylist(MS.AsString, ptPLS, '');
   finally
     MS.Free;
   end;
