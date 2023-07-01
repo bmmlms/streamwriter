@@ -104,6 +104,7 @@ type
 
     procedure FitColumns;
     procedure MenuColsAction(Sender: TVirtualStringTree; Index: Integer; Checked: Boolean);
+    function GetDropTarget(const Pt: TPoint; out TargetNode: PVirtualNode; out AttachMode: TVTNodeAttachMode): Boolean;
   protected
     procedure DoGetText(Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var Text: string); override;
     function DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: Integer): TCustomImageList; override;
@@ -521,53 +522,20 @@ end;
 
 function TMClientView.DoDragOver(Source: TObject; Shift: TShiftState; State: TDragState; const Pt: TPoint; Mode: TDropMode; var Effect: LongWord): Boolean;
 var
-  Nodes: TNodeArray;
-  HitNode, DragNode, Node: PVirtualNode;
-  NodeData, ParentNodeData: PClientNodeData;
-  s: string;
+  S: string;
+  Node: PVirtualNode;
+  Attachmode: TVTNodeAttachMode;
   URLs, Files, OutFiles: TStringArray;
-  HI: THitInfo;
 begin
-  if not inherited then
+  if not inherited DoDragOver(Source, Shift, State, Pt, Mode, Effect) then
     Exit(False);
 
-  if (Length(FDragNodes) = 0) and (Length(FBrowser.DraggedStreams) = 0) and (not (TFunctions.ReadDataObjectText(VTVDragManager.DataObject, s) and TFunctions.FilterHTTPUrls(s, URLs))) and
+  if (Length(FDragNodes) = 0) and (Length(FBrowser.DraggedStreams) = 0) and (not (TFunctions.ReadDataObjectText(VTVDragManager.DataObject, S) and TFunctions.FilterHTTPUrls(S, URLs))) and
     (not (TFunctions.ReadDataObjectFiles(VTVDragManager.DataObject, Files) and TFunctions.FilterEndsWith(Files, ['.m3u', '.pls'], OutFiles)))
   then
     Exit(False);
 
-  HitNode := GetNodeAt(Pt);
-  if not Assigned(HitNode) then
-    Exit(True);
-
-  Result := True;
-
-  NodeData := GetNodeData(HitNode);
-
-  // Man darf in die automatische Kategorie nix reindraggen
-  if (NodeData.Category <> nil) and (NodeData.Category.IsAuto) and ((LastDropMode = dmOnNode) or (Expanded[HitNode] and (ChildCount[HitNode] > 0) and (LastDropMode = dmBelow))) then
-    Exit(False);
-
-  if (NodeData.Client <> nil) and (GetNodeLevel(HitNode) > 0) then
-  begin
-    ParentNodeData := GetNodeData(HitNode.Parent);
-    if ParentNodeData.Category <> nil then
-      if ParentNodeData.Category.IsAuto then
-        Exit(False);
-  end;
-
-  // Drop darf nur erlaubt sein, wenn Ziel-Node nicht in gedraggten
-  // Nodes vorkommt und Ziel-Node kein Kind von Drag-Node ist
-  for DragNode in FDragNodes do
-  begin
-    if HitNode = DragNode then
-      Exit(False);
-
-    Nodes := GetNodes(ntClient, False);
-    for Node in Nodes do
-      if (Node = HitNode) and (HitNode.Parent = DragNode) then
-        Exit(False);
-  end;
+  Exit(GetDropTarget(Pt, Node, AttachMode));
 end;
 
 procedure TMClientView.DoEdit;
@@ -735,6 +703,79 @@ begin
     Header.Columns[Index].Options := Header.Columns[Index].Options - [coVisible];
 
   AppGlobals.ClientCols := AppGlobals.ClientCols xor (1 shl Index);
+end;
+
+function TMClientView.GetDropTarget(const Pt: TPoint; out TargetNode: PVirtualNode; out AttachMode: TVTNodeAttachMode): Boolean;
+var
+  DragNode: PVirtualNode;
+  TargetNodeData: PClientNodeData = nil;
+  TargetParentNodeData: PClientNodeData = nil;
+  DraggingCategories: Boolean = False;
+begin
+  TargetNode := GetNodeAt(Pt);
+  if Assigned(TargetNode) then
+  begin
+    TargetNodeData := GetNodeData(TargetNode);
+    TargetParentNodeData := GetNodeData(TargetNode.Parent);
+  end;
+
+  for DragNode in FDragNodes do
+    if Assigned(PClientNodeData(GetNodeData(DragNode)).Category) then
+    begin
+      DraggingCategories := True;
+      Break;
+    end;
+
+  if not Assigned(TargetNode) then
+  begin
+    TargetNode := RootNode;
+    AttachMode := amAddChildLast;
+    Exit(True);
+  end else if LastDropMode = dmAbove then
+    AttachMode := amInsertBefore
+  else if LastDropMode = dmBelow then
+    AttachMode := IfThen<TVTNodeAttachMode>(Expanded[TargetNode], amAddChildFirst, amInsertAfter)
+  else
+    AttachMode := IfThen<TVTNodeAttachMode>(Assigned(TargetNodeData.Category), amAddChildLast, amNoWhere);
+
+  if AttachMode = amNoWhere then
+    Exit(False);
+
+  // When dropping below the last automatic recording modify target node
+  // When dropping categories below the last stream in a category modify target node
+  if AttachMode = amInsertAfter then
+    if (Assigned(TargetNodeData.Client) and Assigned(TargetParentNodeData) and Assigned(TargetParentNodeData.Category) and TargetParentNodeData.Category.IsAuto and not Assigned(GetNextSibling(TargetNode)))
+      or (DraggingCategories and Assigned(TargetNodeData.Client) and Assigned(TargetParentNodeData) and Assigned(TargetParentNodeData.Category) and not Assigned(GetNextSibling(TargetNode))) then
+    begin
+      TargetNode := TargetNode.Parent;
+      TargetNodeData := GetNodeData(TargetNode);
+      TargetParentNodeData := GetNodeData(TargetNode.Parent);
+    end;
+
+  // Deny adding categories into categories
+  if ((AttachMode in [amAddChildFirst, amAddChildLast]) or (GetNodeLevel(TargetNode) > 0)) and DraggingCategories then
+    Exit(False);
+
+  // Deny adding children to automatic recording category
+  if (AttachMode in [amAddChildFirst, amAddChildLast]) and Assigned(TargetNodeData.Category) and TargetNodeData.Category.IsAuto then
+    Exit(False);
+
+  // Deny inserting before/after automatic recording stream
+  if (AttachMode = amInsertBefore) and Assigned(TargetNodeData.Client) and Assigned(TargetParentNodeData) and Assigned(TargetParentNodeData.Category) and TargetParentNodeData.Category.IsAuto then
+    Exit(False);
+
+  // Deny inserting after automatic recording stream if next stream is automatic as well
+  if (AttachMode = amInsertAfter) and Assigned(TargetNodeData.Client) and Assigned(TargetParentNodeData) and Assigned(TargetParentNodeData.Category) and TargetParentNodeData.Category.IsAuto
+    and Assigned(GetNextSibling(TargetNode)) and (GetNodeLevel(GetNextSibling(TargetNode)) > 0) then
+    Exit(False);
+
+  // Drop darf nur erlaubt sein, wenn Ziel-Node nicht in gedraggten
+  // Nodes vorkommt und Ziel-Node kein Kind von Drag-Node ist
+  for DragNode in FDragNodes do
+    if (TargetNode = DragNode) or (TargetNode.Parent = DragNode) then
+      Exit(False);
+
+  Exit(True);
 end;
 
 procedure TMClientView.MoveTo(Source, Target: PVirtualNode; Mode: TVTNodeAttachMode; ChildrenOnly: Boolean);
@@ -925,81 +966,40 @@ procedure TMClientView.DoDragDrop(Source: TObject; DataObject: IDataObject; Form
   end;
 
 var
-  AttachMode: TVTNodeAttachMode = amInsertAfter;
+  AttachMode: TVTNodeAttachMode;
   S, S2: string;
   URLs, Files, OutFiles: TStringArray;
-  HitNodeData: PClientNodeData = nil;
-  DragNodeData: PClientNodeData;
   StreamData: TStreamData;
   Node, TargetNode: PVirtualNode;
-  HI: THitInfo;
-  R: TRect;
   PH: TPlaylistHandler;
 begin
-  if not Assigned(DataObject) then
+  if not Assigned(DataObject) or not GetDropTarget(Pt, TargetNode, AttachMode) then
     Exit;
 
-  Effect := DROPEFFECT_COPY;
-
-  GetHitTestInfoAt(Pt.X, Pt.Y, True, HI);
-  if HI.HitNode <> nil then
-  begin
-    HitNodeData := GetNodeData(HI.HitNode);
-    R := GetDisplayRect(HI.HitNode, 0, False);
-  end;
-
-  TargetNode := HI.HitNode;
-
-  if not Assigned(TargetNode) then
-  begin
-    TargetNode := RootNode;
-    AttachMode := amAddChildLast;
-  end else if LastDropMode = dmAbove then
-    AttachMode := amInsertBefore
-  else if LastDropMode = dmBelow then
-    AttachMode := IfThen<TVTNodeAttachMode>(Expanded[TargetNode], amAddChildFirst, amInsertAfter)
-  else
-    AttachMode := IfThen<TVTNodeAttachMode>(Assigned(HitNodeData.Category), amAddChildLast, amInsertAfter);
+  // Unkill when adding children or when adding before/after children of category
+  if (AttachMode in [amAddChildFirst, amAddChildLast]) or (GetNodeLevel(TargetNode) > 0) then
+    UnkillCategory(TargetNode);
 
   if Length(FDragNodes) > 0 then
   begin
     for Node in FDragNodes do
     begin
-      DragNodeData := GetNodeData(Node);
-
-      if Assigned(DragNodeData.Category) and Assigned(HitNodeData) and Assigned(HitNodeData.Category) then
-        AttachMode := amInsertAfter;
-
       MoveTo(Node, TargetNode, AttachMode, False);
 
-      if AttachMode = amAddChildLast then
-        UnkillCategory(TargetNode);
-
+      // Update TargetNode to preserve order of dropped nodes
       if (AttachMode = amAddChildFirst) or (AttachMode = amInsertAfter) then
+      begin
         TargetNode := Node;
-
-      if AttachMode = amAddChildFirst then
         AttachMode := amInsertAfter;
+      end;
     end;
   end else if Length(FBrowser.DraggedStreams) > 0 then
-  begin
     for StreamData in FBrowser.DraggedStreams do
-    begin
-      OnStartStreaming(Self, StreamData.ID, StreamData.Bitrate, StreamData.Name, StreamData.URL, StreamData.URLs, StreamData.RegExes, StreamData.IgnoreTitles, False, TargetNode, Attachmode);
-
-      if AttachMode = amAddChildLast then
-        UnkillCategory(TargetNode);
-    end;
-  end else if TFunctions.ReadDataObjectText(DataObject, S) and TFunctions.FilterHTTPUrls(S, URLs) then
-  begin
+      OnStartStreaming(Self, StreamData.ID, StreamData.Bitrate, StreamData.Name, StreamData.URL, StreamData.URLs, StreamData.RegExes, StreamData.IgnoreTitles, False, TargetNode, Attachmode)
+  else if TFunctions.ReadDataObjectText(DataObject, S) and TFunctions.FilterHTTPUrls(S, URLs) then
     for S in URLs do
-    begin
-      OnStartStreaming(Self, 0, 0, '', S, nil, nil, nil, True, TargetNode, AttachMode);
-
-      if AttachMode = amAddChildLast then
-        UnkillCategory(TargetNode);
-    end;
-  end else if TFunctions.ReadDataObjectFiles(DataObject, Files) and TFunctions.FilterEndsWith(Files, ['.m3u', '.pls'], OutFiles) then
+      OnStartStreaming(Self, 0, 0, '', S, nil, nil, nil, True, TargetNode, AttachMode)
+  else if TFunctions.ReadDataObjectFiles(DataObject, Files) and TFunctions.FilterEndsWith(Files, ['.m3u', '.pls'], OutFiles) then
   begin
     PH := TPlaylistHandler.Create;
     try
@@ -1009,12 +1009,7 @@ begin
             Continue;
 
           for S2 in PH.URLs do
-          begin
             OnStartStreaming(Self, 0, 0, '', S2, nil, nil, nil, True, TargetNode, AttachMode);
-
-            if AttachMode = amAddChildLast then
-              UnkillCategory(TargetNode);
-          end;
         except
         end;
     finally
