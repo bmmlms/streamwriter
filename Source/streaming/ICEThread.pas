@@ -56,6 +56,7 @@ type
     FPlaying: Boolean;
     FPlayingStarted: Boolean;
     FPlayingPaused: Boolean;
+    FPlayingPausedNoFadeOut: Boolean;
     FPaused: Boolean;
     FSleepTime: Integer;
     FMonitoringStarted: Boolean;
@@ -124,7 +125,7 @@ type
     procedure SetSettings(Settings: TStreamSettings; AutoRemove, StopAfterSong, Killed: Boolean; RecordTitle, ParsedRecordTitle: string; SongsSaved: Cardinal; StreamCustomName: string);
 
     procedure StartPlay;
-    procedure PausePlay;
+    procedure PausePlay(NoFadeOut: Boolean = False);
     procedure StopPlay;
     procedure StartRecording;
     procedure StopRecording;
@@ -253,9 +254,10 @@ begin
   Sync(FOnStateChanged);
 end;
 
-procedure TICEThread.PausePlay;
+procedure TICEThread.PausePlay(NoFadeOut: Boolean = False);
 begin
   FPlayingPaused := not FPlayingPaused;
+  FPlayingPausedNoFadeOut := NoFadeOut;
 end;
 
 procedure TICEThread.StopPlay;
@@ -507,7 +509,7 @@ begin
 
   if FPlayingPaused and (not FPaused) then
   begin
-    FPlayer.Pause;
+    FPlayer.Pause(FPlayingPausedNoFadeOut);
     FPaused := True;
   end;
 

@@ -85,7 +85,7 @@ type
     destructor Destroy; override;
 
     procedure Play;
-    procedure Pause;
+    procedure Pause(NoFadeOut: Boolean = False);
     procedure Stop(Free: Boolean; NoFadeOut: Boolean = False);
     procedure SetEQ(Value, Freq: Integer);
 
@@ -367,7 +367,7 @@ begin
     BASSChannelSetAttribute(FPlayer, 2, Value / 100);
 end;
 
-procedure TPlayer.Pause;
+procedure TPlayer.Pause(NoFadeOut: Boolean = False);
 var
   Pos, Len: Double;
 begin
@@ -382,7 +382,7 @@ begin
     Pos := BASSChannelBytes2Seconds(FPlayer, BASSChannelGetPosition(FPlayer, BASS_FILEPOS_CURRENT));
     Len := BASSChannelBytes2Seconds(FPlayer, BASSChannelGetLength(FPlayer, BASS_POS_BYTE));
 
-    if Len - Pos < 0.300 then
+    if NoFadeOut or (Len - Pos < 0.300) then
       BASSChannelPause(FPlayer)
     else
     begin

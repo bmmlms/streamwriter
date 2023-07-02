@@ -62,7 +62,7 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    procedure PauseAll;
+    procedure PauseAll(NoFadeOut: Boolean = False);
     procedure StopAll;
 
     procedure AddPlayer(Player: TObject);
@@ -325,7 +325,7 @@ begin
     end;
 end;
 
-procedure TPlayerManager.PauseAll;
+procedure TPlayerManager.PauseAll(NoFadeOut: Boolean = False);
 var
   i: Integer;
   P: TPlayer;
@@ -346,7 +346,7 @@ begin
         if P.Playing then
         begin
           FLastPlayer := P;
-          P.Pause;
+          P.Pause(NoFadeOut);
         end;
       end else if TObject(FPlayers[i]) is TICEClient then
       begin
@@ -354,7 +354,7 @@ begin
         if IP.Playing and (not IP.Paused) then
         begin
           FlastPlayer := IP;
-          IP.PausePlay;
+          IP.PausePlay(NoFadeOut);
         end;
       end;
 end;
@@ -438,7 +438,7 @@ begin
     Play(FLastPlayer)
   else if (NotificationType = dntRemoved) and AnyPlaying then
   begin
-    PauseAll;
+    PauseAll(True);
     FResumePlaybackOnDeviceAdd := True;
   end;
 end;

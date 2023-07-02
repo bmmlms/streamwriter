@@ -175,7 +175,7 @@ type
     procedure WriteLog(Text: string; T: TLogType; Level: TLogLevel); overload;
 
     function StartPlay(CheckConditions: Boolean): TMayConnectResults;
-    procedure PausePlay;
+    procedure PausePlay(NoFadeOut: Boolean = False);
     procedure StopPlay;
     class function MayConnect(PlayOnly: Boolean; UsedBandwidth: Integer; IsAuto: Boolean): TMayConnectResults;
     function StartRecording(CheckConditions: Boolean): TMayConnectResults;
@@ -329,14 +329,14 @@ begin
   end;
 end;
 
-procedure TICEClient.PausePlay;
+procedure TICEClient.PausePlay(NoFadeOut: Boolean = False);
 begin
   if FICEThread <> nil then
   begin
     if Assigned(FOnStateChange) then
       FOnStateChange(Self);
 
-    FICEThread.PausePlay;
+    FICEThread.PausePlay(NoFadeOut);
 
     if Assigned(FOnPause) then
       FOnPause(Self);

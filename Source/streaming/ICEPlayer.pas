@@ -58,7 +58,7 @@ type
     destructor Destroy; override;
 
     procedure Play;
-    procedure Pause;
+    procedure Pause(NoFadeOut: Boolean = False);
     procedure Stop;
     procedure SetVolume(Vol: Integer);
     procedure SetEQ(Value, Freq: Integer);
@@ -236,19 +236,18 @@ begin
   end;
 end;
 
-procedure TICEPlayer.Pause;
-var
-  State: Cardinal;
+procedure TICEPlayer.Pause(NoFadeOut: Boolean = False);
 begin
-  if FPlayer > 0 then
+  if FPlayer = 0 then
+    Exit;
+
+  if NoFadeOut then
+    BASSChannelPause(FPlayer)
+  else if BASSChannelIsActive(FPlayer) = BASS_ACTIVE_PLAYING then
   begin
-    State := BASSChannelIsActive(FPlayer);
-    if State = BASS_ACTIVE_PLAYING then
-    begin
-      FPausing := True;
-      BASSChannelSlideAttribute(FPlayer, 2, 0, 300);
-      BASSChannelSetSync(FPlayer, BASS_SYNC_SLIDE, 0, EndSyncProc, Self);
-    end;
+    FPausing := True;
+    BASSChannelSlideAttribute(FPlayer, 2, 0, 300);
+    BASSChannelSetSync(FPlayer, BASS_SYNC_SLIDE, 0, EndSyncProc, Self);
   end;
 end;
 
@@ -256,17 +255,18 @@ procedure TICEPlayer.Stop;
 var
   State: Cardinal;
 begin
-  if FPlayer > 0 then
+  if FPlayer = 0 then
+    Exit;
+
+  State := BASSChannelIsActive(FPlayer);
+  if State = BASS_ACTIVE_PLAYING then
   begin
-    State := BASSChannelIsActive(FPlayer);
-    if State = BASS_ACTIVE_PLAYING then
-    begin
-      FStopping := True;
-      BASSChannelSlideAttribute(FPlayer, 2, 0, 300);
-      BASSChannelSetSync(FPlayer, BASS_SYNC_SLIDE, 0, EndSyncProc, Self);
-    end else
-      FreeStream(FPlayer);
-  end;
+    FStopping := True;
+    BASSChannelSlideAttribute(FPlayer, 2, 0, 300);
+    BASSChannelSetSync(FPlayer, BASS_SYNC_SLIDE, 0, EndSyncProc, Self);
+  end else
+    FreeStream(FPlayer);
+
   FPlayer := 0;
 end;
 
