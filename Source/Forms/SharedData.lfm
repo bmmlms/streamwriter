@@ -5,6 +5,7 @@ object modSharedData: TmodSharedData
   VerticalOffset = 0
   Width = 242
   object imgImages: TImageList
+    Scaled = True
     Left = 44
     Top = 24
     Bitmap = {

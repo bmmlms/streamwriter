@@ -887,7 +887,7 @@ begin
   NodeData := GetNodeData(PaintInfo.Node);
 
   if (NodeData.Client <> nil) and (NodeData.Client.Entry.Schedules.Count > 0) then
-    Images.Resolution[8].Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos + 8, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.TIME);
+    Images.ResolutionForPPI[8, Font.PixelsPerInch, GetCanvasScaleFactor].Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos + Scale96ToFont(8), PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.TIME);
 end;
 
 function TMClientView.NodesToClients(Nodes: TNodeArray): TClientArray;

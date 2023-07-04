@@ -2030,68 +2030,56 @@ var
   Node: PVirtualNode;
   NodeData, ParentNodeData: PTitleNodeData;
   Title: TTitleInfo;
-  List: TSaveIgnoreList;
+  List: TSaveIgnoreList = nil;
   S: string;
   Strings, Files: TStringArray;
 begin
-  List := nil;
-  Effect := DROPEFFECT_COPY;
+  Node := GetNodeAt(Pt);
 
-  GetHitTestInfoAt(Pt.X, Pt.Y, True, HI);
-  if HI.HitNode <> nil then
-  begin
-    NodeData := GetNodeData(Hi.HitNode);
+  if not Assigned(Node) then
+    Exit;
 
-    Node := HI.HitNode;
+  NodeData := GetNodeData(Node);
+  ParentNodeData := GetNodeData(Node.Parent);
 
-    case NodeData.NodeType of
-      ntWishParent:
-        List := AppGlobals.Data.SaveList;
-      ntIgnoreParent:
-        List := AppGlobals.Data.IgnoreList;
-      ntStream:
-      begin
-        ParentNodeData := GetNodeData(HI.HitNode.Parent);
-        if ParentNodeData.NodeType = ntWishParent then
-          List := NodeData.Stream.Entry.SaveList
-        else
-          List := NodeData.Stream.Entry.IgnoreList;
-      end;
-      ntWish:
-      begin
-        ParentNodeData := GetNodeData(HI.HitNode.Parent);
-        case ParentNodeData.NodeType of
-          ntWishParent:
-          begin
-            Node := FWishNode;
-            List := AppGlobals.Data.SaveList;
-          end;
-          ntStream:
-          begin
-            Node := HI.HitNode.Parent;
-            ParentNodeData := GetNodeData(HI.HitNode.Parent);
-            List := ParentNodeData.Stream.Entry.SaveList;
-          end;
+  case NodeData.NodeType of
+    ntWishParent:
+      List := AppGlobals.Data.SaveList;
+    ntIgnoreParent:
+      List := AppGlobals.Data.IgnoreList;
+    ntStream:
+      if ParentNodeData.NodeType = ntWishParent then
+        List := NodeData.Stream.Entry.SaveList
+      else
+        List := NodeData.Stream.Entry.IgnoreList;
+    ntWish:
+      case ParentNodeData.NodeType of
+        ntWishParent:
+        begin
+          Node := FWishNode;
+          List := AppGlobals.Data.SaveList;
+        end;
+        ntStream:
+        begin
+          Node := Node.Parent;
+          ParentNodeData := GetNodeData(Node.Parent);
+          List := ParentNodeData.Stream.Entry.SaveList;
         end;
       end;
-      ntIgnore:
-      begin
-        ParentNodeData := GetNodeData(HI.HitNode.Parent);
-        case ParentNodeData.NodeType of
-          ntIgnoreParent:
-          begin
-            Node := FIgnoreNode;
-            List := AppGlobals.Data.IgnoreList;
-          end;
-          ntStream:
-          begin
-            Node := HI.HitNode.Parent;
-            ParentNodeData := GetNodeData(HI.HitNode.Parent);
-            List := ParentNodeData.Stream.Entry.IgnoreList;
-          end;
+    ntIgnore:
+      case ParentNodeData.NodeType of
+        ntIgnoreParent:
+        begin
+          Node := FIgnoreNode;
+          List := AppGlobals.Data.IgnoreList;
+        end;
+        ntStream:
+        begin
+          Node := Node.Parent;
+          ParentNodeData := GetNodeData(Node.Parent);
+          List := ParentNodeData.Stream.Entry.IgnoreList;
         end;
       end;
-    end;
   end;
 
   if not Assigned(List) then
@@ -2132,11 +2120,13 @@ function TTitleTree.DoDragOver(Source: TObject; Shift: TShiftState; State: TDrag
 var
   S: string;
   Files: TStringArray;
+  Node: PVirtualNode;
 begin
-  if not inherited then
+  if not inherited DoDragOver(Source, Shift, State, Pt, Mode, Effect) then
     Exit(False);
 
-  Result := Assigned(GetNodeAt(Pt.X, Pt.Y)) and (TFunctions.ReadDataObjectText(VTVDragManager.DataObject, S) or TFunctions.ReadDataObjectFiles(VTVDragManager.DataObject, Files));
+  Node := GetNodeAt(Pt.X, Pt.Y);
+  Result := Assigned(Node) and not ((Node.Index = 0) and (LastDropMode = dmAbove)) and (TFunctions.ReadDataObjectText(VTVDragManager.DataObject, S) or TFunctions.ReadDataObjectFiles(VTVDragManager.DataObject, Files));
 end;
 
 procedure TTitleTree.DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition);

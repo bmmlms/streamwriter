@@ -1170,27 +1170,30 @@ var
   i: Integer;
   NodeData: PChartNodeData;
   P: TControl;
+  ScaledImages: TScaledImageListResolution;
 begin
+  ScaledImages := Images.ResolutionForPPI[16, Font.PixelsPerInch, GetCanvasScaleFactor];
+
   NodeData := GetNodeData(PaintInfo.Node);
 
   case PaintInfo.Column of
     0:
       if NodeData.Chart <> nil then
-        Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.MUSIC)
+        ScaledImages.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.MUSIC)
       else
-        Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.TRANSMIT);
+        ScaledImages.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.TRANSMIT);
     1:
       if NodeData.Chart <> nil then
       begin
         if NodeData.IsOnWishlist then
-          Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.SCRIPT_BRICKS);
+          ScaledImages.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.SCRIPT_BRICKS);
         if NodeData.IsArtistOnWishlist then
-          Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos + Scale96ToFont(16 + 2), PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.SCRIPT_USER_GRAY_COOL);
+          ScaledImages.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos + Scale96ToFont(16 + 2), PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.SCRIPT_USER_GRAY_COOL);
 
         for i := 0 to AppGlobals.Data.SavedTitleHashes.Count - 1 do
           if AppGlobals.Data.SavedTitleHashes[i] = NodeData.Chart.ServerHash then
           begin
-            Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos + Scale96ToFont((16 + 2) * 2), PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.DRIVE);
+            ScaledImages.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos + Scale96ToFont((16 + 2) * 2), PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.DRIVE);
             Break;
           end;
       end else
@@ -1199,7 +1202,7 @@ begin
         while not (P.ClassType = TChartsTab) do
           P := P.Parent;
         if TChartsTab(P).FOnGetIsStreamOnListEvent(Self, NodeData.Stream.Stream) then
-          Images.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.ADD);
+          ScaledImages.Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.ADD);
       end;
   end;
 end;

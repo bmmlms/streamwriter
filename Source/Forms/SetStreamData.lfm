@@ -17,6 +17,7 @@ object frmSetStreamData: TfrmSetStreamData
   OnKeyDown = FormKeyDown
   Position = poOwnerFormCenter
   ShowHint = True
+  LCLVersion = '2.2.6.0'
   object pnlNav: TPanel
     Left = 4
     Height = 34

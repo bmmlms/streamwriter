@@ -391,7 +391,7 @@ begin
   if TStreamTreeHeader(Header).FSortDown then
     R.Offset(1, 1);
 
-  modSharedData.imgImages.Resolution[16].Draw(TargetCanvas, R.Right - Header.Treeview.Scale96ToFont(16), R.Top + R.Height div 2 - Header.Treeview.Scale96ToFont(16) div 2, TImages.SORT, IfThen<TGraphicsDrawEffect>(Header.Treeview.Enabled, gdeNormal, gdeDisabled));
+  modSharedData.imgImages.ResolutionForPPI[16, Header.Font.PixelsPerInch, Header.Treeview.GetCanvasScaleFactor].Draw(TargetCanvas, R.Right - Header.Treeview.Scale96ToFont(16), R.Top + R.Height div 2 - Header.Treeview.Scale96ToFont(16) div 2, TImages.SORT, IfThen<TGraphicsDrawEffect>(Header.Treeview.Enabled, gdeNormal, gdeDisabled));
 end;
 
 function TStreamTreeColumns.ColumnFromPosition(const P: TPoint; Relative: Boolean): TColumnIndex;
@@ -608,12 +608,12 @@ begin
 
   if NodeData.Data.MetaData then
   begin
-    Images.Resolution[8].Draw(PaintInfo.Canvas, L, Scale96ToFont(19), TImages.TAG_GREEN, gdeNormal);
-    L := L + 9;
+    Images.ResolutionForPPI[9, Font.PixelsPerInch, GetCanvasScaleFactor].Draw(PaintInfo.Canvas, L, Scale96ToFont(16) + Margin, TImages.TAG_GREEN, gdeNormal);
+    L := L + Scale96ToFont(11);
   end;
 
   if NodeData.Data.ChangesTitleInSong or (not NodeData.Data.RecordingOkay) then
-    Images.Resolution[10].Draw(PaintInfo.Canvas, L, Scale96ToFont(19), TImages.CROSS, gdeNormal);
+    Images.ResolutionForPPI[9, Font.PixelsPerInch, GetCanvasScaleFactor].Draw(PaintInfo.Canvas, L, Scale96ToFont(16) + Margin, TImages.CROSS, gdeNormal);
 end;
 
 procedure TMStreamTree.FitColumns;

@@ -857,14 +857,14 @@ procedure TfrmStreamWriterMain.SetFormDimensions;
   begin
     Width := Scale96ToFont(Width);
     Height := Scale96ToFont(Height);
-    Left := Screen.Width div 2 - Width div 2;
-    Top := Screen.Height div 2 - Height div 2;
+    Left := Screen.PrimaryMonitor.WorkareaRect.Width div 2 - Width div 2;
+    Top := Screen.PrimaryMonitor.WorkareaRect.Height div 2 - Height div 2;
   end;
 
 var
   F: Boolean = False;
   i, DefW, DefH: Integer;
-  R, R2: TRect;
+  R: TRect;
 begin
   DefW := Scale96ToFont(Width);
   DefH := Scale96ToFont(Height);
@@ -881,7 +881,7 @@ begin
     // Wenn Fenster nicht auf Bildschirmen, Position zurücksetzen
     R := Classes.Rect(Left + 20, Top + 20, Left + Width - 40, Top + Height - 40);
     for i := 0 to Screen.MonitorCount - 1 do
-      if IntersectRect(R2, R, Screen.Monitors[i].WorkareaRect) then
+      if Screen.Monitors[i].WorkareaRect.IntersectsWith(R) then
       begin
         F := True;
         Break;

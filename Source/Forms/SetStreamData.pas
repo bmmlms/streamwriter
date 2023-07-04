@@ -127,7 +127,7 @@ begin
   else
     ImageIndex := TImages.EXCLAMATION;
 
-  modSharedData.imgImages.Resolution[16].Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, ImageIndex, gdeNormal);
+  modSharedData.imgImages.ResolutionForPPI[16, Font.PixelsPerInch, GetCanvasScaleFactor].Draw(PaintInfo.Canvas, PaintInfo.ImageInfo[ImageInfoIndex].XPos, PaintInfo.ImageInfo[ImageInfoIndex].YPos, ImageIndex, gdeNormal);
 end;
 
 procedure TTitleTree.DoTextDrawing(var PaintInfo: TVTPaintInfo; const Text: string; CellRect: TRect; DrawFormat: Cardinal);

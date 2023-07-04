@@ -575,7 +575,10 @@ procedure TLogTree.PaintImage(var PaintInfo: TVTPaintInfo; ImageInfoIndex: TVTIm
 var
   L: Integer;
   NodeData: PLogNodeData;
+  ScaledImages: TScaledImageListResolution;
 begin
+  ScaledImages := Images.ResolutionForPPI[16, Font.PixelsPerInch, GetCanvasScaleFactor];
+
   if PaintInfo.Column = 0 then
   begin
     NodeData := GetNodeData(PaintInfo.Node);
@@ -584,26 +587,26 @@ begin
 
     case NodeData.LogEntry.Source of
       lsGeneral:
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.BOOK_OPEN);
+        ScaledImages.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.BOOK_OPEN);
       lsAutomatic:
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.BRICKS);
+        ScaledImages.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.BRICKS);
       lsStream:
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.TRANSMIT);
+        ScaledImages.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.TRANSMIT);
       lsHome:
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.CONNECT);
+        ScaledImages.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.CONNECT);
     end;
 
     L += Scale96ToFont(16 + 2);
 
     case NodeData.LogEntry.Level of
       llError:
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.EXCLAMATION);
+        ScaledImages.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.EXCLAMATION);
       llWarning:
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.ERROR);
+        ScaledImages.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.ERROR);
       llInfo:
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.INFORMATION);
+        ScaledImages.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.INFORMATION);
       llDebug:
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.BUG);
+        ScaledImages.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.BUG);
     end;
 
     L += Scale96ToFont(16 + 2);
@@ -611,15 +614,15 @@ begin
     case NodeData.LogEntry.LogType of
       ltGeneral: ;
       ltSong:
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.MUSIC);
+        ScaledImages.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.MUSIC);
       ltSaved:
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.DRIVE);
+        ScaledImages.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.DRIVE);
       ltPostProcess:
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.LIGHTNING);
+        ScaledImages.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.LIGHTNING);
       ltSchedule:
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.TIME);
+        ScaledImages.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.TIME);
       ltSecure:
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.LOCK);
+        ScaledImages.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.LOCK);
     end;
   end;
 end;

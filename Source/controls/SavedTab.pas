@@ -1557,7 +1557,10 @@ procedure TSavedTree.PaintImage(var PaintInfo: TVTPaintInfo; ImageInfoIndex: TVT
 var
   L: Integer;
   NodeData: PSavedNodeData;
+  ScaledImages: TScaledImageListResolution;
 begin
+  ScaledImages := Images.ResolutionForPPI[16, Font.PixelsPerInch, GetCanvasScaleFactor];
+
   if PaintInfo.Column = 0 then
   begin
     NodeData := GetNodeData(PaintInfo.Node);
@@ -1566,37 +1569,37 @@ begin
 
     if NodeData.Track = nil then
     begin
-      Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.FOLDER_MUSIC);
+      ScaledImages.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.FOLDER_MUSIC);
       Exit;
     end;
 
     if LowerCase(FPlayer.Filename) = LowerCase(NodeData.Track.Filename) then
     begin
       if FPlayer.Playing then
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.PLAY_BLUE)
+        ScaledImages.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.PLAY_BLUE)
       else if FPlayer.Paused then
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.PAUSE_BLUE)
+        ScaledImages.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.PAUSE_BLUE)
       else
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.MUSIC);
+        ScaledImages.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.MUSIC);
     end else
-      Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.MUSIC);
+      ScaledImages.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.MUSIC);
 
     if NodeData.Track.IsAuto then
     begin
       L += Scale96ToFont(16 + 2);
 
       if NodeData.Track.RecordBecauseArtist then
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.USER_GRAY_COOL)
+        ScaledImages.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.USER_GRAY_COOL)
       else
-        Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.BRICKS);
+        ScaledImages.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.BRICKS);
     end;
 
     L += Scale96ToFont(16 + 2);
 
     if NodeData.Track.Finalized then
-      Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.TICK)
+      ScaledImages.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.TICK)
     else if NodeData.Track.WasCut then
-      Images.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.CUT);
+      ScaledImages.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.CUT);
   end;
 end;
 
