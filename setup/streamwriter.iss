@@ -64,15 +64,28 @@ PrivilegesRequiredOverridesAllowed=commandline dialog
 Filename: {app}\streamwriter.exe; WorkingDir: {app}; Flags: waituntilidle postinstall skipifsilent; Description: "{cm:Launch}"
 
 [Code]
-type TTimerProc = procedure(h:longword; msg:longword; idevent:longword; dwTime:longword);
+type
+  TTimerProc = procedure(hWnd: LongWord; uMsg: LongWord; idEvent: LongWord; dwTime: LongWord);
+  TFakePointer = Cardinal;
 
 // WinAPI
-function SetTimer(hWnd: longword; nIDEvent, uElapse: longword; lpTimerFunc: longword): longword; external 'SetTimer@user32 stdcall';
+function SetTimer(hWnd: LongWord; nIDEvent, uElapse: LongWord; lpTimerFunc: LongWord): LongWord; external 'SetTimer@user32 stdcall';
 function KillTimer(hWnd, nIDEvent: LongWord): LongWord; external 'KillTimer@user32 stdcall';
 function GetTickCount: LongWord; external 'GetTickCount@kernel32 stdcall';
+function CloseHandle(hObject: THandle): LongBool; external 'CloseHandle@kernel32 stdcall';
+
+// Following imports are modified since Pascal Script does not seem to support pointers
+function CreateFileMapping(hFile: THandle; lpFileMappingAttributes: TFakePointer; flProtect: DWORD; dwMaximumSizeHigh: DWORD; dwMaximumSizeLow: DWORD; lpName: PAnsiChar): THandle; external 'CreateFileMappingA@kernel32 stdcall';
+function MapViewOfFile(hFileMappingObject: THandle; dwDesiredAccess: DWORD; dwFileOffsetHigh: DWORD; dwFileOffsetLow: DWORD; dwNumberOfBytesToMap: Cardinal): TFakePointer; external 'MapViewOfFile@kernel32 stdcall';
+procedure RtlMoveMemory(var Dst: Cardinal; Src: TFakePointer; Len: Cardinal); external 'RtlMoveMemory@kernel32 stdcall';
+function UnmapViewOfFile(lpBaseAddress: TFakePointer): LongBool; external 'UnmapViewOfFile@kernel32 stdcall';
 
 const
   AppName = 'streamWriter';
+  INVALID_HANDLE_VALUE = -1;
+  PAGE_READONLY = 2;
+  FILE_MAP_READ = 4;
+
 var
   ExitApp: Boolean;
   AppCloseError: Boolean;
@@ -95,8 +108,22 @@ begin
 end;
 
 function GetWindowHandle: Cardinal;
+var
+  FileMapping: THandle;
+  Mem: Cardinal;
 begin
-  Result := FindWindowByClassName('TfrmStreamWriterMain');
+  Result := 0;
+  FileMapping := CreateFileMapping(INVALID_HANDLE_VALUE, 0, PAGE_READONLY, 0, SizeOf(Result), AppName + 'WndHandle');
+  if FileMapping = 0 then
+    Exit;
+
+  Mem := MapViewOfFile(FileMapping, FILE_MAP_READ, 0, 0, SizeOf(Result));
+  if Mem > 0 then
+  begin
+    RtlMoveMemory(Result, Mem, SizeOf(Result));
+    UnmapViewOfFile(Mem);
+  end;
+  CloseHandle(FileMapping);
 end;
 
 function VersionSupportsCloseFromSetup: Boolean;
@@ -125,7 +152,7 @@ begin
   Result := Pos(Needle, AnsiLowerCase(Copy(Haystack, Index + 1, Length(Haystack))));
 end;
 
-procedure AppCheckExitTimer(hwnd: LongWord; uMsg: LongWord; idEvent: LongWord; dwTime: LongWord);
+procedure AppCheckExitTimer(hWnd: LongWord; uMsg: LongWord; idEvent: LongWord; dwTime: LongWord);
 begin
   KillTimer(0, TimerAppCheckExit);
 
@@ -136,7 +163,7 @@ begin
   begin
     AppCloseError := True;
     LabelState.Caption := TranslateNewline(ExpandConstant('{cm:Running7}'));
-  end;    
+  end;
 end;
 
 procedure CloseApp;
