@@ -3,7 +3,6 @@
 
 [Files]
 Source: ..\Build\streamwriter.exe; DestDir: {app}; Flags: ignoreversion
-Source: .\InnoCallback.dll; DestDir: {tmp}; Flags: dontcopy
 Source: .\WizModernSmallImage-IS.bmp; DestDir: {tmp}; Flags: dontcopy
 
 [Icons]
@@ -72,9 +71,8 @@ function SetTimer(hWnd: longword; nIDEvent, uElapse: longword; lpTimerFunc: long
 function KillTimer(hWnd, nIDEvent: LongWord): LongWord; external 'KillTimer@user32 stdcall';
 function GetTickCount: LongWord; external 'GetTickCount@kernel32 stdcall';
 
-// InnoCallback
-function WrapTimerProc(callback: TTimerProc; paramcount: integer):longword; external 'wrapcallback@files:innocallback.dll stdcall setuponly';
-
+const
+  AppName = 'streamWriter';
 var
   ExitApp: Boolean;
   AppCloseError: Boolean;
@@ -85,20 +83,6 @@ var
   LabelState: TLabel;
   ButtonCloseApp: TNewButton;
   AppRunningPage: TWizardPage;
-const
-  WM_QUIT = 18;
-  WM_CLOSE = 16;
-  AppName = 'streamWriter';
-
-function CreateTimer(EventID, Interval: LongWord; P: TTimerProc): THandle;
-begin
-  Result := SetTimer(0, EventID, Interval, WrapTimerProc(P, 4));
-end;
-
-procedure DestroyTimer(TimerID: LongWord);
-begin
-  KillTimer(0, TimerID);
-end;
 
 function AppRunning: Boolean;
 begin
@@ -143,7 +127,7 @@ end;
 
 procedure AppCheckExitTimer(hwnd: LongWord; uMsg: LongWord; idEvent: LongWord; dwTime: LongWord);
 begin
-  DestroyTimer(TimerAppCheckExit);
+  KillTimer(0, TimerAppCheckExit);
 
   if (AppRunningPage = nil) or (WizardForm.CurPageID <> AppRunningPage.ID) then
     Exit;
@@ -163,7 +147,7 @@ begin
     ButtonCloseApp.Enabled := False;
     PostMessage(GetWindowHandle, 5432, 6345, 555);
 
-    TimerAppCheckExit := CreateTimer(1, 10000, @AppCheckExitTimer);
+    TimerAppCheckExit := SetTimer(0, 1, 10000, CreateCallback(@AppCheckExitTimer));
   end;
 end;
 
@@ -285,8 +269,8 @@ end;
 
 procedure CurPageChanged(CurPageID: Integer);
 begin
-  DestroyTimer(TimerAppRunning);
-  DestroyTimer(TimerAppCheckExit);
+  KillTimer(0, TimerAppRunning);
+  KillTimer(0, TimerAppCheckExit);
   
   if (CurPageID = AppRunningPage.ID) and AppRunning then
   begin
@@ -296,7 +280,7 @@ begin
     UpdateControls;
 
     WizardForm.NextButton.Enabled := False;
-    TimerAppRunning := CreateTimer(0, 100, @AppRunningTimer);
+    TimerAppRunning := SetTimer(0, 0, 100, CreateCallback(@AppRunningTimer));
   end;
 end;
 
