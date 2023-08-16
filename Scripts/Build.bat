@@ -12,7 +12,6 @@ SET "SOURCEDIR=%PROJECTDIR%\Source"
 SET "OUTDIR=%PROJECTDIR%\Build"
 SET "PUBLISHDIR=%PROJECTDIR%\Build\Publish"
 SET "ZIPFILES=%APPNAME%.exe"
-SET "UPLOADURL=https://streamwriter.org/de/downloads/svnbuild?download=67&filename=%APPNAME%"
 
 call :main %1
 echo(
@@ -111,7 +110,7 @@ goto end
 :upload
   cd "%PUBLISHDIR%"
 
-  "%CURL%" -k -f -S -o nul -F "file=@%APPNAME%.zip" "%UPLOADURL%&gitsha=%GITSHA%"
+  type "%APPNAME%.zip" | "%PLINK%" -batch ares streamwriter-update-build %GITSHA%
   if %ERRORLEVEL% GEQ 1 exit /B 1
 
   exit /b 0

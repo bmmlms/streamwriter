@@ -16,6 +16,5 @@ SET "INSTANTFPCOPTIONS=-Fu%FPCBIN%\..\..\..\..\lcl\units\x86_64-win64\win32 -Fu%
 
 SET "ZIP=D:\7-Zip\7z.exe"
 SET "INNO=D:\Inno Setup\ISCC.exe"
-SET "CURL=C:\Program Files\curl.exe"
 SET "PLINK=C:\Program Files\PuTTY\plink.exe"
 SET "MSYS2=D:\msys64\msys2_shell.cmd"
