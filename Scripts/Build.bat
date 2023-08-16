@@ -110,7 +110,7 @@ goto end
 :upload
   cd "%PUBLISHDIR%"
 
-  type "%APPNAME%.zip" | "%PLINK%" -batch ares streamwriter-update-build %GITSHA%
+  type "%APPNAME%.zip" | "%PLINK%" -batch ares streamwriter-update-build "%GITSHA%"
   if %ERRORLEVEL% GEQ 1 exit /B 1
 
   exit /b 0

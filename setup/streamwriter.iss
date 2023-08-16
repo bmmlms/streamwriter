@@ -15,12 +15,13 @@ Name: English; MessagesFile: compiler:Default.isl
 [CustomMessages]
 Deutsch.Launch=streamWriter starten
 Deutsch.Running=streamWriter läuft gerade und muss beendet werden, damit die Installation fortgesetzt werden kann.\nDie Installation wird automatisch fortgesetzt, wenn streamWriter beendet wurde.
-Deutsch.Running2=streamWriter wird gerade beendet...
-Deutsch.Running3=streamWriter läuft gerade
+Deutsch.Running2=streamWriter wird beendet...
+Deutsch.Running3=streamWriter läuft
 Deutsch.Running4=streamWriter muss beendet werden, damit fortgesetzt werden kann
 Deutsch.Running5=Es scheint, dass streamWriter sich nicht ordnungsgemäß beenden kann. Bitte lade die neueste Setup-Version von streamwriter.org herunter und führe das Update manuell durch.
-Deutsch.Running6=streamWriter läuft und muss beendet werden, damit fortgesetzt werden kann.\nBitte beende streamWriter und klicke "OK", um fortzusetzen.
+Deutsch.Running6=streamWriter läuft gerade und muss beendet werden, damit die Installation fortgesetzt werden kann.\nBitte beende streamWriter und klicke "OK", um fortzusetzen.
 Deutsch.Running7=streamWriter konnte nicht beendet werden.\nBitte beende streamWriter, um fortzusetzen.
+Deutsch.Running8=streamWriter läuft gerade und muss beendet werden, damit die Deinstallation fortgesetzt werden kann.\nKlicke "OK", um streamWriter zu beenden.
 Deutsch.ExitApp=streamWriter beenden
 Deutsch.PleaseRestart=Das Update wurde abgeschlossen. Bitte starte streamWriter neu.
 
@@ -30,8 +31,9 @@ English.Running2=streamWriter is exiting...
 English.Running3=streamWriter is running
 English.Running4=streamWriter needs to be closed to continue
 English.Running5=It seems that streamWriter cannot close correctly. Please download the newest setup-file from streamwriter.org and update manually.
-English.Running6=streamWriter is currently running and needs to be closed to continue.\nPlease close streamWriter and click "OK" to continue.
+English.Running6=streamWriter is currently running and needs to be closed to continue installation.\nPlease close streamWriter and click "OK" to continue.
 English.Running7=streamWriter could not be closed.\nPlease close streamWriter to continue.
+English.Running8=streamWriter is currently running and needs to be closed to continue uninstallation.\nClick "OK" to close streamWriter.
 English.ExitApp=Close streamWriter
 English.PleaseRestart=The update was installed successfully. Please restart streamWriter.
 
@@ -87,7 +89,6 @@ const
   FILE_MAP_READ = 4;
 
 var
-  ExitApp: Boolean;
   AppCloseError: Boolean;
 
   TimerAppRunning: THandle;
@@ -337,13 +338,30 @@ begin
 end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+var
+  r, i: Integer;
 begin
-  if CurUninstallStep = usUninstall then  
+  if (CurUninstallStep = usUninstall) and AppRunning then  
   begin
-    ExitApp := False;
-    while AppRunning do
-      if MsgBox(TranslateNewline(ExpandConstant('{cm:Running6}')), mbInformation, MB_OKCANCEL) = IDCANCEL then
-        Abort;
+    r := MsgBox(TranslateNewline(ExpandConstant('{cm:Running8}')), mbInformation, MB_OKCANCEL);
+    if r = IDOK then
+    begin
+      if GetWindowHandle > 0 then
+      begin
+        PostMessage(GetWindowHandle, 5432, 6345, 555);
+        for i := 0 to 10 do
+        begin
+          Sleep(1000);
+          if not AppRunning then
+            Exit;
+        end;
+      end;
+
+      while AppRunning do
+        if MsgBox(TranslateNewline(ExpandConstant('{cm:Running7}')), mbInformation, MB_OKCANCEL) = IDCANCEL then
+          Abort;
+    end else
+      Abort;
   end;
 end;
 
