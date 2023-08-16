@@ -1249,6 +1249,9 @@ begin
   FToolbar.EnableItems(Length(Tracks) > 0, HashesSelected);
   FPlayToolbar.EnableItems(Length(Tracks) > 0, Tree.FPlayer.Playing or Tree.FPlayer.Paused, IsFirst, IsLast);
 
+  Tree.FPopupMenu.ItemRefresh.Enabled := True;
+  FToolbar.FRefresh.Enabled := True;
+
   //Tree.FPopupMenu.ItemPlayLastSecs.Enabled := Bass.DeviceAvailable and ((Length(Tracks) = 1) or Tree.FPlayer.Playing or Tree.Player.Paused);
   FPlayToolbar.FPlayLastSecs.Enabled := Bass.DeviceAvailable and ((Length(Tracks) = 1) or Tree.FPlayer.Playing or Tree.Player.Paused);
 
@@ -1257,6 +1260,7 @@ begin
 
   Tree.FPopupMenu.ItemShowFile.Enabled := Length(Tracks) = 1;
   FToolbar.FShowFile.Enabled := Length(Tracks) = 1;
+
   Tree.FPopupMenu.ItemProperties.Enabled := Length(Tracks) = 1;
   FToolbar.FProperties.Enabled := Length(Tracks) = 1;
 
