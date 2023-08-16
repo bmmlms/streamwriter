@@ -1845,19 +1845,22 @@ var
   S: TfrmUpdate;
 begin
   S := TfrmUpdate.Create(Self, Version, UpdateURL);
-  S.ShowModal;
-  if (S.Updated) and (S.Exit) then
-  begin
-    S.Free;
-    if CanExitApp then
+  try
+    S.ShowModal;
+
+    if (S.Updated) and (S.Exit) then
     begin
-      FUpdateOnExit := True;
-      ExitApp(False);
+      if CanExitApp then
+      begin
+        FUpdateOnExit := True;
+        ExitApp(False);
+      end;
+    end else if S.Updated then
+    begin
+      AppGlobals.InstallUpdateOnStart := True;
+      actCheckUpdate.Enabled := False;
     end;
-  end else if S.Updated then
-  begin
-    AppGlobals.InstallUpdateOnStart := True;
-    actCheckUpdate.Enabled := False;
+  finally
     S.Free;
   end;
 end;
@@ -2675,7 +2678,7 @@ function TfrmStreamWriterMain.CustomWndProc(hwnd: HWND; uMsg: UINT; wParam: WPAR
 var
   CmdLine: TCommandLine;
 begin
-  if (not FExiting) and (uMsg = WM_COPYDATA) then
+  if not FExiting and (uMsg = WM_COPYDATA) then
   begin
     CmdLine := TCommandLine.Create(PChar(PCOPYDATASTRUCT(lParam).lpData));
     try
