@@ -126,7 +126,7 @@ type
   TSaveCutThread = class(TThread)
   private
     FInFilename, FOutFilename: string;
-    FS, FE: Cardinal;
+    FS, FE: Int64;
     FProgress: Integer;
 
     FOnSaveProgress: TNotifyEvent;
@@ -141,7 +141,7 @@ type
   protected
     procedure Execute; override;
   public
-    constructor Create(InFilename, OutFilename: string; S, E: Cardinal);
+    constructor Create(InFilename, OutFilename: string; S, E: Int64);
     destructor Destroy; override;
 
     property OutFilename: string read FOutFilename;
@@ -170,7 +170,7 @@ type
     FPlayerPaused: Boolean;
 
     FPeakColor, FPeakEndColor, FStartColor, FEndColor, FPlayColor, FZoomOuterColor, FZoomInnerColor: TColor;
-    FStartLine, FEndLine, FPlayLine, FZoomStartLine, FZoomEndLine, FEffectStartLine, FEffectEndLine: Cardinal;
+    FStartLine, FEndLine, FPlayLine, FZoomStartLine, FZoomEndLine, FEffectStartLine, FEffectEndLine: Integer;
     FDoZoom: Boolean;
 
     FMouseOldX, FMouseOldY, FMouseMoveStartX: Integer;
@@ -185,8 +185,8 @@ type
     procedure SetLine(X: Integer; Button: TMouseButton; Mode: TMouseMode);
     procedure HandleScrollBar(X: Integer; Y: Integer; Button: PMouseButton; Mode: TMouseMode);
     function GetControlMode(Y: Integer): TControlMode;
-    function PixelsToArray(X: Integer): Cardinal;
-    function GetPlayerPos: Cardinal;
+    function PixelsToArray(X: Integer): Integer;
+    function GetPlayerPos: Integer;
 
     procedure WMEraseBkgnd(var Message: TWMEraseBkgnd); message WM_ERASEBKGND;
 
@@ -211,7 +211,7 @@ type
     FEffectEndLine: Cardinal;
     FPlayLine: Cardinal;
   public
-    constructor Create(Filename: string; StartLine, EndLine, EffectStartLine, EffectEndLine, PlayLine: Cardinal);
+    constructor Create(Filename: string; StartLine, EndLine, EffectStartLine, EffectEndLine, PlayLine: Integer);
 
     property Filename: string read FFilename;
     property StartLine: Cardinal read FStartLine;
@@ -704,7 +704,7 @@ end;
 
 procedure TCutView.Cut;
 var
-  S, E: Cardinal;
+  S, E: Int64;
 begin
   if not CanCut then
     Exit;
@@ -775,7 +775,7 @@ end;
 
 procedure TCutView.ZoomIn;
 var
-  Swap: Cardinal;
+  Swap: Integer;
 begin
   if not CanZoomIn then
     Exit;
@@ -1078,7 +1078,7 @@ end;
 procedure TCutView.ApplyFade;
 var
   CmdLine: string;
-  FadeTo, FadeStart: Cardinal;
+  FadeTo, FadeStart: Integer;
 begin
   if not CheckSoX then
     Exit;
@@ -1200,7 +1200,7 @@ end;
 
 function TCutView.CanApplyFadeIn: Boolean;
 var
-  Tolerance: Cardinal;
+  Tolerance: Integer;
 begin
   if FWaveData = nil then
     Exit(False);
@@ -1211,7 +1211,7 @@ end;
 
 function TCutView.CanApplyFadeOut: Boolean;
 var
-  Tolerance: Cardinal;
+  Tolerance: Integer;
 begin
   if FWaveData = nil then
     Exit(False);
@@ -1247,7 +1247,7 @@ end;
 
 function TCutView.CanZoomOut: Boolean;
 begin
-  Result := (FWaveData <> nil) and ((FWaveData.ZoomStart <> High(Cardinal)) or (FWaveData.ZoomEnd <> High(FWaveData.WaveArray))) and ((FWaveData.ZoomStart <> 0) or (FWaveData.ZoomEnd <> High(FWaveData.WaveArray)));
+  Result := (FWaveData <> nil) and ((FWaveData.ZoomStart > -1) or (FWaveData.ZoomEnd > -1)) and ((FWaveData.ZoomStart <> 0) or (FWaveData.ZoomEnd <> High(FWaveData.WaveArray)));
 end;
 
 function TCutView.CheckSoX: Boolean;
@@ -1337,16 +1337,13 @@ end;
 
 procedure TCutPaintBox.BuildBuffer;
 
-  procedure DrawTransparentBox(StartIdx: Cardinal; EndIdx: Cardinal; LineColor: TColor; FillColor: TColor);
+  procedure DrawTransparentBox(StartIdx: Integer; EndIdx: Integer; LineColor: TColor; FillColor: TColor);
   var
-    RectStart, RectEnd: Int64;
+    RectStart, RectEnd: Integer;
     OriginalMode: TPenMode;
   begin
-    // Die Konvertierung nach Int64 ist wichtig. Sonst gibt es Darstellungsfehler:
-    // Wenn man im Zoom-Modus was markiert und nach rechts scrollt, über den Anfang des markierten,
-    // wird alles als ausgewählt angezeigt. Darum bloß nicht entfernen :)
-    RectStart := Trunc(((Int64(StartIdx) - Int64(FCutView.FWaveData.ZoomStart)) / Int64(FCutView.FWaveData.ZoomSize)) * FWaveBuf.Width);
-    RectEnd := Trunc(((Int64(EndIdx) - Int64(FCutView.FWaveData.ZoomStart)) / Int64(FCutView.FWaveData.ZoomSize)) * FWaveBuf.Width);
+    RectStart := Trunc(((StartIdx - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FWaveBuf.Width);
+    RectEnd := Trunc(((EndIdx - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FWaveBuf.Width);
 
     with FWaveBuf.Canvas do
     begin
@@ -1362,7 +1359,7 @@ procedure TCutPaintBox.BuildBuffer;
   procedure DrawScrollBar(Color: TColor);
   var
     StartX, StartY, EndX: Integer;
-    Y: Cardinal;
+    Y: Integer;
   begin
     with FWaveBuf.Canvas do
     begin
@@ -1380,10 +1377,10 @@ procedure TCutPaintBox.BuildBuffer;
       EndX := Trunc((FCutView.FWaveData.ZoomEnd * (FWaveBuf.Width - 6)) / High(FCutView.FWaveData.WaveArray)) + 3;
       if StartX = EndX then
         EndX := StartX + 1;
-      for y := 0 to FScrollbarHeight - 4 do
+      for Y := 0 to FScrollbarHeight - 4 do
       begin
-        MoveTo(StartX, StartY + y + 2);
-        LineTo(EndX, StartY + y + 2);
+        MoveTo(StartX, StartY + Y + 2);
+        LineTo(EndX, StartY + Y + 2);
       end;
     end;
   end;
@@ -1395,9 +1392,9 @@ var
   LBuf, RBuf: Cardinal;
   Added: Cardinal;
   HT: Cardinal;
-  ArrayFrom, ArrayTo: Cardinal;
-  L1, L2: Cardinal;
-  CS, CE: Cardinal;
+  ArrayFrom, ArrayTo: Integer;
+  L1, L2: Integer;
+  CS, CE: Integer;
   TextWrite: string = '';
 begin
   FWaveBuf.Canvas.Brush.Color := clBlack;
@@ -1446,7 +1443,7 @@ begin
 
   if FDoZoom then
   begin
-    if FZoomStartLine = High(Cardinal) then
+    if FZoomStartLine <= -1 then
     begin
       FCutView.FWaveData.ZoomStart := 0;
       FCutView.FWaveData.ZoomEnd := High(FCutView.FWaveData.WaveArray);
@@ -1454,8 +1451,8 @@ begin
     begin
       FCutView.FWaveData.ZoomStart := FZoomStartLine;
       FCutView.FWaveData.ZoomEnd := FZoomEndLine;
-      FZoomStartLine := High(Cardinal);
-      FZoomEndLine := High(Cardinal);
+      FZoomStartLine := -1;
+      FZoomEndLine := -1;
     end;
     FDoZoom := False;
   end;
@@ -1483,8 +1480,8 @@ begin
 
   for i := ArrayFrom to ArrayTo do
   begin
-    v := Integer(Trunc(((i - Int64(ArrayFrom)) / (ArrayTo - ArrayFrom)) * v2));
-    vnext := Integer(Trunc(((i - Int64(ArrayFrom) + 1) / (ArrayTo - ArrayFrom)) * v2));
+    v := Integer(Trunc(((i - ArrayFrom) / (ArrayTo - ArrayFrom)) * v2));
+    vnext := Integer(Trunc(((i - ArrayFrom + 1) / (ArrayTo - ArrayFrom)) * v2));
 
     if v = Last then
     begin
@@ -1538,9 +1535,9 @@ end;
 
 procedure TCutPaintBox.BuildDrawBuffer;
 
-  procedure DrawLine(ArrayIdx: Cardinal; Color: TColor);
+  procedure DrawLine(ArrayIdx: Integer; Color: TColor);
   var
-    L: Cardinal;
+    L: Integer;
   begin
     L := Trunc(((ArrayIdx - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FDrawBuf.Width);
 
@@ -1548,7 +1545,7 @@ procedure TCutPaintBox.BuildDrawBuffer;
     FDrawBuf.Canvas.Line(L, FEdge, L, FDrawBuf.Height - FScrollbarHeight - FEdge * 2);
   end;
 
-  procedure DrawLineText(ArrayIdx, Y: Cardinal);
+  procedure DrawLineText(ArrayIdx, Y: Integer);
   var
     L, TextWidth: Integer;
     SecText: string;
@@ -1611,8 +1608,8 @@ begin
   if FDrawBuf = nil then
     FDrawBuf := Graphics.TBitmap.Create;
 
-  FZoomStartLine := High(Cardinal);
-  FZoomEndLine := High(Cardinal);
+  FZoomStartLine := -1;
+  FZoomEndLine := -1;
 
   FTimer := TTimer.Create(Self);
   FTimer.Interval := 50;
@@ -1732,15 +1729,9 @@ begin
   BuildDrawBuffer;
 end;
 
-function TCutPaintBox.PixelsToArray(X: Integer): Cardinal;
+function TCutPaintBox.PixelsToArray(X: Integer): Integer;
 begin
-  // Wichtig weil Integer und Cardinal.
-  if X < 0 then
-    X := 0;
-  if X > ClientWidth then
-    X := ClientWidth;
-
-  Result := FCutView.FWaveData.ZoomStart + Cardinal(Ceil((X / FWaveBuf.Width) * FCutView.FWaveData.ZoomSize));
+  Result := FCutView.FWaveData.ZoomStart + Ceil((X / FWaveBuf.Width) * FCutView.FWaveData.ZoomSize);
 
   if Result > FCutView.FWaveData.ZoomEnd then
     Result := FCutView.FWaveData.ZoomEnd;
@@ -1748,10 +1739,10 @@ begin
     Result := FCutView.FWaveData.ZoomStart;
 end;
 
-function TCutPaintBox.GetPlayerPos: Cardinal;
+function TCutPaintBox.GetPlayerPos: Integer;
 var
   i: Integer;
-  SearchFrom, BytePos: Cardinal;
+  SearchFrom, BytePos: Int64;
 begin
   Result := 0;
   BytePos := FCutView.FPlayer.PositionByte;
@@ -1770,7 +1761,7 @@ end;
 
 procedure TCutPaintBox.SetLine(X: Integer; Button: TMouseButton; Mode: TMouseMode);
 var
-  ArrayPos: Cardinal;
+  ArrayPos: Integer;
 begin
   ArrayPos := PixelsToArray(X);
 
@@ -1822,7 +1813,7 @@ begin
     lmEffectsMarker:
     begin
       if (Button = mbLeft) and (Mode <> mmUp) then
-        if (FEffectStartLine = High(Cardinal)) or (Mode = mmDown) then
+        if (FEffectStartLine <= -1) or (Mode = mmDown) then
         begin
           FEffectStartLine := ArrayPos;
           FEffectEndLine := ArrayPos;
@@ -1845,8 +1836,8 @@ var
   StartX, EndX, DiffX: Integer;
 begin
   DiffX := Trunc(((X - FMouseMoveStartX) * High(FCutView.FWaveData.WaveArray)) / (FWaveBuf.Width - 6));
-  StartX := FCutView.FWaveData.ZoomStart + Cardinal(DiffX);
-  EndX := FCutView.FWaveData.ZoomEnd + Cardinal(DiffX);
+  StartX := FCutView.FWaveData.ZoomStart + DiffX;
+  EndX := FCutView.FWaveData.ZoomEnd + DiffX;
   if StartX < 0 then
   begin
     StartX := 0;
@@ -1906,7 +1897,7 @@ end;
 
 procedure TProcessThread.Execute;
 var
-  LoopStarted: UInt64;
+  LoopStarted: Int64;
   FS: TFileStream;
   Failed: Boolean;
   EC: DWORD;
@@ -1970,7 +1961,7 @@ end;
 
 { TUndoStep }
 
-constructor TUndoStep.Create(Filename: string; StartLine, EndLine, EffectStartLine, EffectEndLine, PlayLine: Cardinal);
+constructor TUndoStep.Create(Filename: string; StartLine, EndLine, EffectStartLine, EffectEndLine, PlayLine: Integer);
 begin
   FFilename := Filename;
   FStartLine := StartLine;
@@ -1982,7 +1973,7 @@ end;
 
 { TSaveCutThread }
 
-constructor TSaveCutThread.Create(InFilename, OutFilename: string; S, E: Cardinal);
+constructor TSaveCutThread.Create(InFilename, OutFilename: string; S, E: Int64);
 begin
   inherited Create(True);
 

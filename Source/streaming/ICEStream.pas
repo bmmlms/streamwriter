@@ -182,7 +182,7 @@ type
     function AdjustDisplayTitle(Title: string): string;
     function CalcAdjustment(Offset: Int64): Int64;
     procedure DataReceived(CopySize: Integer);
-    procedure SaveData(S, E: UInt64; Title: string; FullTitle: Boolean);
+    procedure SaveData(S, E: Int64; Title: string; FullTitle: Boolean);
     procedure TrySave;
     procedure ProcessData(Received: Cardinal);
     procedure GetSettings;
@@ -582,7 +582,7 @@ end;
 //    FOnMonitorAnalyzerAnalyzed(Self);
 //end;
 
-procedure TICEStream.SaveData(S, E: UInt64; Title: string; FullTitle: Boolean);
+procedure TICEStream.SaveData(S, E: Int64; Title: string; FullTitle: Boolean);
 
   procedure RemoveData;
   var

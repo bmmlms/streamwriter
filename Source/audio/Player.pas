@@ -72,13 +72,13 @@ type
     function FGetStopped: Boolean;
     function FGetPlaying: Boolean;
     procedure FSetVolume(Value: Integer);
-    function FGetMaxByte: Cardinal;
+    function FGetMaxByte: Int64;
     function FGetMaxTime: Double;
-    function FGetPositionByte: Cardinal;
+    function FGetPositionByte: Int64;
     function FGetPositionTime: Double;
     procedure FSetFilename(Value: string);
     procedure FSetPosToReach(Value: Cardinal);
-    procedure FSetPositionByte(Value: Cardinal);
+    procedure FSetPositionByte(Value: Int64);
     procedure FSetPositionTime(Value: Double);
   public
     constructor Create;
@@ -95,9 +95,9 @@ type
     property Playing: Boolean read FGetPlaying;
     property Filename: string read FFilename write FSetFilename;
     property Volume: Integer read FVolume write FSetVolume;
-    property MaxByte: Cardinal read FGetMaxByte;
+    property MaxByte: Int64 read FGetMaxByte;
     property MaxTime: Double read FGetMaxTime;
-    property PositionByte: Cardinal read FGetPositionByte write FSetPositionByte;
+    property PositionByte: Int64 read FGetPositionByte write FSetPositionByte;
     property PositionTime: Double read FGetPositionTime write FSetPositionTime;
     property PosToReach: Cardinal read FPosToReach write FSetPosToReach;
     property Tag: TTagData read FTag;
@@ -227,7 +227,7 @@ begin
   inherited;
 end;
 
-function TPlayer.FGetMaxByte: Cardinal;
+function TPlayer.FGetMaxByte: Int64;
 begin
   Result := 0;
   if FPlayer > 0 then
@@ -255,7 +255,7 @@ begin
     Result := BASSChannelIsActive(FPlayer) = BASS_ACTIVE_PLAYING;
 end;
 
-function TPlayer.FGetPositionByte: Cardinal;
+function TPlayer.FGetPositionByte: Int64;
 begin
   Result := 0;
   if FPlayer > 0 then
@@ -334,7 +334,7 @@ begin
   end;
 end;
 
-procedure TPlayer.FSetPositionByte(Value: Cardinal);
+procedure TPlayer.FSetPositionByte(Value: Int64);
 begin
   if FPlayer > 0 then
     if Value = MaxByte then

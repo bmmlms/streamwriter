@@ -35,8 +35,6 @@ uses
   SysUtils,
   Windows;
 
-{$RANGECHECKS OFF}
-
 type
   TMinSilence = record
     A, B: Int64;
@@ -45,7 +43,8 @@ type
   TMinSilenceArray = array of TMinSilence;
 
   TWaveEntry = record
-    Pos, Len: Cardinal;
+    Pos: Int64;
+    Len: Integer;
     Sec: Double;
     L, R: Word;
     Avg: Cardinal;
@@ -54,9 +53,9 @@ type
 
   TCutState = class
   public
-    CutStart, CutEnd: Cardinal;
+    CutStart, CutEnd: Integer;
 
-    constructor Create(F, T: Cardinal);
+    constructor Create(F, T: Integer);
   end;
 
   TWaveData = class
@@ -67,24 +66,24 @@ type
 
     FFilename: string;
     FWavesize, FFilesize: Int64;
-    FAudioStart, FAudioEnd: Cardinal;
+    FAudioStart, FAudioEnd: Int64;
     FCheckSum: Cardinal;
     FProgress: Cardinal;
 
     FOnProgress: TNotifyEvent;
 
-    FZoomStart, FZoomEnd: Cardinal;
+    FZoomStart, FZoomEnd: Integer;
 
     procedure AnalyzeData;
 
     procedure FSetWaveArray(Value: TWaveEntryArray);
 
-    function FGetZoomStart: Cardinal;
-    function FGetZoomEnd: Cardinal;
-    function FGetZoomSize: Cardinal;
+    function FGetZoomStart: Integer;
+    function FGetZoomEnd: Integer;
+    function FGetZoomSize: Integer;
     function FGetSecs: Double;
-    procedure FSetZoomStart(StartPos: Cardinal);
-    procedure FSetZoomEnd(EndPos: Cardinal);
+    procedure FSetZoomStart(StartPos: Integer);
+    procedure FSetZoomEnd(EndPos: Integer);
 
     function FindLowestArea(SearchFirst: Boolean; FromEntry, ToEntry: Integer): TMinSilence;
   public
@@ -93,15 +92,15 @@ type
 
     procedure Load(Stream: TMemoryStream); overload;
     procedure Load(Filename: string); overload;
-    function Save(OutFile: string; StartPos, EndPos: Cardinal): Boolean;
+    function Save(OutFile: string; StartPos, EndPos: Integer): Boolean;
     procedure AutoCut(SearchFirst: Boolean; MaxPeaks: Integer; MinDuration: Cardinal; FromEntry, ToEntry: Integer);
     procedure ClearSilence;
-    function TimeBetween(F, T: Cardinal): Double;
-    function IsInSilence(O: Cardinal): Boolean;
+    function TimeBetween(F, T: Integer): Double;
+    function IsInSilence(O: Integer): Boolean;
 
-    property ZoomStart: Cardinal read FGetZoomStart write FSetZoomStart;
-    property ZoomEnd: Cardinal read FGetZoomEnd write FSetZoomEnd;
-    property ZoomSize: Cardinal read FGetZoomSize;
+    property ZoomStart: Integer read FGetZoomStart write FSetZoomStart;
+    property ZoomEnd: Integer read FGetZoomEnd write FSetZoomEnd;
+    property ZoomSize: Integer read FGetZoomSize;
     property Secs: Double read FGetSecs;
 
     property WaveArray: TWaveEntryArray read FWaveArray write FSetWaveArray;
@@ -109,8 +108,8 @@ type
 
     property Wavesize: Int64 read FWavesize;
     property Filesize: Int64 read FFilesize;
-    property AudioStart: Cardinal read FAudioStart;
-    property AudioEnd: Cardinal read FAudioEnd;
+    property AudioStart: Int64 read FAudioStart;
+    property AudioEnd: Int64 read FAudioEnd;
     property CheckSum: Cardinal read FCheckSum;
     property Progress: Cardinal read FProgress;
 
@@ -177,7 +176,7 @@ begin
   end;
 end;
 
-function TWaveData.Save(OutFile: string; StartPos, EndPos: Cardinal): Boolean;
+function TWaveData.Save(OutFile: string; StartPos, EndPos: Integer): Boolean;
 var
   C: TFileConvertor;
 begin
@@ -222,9 +221,12 @@ begin
     end;
 
     Level := BASSChannelGetLevel(FDecoder);
+    {$PUSH}
+    {$RANGECHECKS OFF}
     FWaveArray[Counter].L := LOWORD(Level);
     FWaveArray[Counter].R := HIWORD(Level);
     FWaveArray[Counter].Avg := (LOWORD(Level) + HIWORD(Level)) div 2;
+    {$POP}
     FWaveArray[Counter].Pos := Position;
 
     FCheckSum := FCheckSum + FWaveArray[Counter].Avg;
@@ -260,7 +262,7 @@ var
   i: Integer;
   Avg: Cardinal;
   MinDurationD: Double;
-  SilenceStart, SilenceEnd: Cardinal;
+  SilenceStart, SilenceEnd: Integer;
 begin
   if MaxPeaks = -1 then
     FindLowestArea(SearchFirst, FromEntry, ToEntry)
@@ -295,7 +297,7 @@ begin
   end;
 end;
 
-function TWaveData.FGetZoomStart: Cardinal;
+function TWaveData.FGetZoomStart: Integer;
 begin
   Result := FZoomStart;
 end;
@@ -399,23 +401,23 @@ begin
   end;
 end;
 
-function TWaveData.FGetZoomEnd: Cardinal;
+function TWaveData.FGetZoomEnd: Integer;
 begin
   Result := FZoomEnd;
 end;
 
-function TWaveData.FGetZoomSize: Cardinal;
+function TWaveData.FGetZoomSize: Integer;
 begin
   Result := ZoomEnd - ZoomStart;
 end;
 
-procedure TWaveData.FSetZoomStart(StartPos: Cardinal);
+procedure TWaveData.FSetZoomStart(StartPos: Integer);
 begin
   if StartPos <> ZoomStart then
     FZoomStart := StartPos;
 end;
 
-procedure TWaveData.FSetZoomEnd(EndPos: Cardinal);
+procedure TWaveData.FSetZoomEnd(EndPos: Integer);
 begin
   if EndPos <> ZoomEnd then
     FZoomEnd := EndPos;
@@ -431,7 +433,7 @@ begin
   FWaveArray := Value;
 end;
 
-function TWaveData.IsInSilence(O: Cardinal): Boolean;
+function TWaveData.IsInSilence(O: Integer): Boolean;
 var
   i: Integer;
 begin
@@ -444,14 +446,14 @@ begin
     end;
 end;
 
-function TWaveData.TimeBetween(F, T: Cardinal): Double;
+function TWaveData.TimeBetween(F, T: Integer): Double;
 begin
   Result := Math.Max(FWaveArray[F].Sec, FWaveArray[T].Sec) - Math.Min(FWaveArray[F].Sec, FWaveArray[T].Sec);
 end;
 
 { TCutState }
 
-constructor TCutState.Create(F, T: Cardinal);
+constructor TCutState.Create(F, T: Integer);
 begin
   inherited Create;
 
