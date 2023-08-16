@@ -64,9 +64,11 @@ goto end
 
   cd "%OUTDIR%"
 
-  move "%APPNAME%.dbg" "%APPNAME%_%GITSHA%.dbg"
+  if exist "%APPNAME%.dbg" (
+    move "%APPNAME%.dbg" "%APPNAME%_%GITSHA%.dbg"
+  )
 
-  for %%f in (*.*) do (
+  for %%f in (*.exe *.dll) do (
     type "%%f" | "%PLINK%" -batch gaia osslsigncode-sign.sh > "%%f-signed"
     if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
     move /y "%%f-signed" "%%f"
