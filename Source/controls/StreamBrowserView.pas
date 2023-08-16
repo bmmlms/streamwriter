@@ -697,7 +697,9 @@ procedure TMStreamTree.HomeCommBytesTransferred(CommandHeader: TCommandHeader; T
 begin
   if FProgressBar.Position < 100 then
     FProgressBar.Position := FProgressBar.Position + 1;
-  FProgressBar.Position := Trunc((Transferred / CommandHeader.CommandLength) * 100);
+
+  if CommandHeader.CommandLength > 0 then
+    FProgressBar.Position := Trunc((Transferred / CommandHeader.CommandLength) * 100);
 end;
 
 procedure TMStreamTree.InvalidateVisible;
