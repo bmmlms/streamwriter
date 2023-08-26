@@ -8,7 +8,7 @@ Visit [streamwriter.org](https://streamwriter.org) for more information.
   <img src="./.github/streamwriter-main.png" alt="streamWriter main window">
 </p>
 
-### Features
+### :zap: Features
 - Record as many streams as you want at the same time (MP3/AAC)
 - Automatically record a wishlist's song when it's playing on a stream
 - Player for streams and recorded files
@@ -26,10 +26,10 @@ Visit [streamwriter.org](https://streamwriter.org) for more information.
 - Can be installed or used in portable mode
 - Built using Lazarus :fire:
 
-### Installation
+### :computer: Installation
 Downloads are available at [streamwriter.org](https://streamwriter.org/en/downloads).
 
-### Building
+### :gear: Building
 - Install Lazarus IDE and the tools to crosscompile
 - Install MSYS2 with mingw32 (required for building Mbed TLS)
 
