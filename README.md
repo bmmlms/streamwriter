@@ -27,7 +27,7 @@ Visit [streamwriter.org](https://streamwriter.org) for more information.
 - Built using Lazarus :fire:
 
 ### :computer: Installation
-Downloads are available at [streamwriter.org](https://streamwriter.org/en/downloads).
+Downloads are available at [streamwriter.org](https://streamwriter.org/downloads).
 
 ### :gear: Building
 - Install Lazarus IDE and the tools to crosscompile
