@@ -43,8 +43,7 @@ uses
   StreamHelper,
   SWFunctions,
   SysUtils,
-  TypeDefs,
-  WideStrUtils;
+  TypeDefs;
 
 type
   TChunkReceivedEvent = procedure(Buf: Pointer; Len: Integer) of object;
@@ -100,6 +99,8 @@ type
     property Filename: string read FFilename;
     property FilenameConverted: string read FFilenameConverted;
   end;
+
+  { TICEStream }
 
   TICEStream = class(THTTPStream)
   private
@@ -193,12 +194,12 @@ type
 
     //procedure MonitorAnalyzerAnalyzed(Sender: TObject);
 
-    function CleanTitle(Title: PByte; Size: Integer): AnsiString;
     procedure ParseTitle(S, Pattern: string; var Artist: string; var Title: string; var Album: string);
 
     procedure FSetRecordTitle(Value: string);
     procedure FSetParsedRecordTitle(Value: string);
   protected
+    function ParseHeaderField(const Name: string; const Value: PByte; const Len: Integer): string; override;
     procedure DoHeaderRemoved; override;
     procedure WriteExtLog(Msg: string; T: TLogType; Level: TLogLevel); overload;
   public
@@ -338,17 +339,6 @@ begin
   end;
 end;
 
-function TICEStream.CleanTitle(Title: PByte; Size: Integer): AnsiString;
-var
-  i: Integer;
-begin
-  Result := '';
-  if Size > 0 then
-    for i := 0 to Size do
-      if (((Title + i)^) <= 127) and (((Title + i)^) >= 32) then
-        Result := Result + Chr((Title + i)^);
-end;
-
 constructor TICEStream.Create;
 begin
   inherited Create;
@@ -463,8 +453,9 @@ begin
     Exit;
   end;
 
-  if (HeaderType = 'icy') or (LowerCase(ContentType) = 'audio/mpeg') or (LowerCase(ContentType) = 'audio/aacp') or (LowerCase(ContentType) = 'audio/aac') or (Pos(#10'icy-metaint:', LowerCase(FHeader)) > 0) or
-    (Pos(#10'icy-name:', LowerCase(FHeader)) > 0) then
+  if (HeaderType = 'icy') or (LowerCase(ContentType) = 'audio/mpeg') or (LowerCase(ContentType) = 'audio/aacp') or (LowerCase(ContentType) = 'audio/aac')
+    or FHeader.ContainsKey('icy-metaint') or FHeader.ContainsKey('icy-name')
+  then
   begin
     WriteExtLog(_('Audio-data response detected'), ltGeneral, llDebug);
     FHeaderType := 'icy';
@@ -472,17 +463,17 @@ begin
     if ResponseCode = 200 then
     begin
       try
-        FMetaInt := StrToInt(GetHeaderData('icy-metaint'));
+        FMetaInt := StrToInt(GetHeaderValue('icy-metaint'));
         FNextMetaInt := FMetaInt;
       except
         WriteExtLog(_('Meta-interval could not be found'), ltGeneral, llWarning);
       end;
 
-      FStreamName := GetHeaderData('icy-name');
+      FStreamName := GetHeaderValue('icy-name');
       if FStreamCustomName = '' then
         FStreamCustomName := FStreamName;
-      FStreamURL := GetHeaderData('icy-url');
-      FGenre := GetHeaderData('icy-genre');
+      FStreamURL := GetHeaderValue('icy-url');
+      FGenre := GetHeaderValue('icy-genre');
 
       if (LowerCase(ContentType) = 'audio/mpeg') or ((ContentType = '') and ((FStreamName <> '') or (FStreamURL <> ''))) then
         FAudioType := atMPEG
@@ -560,6 +551,14 @@ begin
   FParsedRecordTitle := Value;
   if Value <> FParsedRecordTitle then
     WriteExtLog(Format(_('Recording "%s"'), [Value]), ltGeneral, llInfo);
+end;
+
+function TICEStream.ParseHeaderField(const Name: string; const Value: PByte; const Len: Integer): string;
+begin
+  if Name <> 'icy-name' then
+    Exit(inherited ParseHeaderField(Name, Value, Len));
+
+  Result := TFunctions.GetStringGuessEncoding(Value, Len);
 end;
 
 procedure TICEStream.GetSettings;
@@ -1161,19 +1160,11 @@ begin
             MetaLen := Buf * 16;
 
             TitleStart := RecvStream.Position + 13;
-            TitleLen := Min(RecvStream.PosInStream(''';', TitleStart) - TitleStart - 1, MetaLen);
+            TitleLen := Min(RecvStream.PosInStream([$27, $3B] { '; }, TitleStart) - TitleStart, MetaLen);
 
             if TitleLen > 0 then
-            begin
-              if IsBufferUTF8(RecvStream.Memory + TitleStart, TitleLen, False) = u8sYes then
-              begin
-                SetLength(Title, TitleLen);
-                Move((RecvStream.Memory + TitleStart)^, Title[1], TitleLen);
-              end else
-                Title := CleanTitle(RecvStream.Memory + TitleStart, TitleLen);
-
-              Title := Title.Trim;
-            end else
+              Title := TFunctions.GetStringGuessEncoding(RecvStream.Memory + TitleStart, TitleLen).Trim
+            else
               Title := '';
 
             RecvStream.Position := RecvStream.Position + MetaLen;
