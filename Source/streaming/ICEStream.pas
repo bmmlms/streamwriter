@@ -884,7 +884,6 @@ begin
       raise Exception.Create(Format(_('Could not create "%s"'), [Filename]));
     end;
 
-
     FRecordingTitleFound := False;
     FStreamTracks.Clear;
 
@@ -1357,6 +1356,7 @@ begin
 
   if not HeaderRemoved then
     Exit;
+
   if HeaderType = 'icy' then
   begin
     if (HeaderRemoved) and (RecvStream.Size > 8192) then

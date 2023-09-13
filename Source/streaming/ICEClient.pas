@@ -952,12 +952,10 @@ end;
 procedure TICEClient.ThreadTerminated(Sender: TObject);
 var
   MaxRetries: Integer;
-  DiedThread: TICEThread;
+  DiedThread: TICEThread absolute Sender;
 begin
   if FICEThread <> Sender then
     Exit;
-
-  DiedThread := TICEThread(Sender);
 
   FICEThread := nil;
   FTitle := '';
