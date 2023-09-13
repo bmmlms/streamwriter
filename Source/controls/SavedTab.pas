@@ -1588,22 +1588,22 @@ begin
     end else
       ScaledImages.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.MUSIC);
 
-    if NodeData.Track.IsAuto then
-    begin
-      L += Scale96ToFont(16 + 2);
-
-      if NodeData.Track.RecordBecauseArtist then
-        ScaledImages.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.USER_GRAY_COOL)
-      else
-        ScaledImages.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.BRICKS);
-    end;
-
     L += Scale96ToFont(16 + 2);
 
     if NodeData.Track.Finalized then
       ScaledImages.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.TICK)
     else if NodeData.Track.WasCut then
       ScaledImages.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.CUT);
+
+    L += Scale96ToFont(16 + 2);
+
+    if NodeData.Track.IsAuto then
+    begin
+      if NodeData.Track.RecordBecauseArtist then
+        ScaledImages.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.USER_GRAY_COOL)
+      else
+        ScaledImages.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.BRICKS);
+    end;
   end;
 end;
 
@@ -2282,7 +2282,10 @@ begin
   begin
     Tracks := GetSelected;
     if Length(Tracks) = 1 then
+    begin
+      FPlayer.Stop(True, True);
       FPopupMenu.FItemPlay.Click;
+    end;
   end;
 end;
 
@@ -2657,7 +2660,10 @@ begin
     Key := #0;
     Tracks := GetSelected;
     if Length(Tracks) = 1 then
+    begin
+      FPlayer.Stop(True, True);
       FPopupMenu.FItemPlay.Click;
+    end;
   end else
     inherited;
 end;
