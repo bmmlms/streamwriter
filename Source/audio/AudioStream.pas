@@ -436,7 +436,7 @@ begin
         MaxPeaks := Trunc((MaxPeaks / 100) * 6000);
 
       WD.AutoCut(False, MaxPeaks, MinDuration, 0, High(WD.WaveArray));
-      WD2.AutoCut(True, MaxPeaks, MinDuration, 0, High(WD.WaveArray));
+      WD2.AutoCut(True, MaxPeaks, MinDuration, 0, High(WD2.WaveArray));
 
       if WD.Silence.Count > 0 then
       begin
