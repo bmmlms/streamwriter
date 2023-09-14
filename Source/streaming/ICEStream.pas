@@ -631,9 +631,9 @@ begin
       Exit;
 
     if FAudioStream.ClassType.InheritsFrom(TAudioStreamFile) then
-      P := TAudioStreamFile(FAudioStream).GetFrame(S, E)
+      P := TAudioStreamFile(FAudioStream).GetFrame(Max(S, 0), Min(E, FAudioStream.Size))
     else
-      P := TAudioStreamMemory(FAudioStream).GetFrame(S, E);
+      P := TAudioStreamMemory(FAudioStream).GetFrame(Max(S, 0), Min(E, FAudioStream.Size));
 
     if FAudioInfo.BytesPerSec = 0 then
     begin

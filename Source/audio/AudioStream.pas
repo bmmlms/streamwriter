@@ -208,16 +208,14 @@ var
   FL: Integer;
   Buf: array[0..3] of byte;
 begin
+  if (F < 0) or (T > Size) then
+    raise Exception.Create('Invalid arguments');
+
   Result.DataStart := -1;
   Result.DataEnd := -1;
 
   LastFrame := -1;
   OldPos := Position;
-
-  if F < 0 then
-    F := 0;
-  if T > Size then
-    T := Size;
 
   i := F;
   while i <= T - 4 do
@@ -282,6 +280,9 @@ end;
 
 function TAACStreamFile.GetFrame(F, T: Int64): TPosRect;
 begin
+  if (F < 0) or (T > Size) then
+    raise Exception.Create('Invalid arguments');
+
   Result.DataStart := F;
   Result.DataEnd := T;
 end;
@@ -295,16 +296,14 @@ var
   FL: Integer;
   Buf: array[0..3] of byte;
 begin
+  if (F < 0) or (T > Size) then
+    raise Exception.Create('Invalid arguments');
+
   Result.DataStart := -1;
   Result.DataEnd := -1;
 
   LastFrame := -1;
   OldPos := Position;
-
-  if F < 0 then
-    F := 0;
-  if T > Size then
-    T := Size;
 
   i := F;
   while i <= T - 4 do
@@ -369,6 +368,9 @@ end;
 
 function TAACStreamMemory.GetFrame(F, T: Int64): TPosRect;
 begin
+  if (F < 0) or (T > Size) then
+    raise Exception.Create('Invalid arguments');
+
   Result.DataStart := F;
   Result.DataEnd := T;
 end;
@@ -477,6 +479,9 @@ end;
 
 function TOGGStreamFile.GetFrame(F, T: Int64): TPosRect;
 begin
+  if (F < 0) or (T > Size) then
+    raise Exception.Create('Invalid arguments');
+
   Result.DataStart := F;
   Result.DataEnd := T;
 end;
@@ -485,6 +490,9 @@ end;
 
 function TOGGStreamMemory.GetFrame(F, T: Int64): TPosRect;
 begin
+  if (F < 0) or (T > Size) then
+    raise Exception.Create('Invalid arguments');
+
   Result.DataStart := F;
   Result.DataEnd := T;
 end;
