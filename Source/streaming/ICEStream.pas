@@ -439,6 +439,8 @@ begin
 end;
 
 procedure TICEStream.DoHeaderRemoved;
+var
+  AudioContentType: TAudioTypes = atNone;
 begin
   inherited;
 
@@ -453,36 +455,39 @@ begin
     Exit;
   end;
 
-  if (HeaderType = 'icy') or (LowerCase(ContentType) = 'audio/mpeg') or (LowerCase(ContentType) = 'audio/aacp') or (LowerCase(ContentType) = 'audio/aac')
-    or FHeader.ContainsKey('icy-metaint') or FHeader.ContainsKey('icy-name')
-  then
+  if (LowerCase(ContentType) = 'audio/mpeg') or (LowerCase(ContentType) = 'audio/mp3') then
+    AudioContentType := atMPEG
+  else if (LowerCase(ContentType) = 'audio/aacp') or (LowerCase(ContentType) = 'audio/aac') then
+    AudioContentType := atAAC;
+
+  if (HeaderType = 'icy') or FHeader.ContainsKey('icy-metaint') or FHeader.ContainsKey('icy-name') or (AudioContentType in [atMPEG, atAAC]) then
   begin
     WriteExtLog(_('Audio-data response detected'), ltGeneral, llDebug);
     FHeaderType := 'icy';
 
     if ResponseCode = 200 then
     begin
-      try
-        FMetaInt := StrToInt(GetHeaderValue('icy-metaint'));
-        FNextMetaInt := FMetaInt;
-      except
-        WriteExtLog(_('Meta-interval could not be found'), ltGeneral, llWarning);
-      end;
-
       FStreamName := GetHeaderValue('icy-name');
       if FStreamCustomName = '' then
         FStreamCustomName := FStreamName;
       FStreamURL := GetHeaderValue('icy-url');
       FGenre := GetHeaderValue('icy-genre');
 
-      if (LowerCase(ContentType) = 'audio/mpeg') or ((ContentType = '') and ((FStreamName <> '') or (FStreamURL <> ''))) then
+      if (AudioContentType = atMPEG) or ((ContentType = '') and ((FStreamName <> '') or (FStreamURL <> ''))) then
         FAudioType := atMPEG
-      else if (LowerCase(ContentType) = 'audio/aacp') or (LowerCase(ContentType) = 'audio/aac') then
+      else if AudioContentType = atAAC then
         FAudioType := atAAC
       //else if LowerCase(ContentType) = 'application/ogg' then
       //  FAudioType := atOGG
       else
         raise Exception.Create(_('Unknown content-type'));
+
+      try
+        FMetaInt := StrToInt(GetHeaderValue('icy-metaint'));
+        FNextMetaInt := FMetaInt;
+      except
+        WriteExtLog(_('Meta-interval could not be found'), ltGeneral, llWarning);
+      end;
 
       AppGlobals.Lock;
       try
