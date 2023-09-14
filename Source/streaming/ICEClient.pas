@@ -56,7 +56,7 @@ type
   TICEClient = class;
 
   TIntegerEvent = procedure(Sender: TObject; Data: Integer) of object;
-  TSongSavedEvent = procedure(Sender: TObject; Filename, Title, SongArtist, SongTitle: string; Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile, RecordBecauseArtist: Boolean;
+  TSongSavedEvent = procedure(Sender: TObject; Filename, Title, SongArtist, SongTitle: string; Filesize: Int64; Length, Bitrate: Cardinal; VBR, WasCut, FullTitle, IsStreamFile, RecordBecauseArtist: Boolean;
     ServerTitleHash, ServerArtistHash: Cardinal) of object;
   TTitleAllowedEvent = procedure(Sender: TObject; Title: string; var Allowed: Boolean; var Match: string; var Filter: Integer) of object;
 
@@ -95,7 +95,7 @@ type
     FGenre: string;
     FTitle: string;
     FDisplayTitle: string;
-    FSpeed: Integer;
+    FSpeed: Cardinal;
     FContentType: string;
     FFilename: string;
     FScheduledRecording: Boolean;
@@ -183,7 +183,7 @@ type
     procedure StopRecording;
     procedure SetVolume(Vol: Integer);
     procedure SetEQ(Value, Freq: Integer);
-    procedure PostProcessingFinished(Filename, Title, SongArtist, SongTitle: string; Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile, RecordBecauseArtist: Boolean;
+    procedure PostProcessingFinished(Filename, Title, SongArtist, SongTitle: string; Filesize: Int64; Length, Bitrate: Cardinal; VBR, WasCut, FullTitle, IsStreamFile, RecordBecauseArtist: Boolean;
       ServerTitleHash, ServerArtistHash: Cardinal);
     function IsCurrentTimeInSchedule(ExcludeSchedule: TSchedule = nil): Boolean;
 
@@ -213,7 +213,7 @@ type
     property Genre: string read FGenre;
     property Title: string read FTitle;
     property DisplayTitle: string read FDisplayTitle;
-    property Speed: Integer read FSpeed;
+    property Speed: Cardinal read FSpeed;
     property ContentType: string read FContentType;
     property Filename: string read FFilename;
     property ScheduledRecording: Boolean read FScheduledRecording write FScheduledRecording;
@@ -348,7 +348,7 @@ begin
   end;
 end;
 
-procedure TICEClient.PostProcessingFinished(Filename, Title, SongArtist, SongTitle: string; Filesize, Length, Bitrate: UInt64; VBR, WasCut, FullTitle, IsStreamFile, RecordBecauseArtist: Boolean;
+procedure TICEClient.PostProcessingFinished(Filename, Title, SongArtist, SongTitle: string; Filesize: Int64; Length, Bitrate: Cardinal; VBR, WasCut, FullTitle, IsStreamFile, RecordBecauseArtist: Boolean;
   ServerTitleHash, ServerArtistHash: Cardinal);
 begin
   if Assigned(FOnSongSaved) then

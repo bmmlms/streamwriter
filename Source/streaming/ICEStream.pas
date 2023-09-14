@@ -92,7 +92,7 @@ type
     constructor Create(Streamname, Dir: string; SongsSaved: Cardinal; Settings: TStreamSettings);
 
     procedure GetStreamFilename(Name: string; AudioType: TAudioTypes);
-    procedure GetFilename(Filesize: UInt64; Artist, Title, Album, Genre, StreamTitle: string; AudioType: TAudioTypes; TitleState: TTitleStates; Killed: Boolean);
+    procedure GetFilename(Filesize: Int64; Artist, Title, Album, Genre, StreamTitle: string; AudioType: TAudioTypes; TitleState: TTitleStates; Killed: Boolean);
 
     property Result: TCheckResults read FResult;
     property SaveDir: string read FSaveDir;
@@ -139,8 +139,8 @@ type
     FSavedArtist: string;
     FSavedTitle: string;
     FSavedAlbum: string;
-    FSavedSize: UInt64;
-    FSavedLength: UInt64;
+    FSavedSize: Int64;
+    FSavedLength: Cardinal;
     FSavedStreamTitle: string;
     FSavedIsStreamFile: Boolean;
     FFilename: string;
@@ -237,8 +237,8 @@ type
     property SavedArtist: string read FSavedArtist;
     property SavedTitle: string read FSavedTitle;
     property SavedAlbum: string read FSavedAlbum;
-    property SavedSize: UInt64 read FSavedSize;
-    property SavedLength: UInt64 read FSavedLength;
+    property SavedSize: Int64 read FSavedSize;
+    property SavedLength: Cardinal read FSavedLength;
     property SavedStreamTitle: string read FSavedStreamTitle;
     property SavedIsStreamFile: Boolean read FSavedIsStreamFile;
     property SongsSaved: Cardinal read FSongsSaved write FSongsSaved;
@@ -432,7 +432,7 @@ begin
   if Assigned(FOnChunkReceived) and (not FMonitoring) then
   begin
     GetMem(Buf, CopySize);
-    Move((Pointer(Integer(RecvStream.Memory) + (RecvStream.Position - CopySize)))^, Buf^, CopySize);
+    Move((Pointer(PtrUInt(RecvStream.Memory) + (RecvStream.Position - CopySize)))^, Buf^, CopySize);
     FOnChunkReceived(Buf, CopySize);
     FreeMem(Buf);
   end;
@@ -1494,21 +1494,10 @@ begin
     Result := Append;
 end;
 
-procedure TFileChecker.GetFilename(Filesize: UInt64; Artist, Title, Album, Genre, StreamTitle: string; AudioType: TAudioTypes; TitleState: TTitleStates; Killed: Boolean);
-
-  function AnyFileExists(Filename: string): Boolean;
-  var
-    i: Integer;
-  begin
-    Result := False;
-    for i := 0 to Ord(High(TAudioTypes)) do
-      if TAudioTypes(i) <> atNone then
-        if FileExists(Filename + FormatToFiletype(TAudioTypes(i))) then
-          Exit(True);
-  end;
-
+procedure TFileChecker.GetFilename(Filesize: Int64; Artist, Title, Album, Genre, StreamTitle: string; AudioType: TAudioTypes; TitleState: TTitleStates; Killed: Boolean);
 var
   Filename, Ext, Patterns: string;
+  ExistingFileSize: Int64;
 begin
   FResult := crSave;
 
@@ -1526,15 +1515,15 @@ begin
   Filename := InfoToFilename(Artist, Title, Album, Genre, StreamTitle, TitleState, Patterns);
   Filename := GetValidFilename(Filename);
 
-  if AnyFileExists(ConcatPaths([FSaveDir, Filename])) then
+  if TFunctions.GetFileSize(ConcatPaths([FSaveDir, Filename + Ext]), ExistingFileSize) then
   begin
     if FSettings.DiscardAlways then
       FResult := crDiscard
-    else if FSettings.OverwriteSmaller and (TFunctions.GetFileSize(ConcatPaths([FSaveDir, Filename + Ext])) < Filesize) then
+    else if FSettings.OverwriteSmaller and (ExistingFileSize < Filesize) then
     begin
       FResult := crOverwrite;
       FFilename := Filename + Ext;
-    end else if FSettings.DiscardSmaller and (TFunctions.GetFileSize(ConcatPaths([FSaveDir, Filename + Ext])) >= Filesize) then
+    end else if FSettings.DiscardSmaller and (ExistingFileSize >= Filesize) then
       FResult := crDiscardExistingIsLarger
     else
       FFilename := TFunctions.FixPathName(Filename + ' (' + IntToStr(GetAppendNumber(FSaveDir, Filename)) + ')' + Ext);

@@ -37,14 +37,14 @@ type
   TFileEntry = class
   private
     FAction: TFileEntryAction;
-    FSize: UInt64;
+    FSize: Int64;
     FFilename: string;
     FHash: Cardinal;
   public
-    constructor Create(Filename: string; Size: UInt64; Action: TFileEntryAction);
+    constructor Create(Filename: string; Size: Int64; Action: TFileEntryAction);
 
     property Action: TFileEntryAction read FAction write FAction;
-    property Size: UInt64 read FSize write FSize;
+    property Size: Int64 read FSize write FSize;
     property Filename: string read FFilename write FFilename;
     property Hash: Cardinal read FHash write FHash;
   end;
@@ -91,7 +91,7 @@ end;
 procedure TCheckFilesThread.Execute;
 var
   i: Integer;
-  NewSize: UInt64;
+  NewSize: Int64;
   E: TFileEntry;
 begin
   inherited;
@@ -106,8 +106,7 @@ begin
       E.Action := feaRemove
     else
     begin
-      NewSize := TFunctions.GetFileSize(E.Filename);
-      if E.Size <> NewSize then
+      if TFunctions.GetFileSize(E.Filename, NewSize) and (E.Size <> NewSize) then
       begin
         E.Action := feaSize;
         E.Size := NewSize;
@@ -119,7 +118,7 @@ end;
 
 { TFileEntry }
 
-constructor TFileEntry.Create(Filename: string; Size: UInt64; Action: TFileEntryAction);
+constructor TFileEntry.Create(Filename: string; Size: Int64; Action: TFileEntryAction);
 begin
   FFilename := Filename;
   FSize := Size;

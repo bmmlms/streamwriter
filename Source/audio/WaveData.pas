@@ -161,8 +161,7 @@ end;
 procedure TWaveData.Load(Filename: string);
 begin
   FFilename := Filename;
-  FFilesize := TFunctions.GetFileSize(Filename);
-  if FFilesize = -1 then
+  if not TFunctions.GetFileSize(Filename, FFilesize) then
     raise Exception.Create('Filesize could not be determined');
 
   FDecoder := BASSStreamCreateFile(False, PChar(Filename), 0, 0, BASS_STREAM_DECODE);

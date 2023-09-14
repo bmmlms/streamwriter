@@ -57,7 +57,7 @@ type
     FNotifyTitleChanges: Boolean;
     FClients: Integer;
     FRecordings: Integer;
-    FSpeed: UInt64;
+    FSpeed: Cardinal;
     FSongsSaved: Cardinal;
     FOverallSongsSaved: Cardinal;
     FCurrentReceived: UInt64;
@@ -71,7 +71,7 @@ type
     FSpeedBmp: Graphics.TBitmap;
 
     procedure TimerTimer(Sender: TObject);
-    procedure FSetSpeed(Value: UInt64);
+    procedure FSetSpeed(Value: Cardinal);
     procedure FSetCurrentReceived(Value: UInt64);
     procedure FSetOverallReceived(Value: UInt64);
   protected
@@ -86,7 +86,7 @@ type
     procedure BuildSpeedBmp;
     procedure PostTranslate;
 
-    property Speed: UInt64 read FSpeed write FSetSpeed;
+    property Speed: Cardinal read FSpeed write FSetSpeed;
     property CurrentReceived: UInt64 read FCurrentReceived write FSetCurrentReceived;
     property OverallReceived: UInt64 read FOverallReceived write FSetOverallReceived;
   published
@@ -329,7 +329,7 @@ begin
     InvalidatePanel(3);
 end;
 
-procedure TSWStatusBar.FSetSpeed(Value: UInt64);
+procedure TSWStatusBar.FSetSpeed(Value: Cardinal);
 begin
   FSpeed := Value;
   BuildSpeedBmp;

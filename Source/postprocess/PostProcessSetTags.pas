@@ -92,6 +92,7 @@ var
   Artist, Title, Album, Genre, Comment: string;
   Arr: TPatternReplaceArray;
   FileTagger: TFileTagger;
+  FileSize: Int64;
 begin
   inherited;
 
@@ -143,7 +144,11 @@ begin
 
         if FileTagger.Write(Language.CurrentLanguage.LCID, FData.Filename) then
         begin
-          FData.Filesize := TFunctions.GetFileSize(FData.Filename);
+          if TFunctions.GetFileSize(FData.Filename, FileSize) then
+            FData.Filesize := FileSize
+          else
+            FData.Filesize := -1;
+
           FResult := arWin;
         end;
       end;

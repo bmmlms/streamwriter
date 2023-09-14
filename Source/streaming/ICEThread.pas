@@ -238,7 +238,7 @@ begin
           FPlaybackStarted := True;
           Sync(FOnPlaybackStarted);
         end;
-        FPlayer.PushData(Pointer(Integer(FPlayBuffer.Memory) + P.DataStart), FPlayBuffer.Size - P.DataStart);
+        FPlayer.PushData(Pointer(PtrUInt(FPlayBuffer.Memory) + P.DataStart), FPlayBuffer.Size - P.DataStart);
       except
         // Unbekannte Daten (kein MP3/AAC) - Ende.
         FPlayingStarted := False;

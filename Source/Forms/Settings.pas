@@ -1088,7 +1088,7 @@ begin
   txtHotkey.Enabled := lstHotkeys.Selected <> nil;
   if txtHotkey.Enabled then
   begin
-    txtHotkey.Control.HotKey := TShortcut(lstHotkeys.Selected.Data);
+    txtHotkey.Control.HotKey := TShortCut(lstHotkeys.Selected.Data);
   end else
     txtHotkey.Control.HotKey := 0;
 end;

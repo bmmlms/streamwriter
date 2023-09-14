@@ -204,8 +204,10 @@ var
   Player: Cardinal;
 begin
   Success := False;
+
   if MemoryStream.Size = 0 then
     Exit;
+
   Player := BASSStreamCreateFile(True, MemoryStream.Memory, 0, MemoryStream.Size, BASS_STREAM_DECODE or BASS_STREAM_PRESCAN);
 
   if Player = 0 then
@@ -224,10 +226,14 @@ var
   Size: Int64;
 begin
   Success := False;
-  Size := TFunctions.GetFileSize(Filename);
-  if Size = 0 then
+
+  if not TFunctions.GetFileSize(Filename, Size) or (Size = 0) then
     Exit;
+
   Player := BASSStreamCreateFile(False, PChar(Filename), 0, 0, BASS_STREAM_DECODE or BASS_STREAM_PRESCAN);
+
+  if Player = 0 then
+    Exit;
 
   try
     GetAudioInfo(Player, Size);

@@ -76,6 +76,7 @@ end;
 procedure TPostProcessMP4BoxThread.Execute;
 var
   OutFile, MovedFileName: string;
+  FileSize: Int64;
 begin
   inherited;
 
@@ -95,7 +96,10 @@ begin
       begin
         DeleteFile(FData.Filename);
         FData.Filename := MovedFileName;
-        FData.Filesize := TFunctions.GetFileSize(MovedFileName);
+        if TFunctions.GetFileSize(MovedFileName, FileSize) then
+          FData.Filesize := FileSize
+        else
+          FData.Filesize := -1;
       end;
     end;
     arFail: ;

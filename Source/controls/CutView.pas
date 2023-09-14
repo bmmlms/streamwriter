@@ -246,8 +246,8 @@ type
     FPlayer: TPlayer;
     FOriginalFilename: string;
     FWorkingFilename: string;
-    FFilesize: UInt64;
-    FSaveSecs: UInt64;
+    FFilesize: Int64;
+    FSaveSecs: Cardinal;
 
     FBitrateType: TBitrates;
     FQuality: TVBRQualities;
@@ -338,7 +338,7 @@ type
     property UndoList: TUndoList read FUndoList;
     property Player: TPlayer read FPlayer;
     property LineMode: TLineMode read FLineMode write FLineMode;
-    property Filesize: UInt64 read FFilesize;
+    property Filesize: Int64 read FFilesize;
     property OnStateChanged: TNotifyEvent read FOnStateChanged write FOnStateChanged;
     property OnCutFile: TCutFileEvent read FOnCutFile write FOnCutFile;
   end;

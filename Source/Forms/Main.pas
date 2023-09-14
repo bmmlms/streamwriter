@@ -307,7 +307,7 @@ type
     FUpdateOnExit: Boolean;
     FSkipAfterShown: Boolean;
 
-    FSpeed: UInt64;
+    FSpeed: Cardinal;
     FClientCount: Cardinal;
     FRecordingCount: Cardinal;
     FDiskSpaceFailCount: Cardinal;
@@ -367,7 +367,7 @@ type
     procedure CommunityLoginClose(Sender: TObject; var Action: TCloseAction);
 
     procedure HomeCommStateChanged(Sender: TObject);
-    procedure HomeCommBytesTransferred(Sender: TObject; Direction: TTransferDirection; CommandID: Cardinal; CommandHeader: TCommandHeader; Transferred: UInt64);
+    procedure HomeCommBytesTransferred(Sender: TObject; Direction: TTransferDirection; CommandID: Cardinal; CommandHeader: TCommandHeader; Transferred: Cardinal);
     procedure HomeCommTitleNotificationsChanged(Sender: TObject);
     procedure HomeCommHandshake(Sender: TObject; Success: Boolean);
     procedure HomeCommLogIn(Sender: TObject; Success: Boolean);
@@ -1087,7 +1087,7 @@ begin
   PostMessage(Handle, WM_AFTERSHOWN, 0, 0);
 end;
 
-procedure TfrmStreamWriterMain.HomeCommBytesTransferred(Sender: TObject; Direction: TTransferDirection; CommandID: Cardinal; CommandHeader: TCommandHeader; Transferred: UInt64);
+procedure TfrmStreamWriterMain.HomeCommBytesTransferred(Sender: TObject; Direction: TTransferDirection; CommandID: Cardinal; CommandHeader: TCommandHeader; Transferred: Cardinal);
 begin
   if CommandHeader.CommandType = ctGetServerDataResponse then
     tabClients.SideBar.BrowserView.HomeCommBytesTransferred(CommandHeader, Transferred);
@@ -2218,13 +2218,15 @@ end;
 procedure TfrmStreamWriterMain.tabCutSaved(Sender: TObject; AudioInfo: TAudioInfo);
 var
   Track: TTrackInfo;
+  FileSize: Int64;
 begin
   Track := AppGlobals.Data.TrackList.GetTrack(TCutTab(Sender).Filename);
 
   if not Assigned(Track) then
     Exit;
 
-  Track.Filesize := TFunctions.GetFileSize(TCutTab(Sender).Filename);
+  if TFunctions.GetFileSize(TCutTab(Sender).Filename, FileSize) then
+    Track.Filesize := FileSize;
   Track.Length := Trunc(AudioInfo.Length);
 
   // Ist mal raus, damit das "geschnitten"-Symbol nur bei automatischen Aufnahmen kommt
@@ -2313,7 +2315,7 @@ var
   Clients: TNodeDataArray;
   Client: PClientNodeData;
   Client2: TICEClient;
-  Speed: UInt64;
+  Speed: Cardinal;
   OnlyAuto: Boolean;
 begin
   Speed := 0;

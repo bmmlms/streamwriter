@@ -224,7 +224,7 @@ var
   Freq: Single;
   Buf: array of Byte;
   BytesRead: Integer;
-  i: UInt64;
+  i: Int64;
   Tmp: AnsiString;
   OutStream: TFileStream;
   Channels: Word;
@@ -304,9 +304,10 @@ begin
       if (T > -1) and (BASSChannelGetPosition(Channel, BASS_POS_BYTE) + BytesToRead > T) then
         BytesToRead := T - BASSChannelGetPosition(Channel, BASS_POS_BYTE);
 
-      {$R-}
+      {$PUSH}
+      {$RANGECHECKS OFF}
       BytesRead := BASSChannelGetData(Channel, @Buf[0], BytesToRead);
-      {$IFDEF DEBUG}{$R+}{$ENDIF}
+      {$POP}
       OutStream.Write(Buf[0], BytesRead);
 
       if Assigned(FOnProgress) then

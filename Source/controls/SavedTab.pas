@@ -2326,6 +2326,7 @@ procedure TSavedTree.FileWatcherEvent(Sender: TObject; Action: TFileWatcherEvent
 var
   Track: TTrackInfo;
   Tracks: TTrackInfoArray;
+  Filesize: Int64;
 begin
   if Action = eaAdded then
     Exit;
@@ -2344,8 +2345,8 @@ begin
         for Track in Tracks do
           Track.Filename := ConcatPaths([PathNew, Track.Filename.Remove(0, Path.Length)]);
     eaModified:
-      if Assigned(Track) then
-        Track.Filesize := TFunctions.GetFileSize(Track.Filename);
+      if Assigned(Track) and TFunctions.GetFileSize(Track.Filename, Filesize) then
+        Track.Filesize := Filesize;
   end;
 
   if Action = eaRemoved then
@@ -2835,6 +2836,7 @@ end;
 procedure TImportFilesThread.Execute;
 var
   i, n: Integer;
+  Filesize: Int64;
   Add: Boolean;
   FoundFiles: TStringList;
   Track: TTrackInfo;
@@ -2882,8 +2884,9 @@ begin
         Track.Bitrate := Info.Bitrate;
         Track.Length := Trunc(Info.Length);
         Track.Filename := FFoundAudioFiles[i];
-        Track.Filesize := TFunctions.GetFileSize(FFoundAudioFiles[i]);
         Track.VBR := Info.VBR;
+        if TFunctions.GetFileSize(FFoundAudioFiles[i], Filesize) then
+          Track.Filesize := Filesize;
 
         if TFunctions.OccurenceCount('\', FFoundAudioFiles[i]) > 1 then
           Track.Streamname := TFunctions.ExtractLastDirName(ExtractFilePath(FFoundAudioFiles[i]));

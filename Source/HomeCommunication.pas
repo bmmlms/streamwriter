@@ -167,7 +167,7 @@ type
     procedure HomeThreadDisconnected(Sender: TSocketThread);
     procedure HomeThreadBeforeEnded(Sender: TSocketThread);
     procedure HomeThreadEnded(Sender: TSocketThread);
-    procedure HomeThreadBytesTransferred(Sender: TObject; Direction: TTransferDirection; CommandID: Cardinal; CommandHeader: TCommandHeader; Transferred: UInt64);
+    procedure HomeThreadBytesTransferred(Sender: TObject; Direction: TTransferDirection; CommandID: Cardinal; CommandHeader: TCommandHeader; Transferred: Cardinal);
 
     procedure HomeThreadHandshakeReceived(Sender: TSocketThread);
     procedure HomeThreadLogInReceived(Sender: TSocketThread);
@@ -555,7 +555,7 @@ end;
 
 { THomeCommunication }
 
-procedure THomeCommunication.HomeThreadBytesTransferred(Sender: TObject; Direction: TTransferDirection; CommandID: Cardinal; CommandHeader: TCommandHeader; Transferred: UInt64);
+procedure THomeCommunication.HomeThreadBytesTransferred(Sender: TObject; Direction: TTransferDirection; CommandID: Cardinal; CommandHeader: TCommandHeader; Transferred: Cardinal);
 begin
   if Assigned(FOnBytesTransferred) then
     FOnBytesTransferred(Sender, Direction, CommandID, CommandHeader, Transferred);

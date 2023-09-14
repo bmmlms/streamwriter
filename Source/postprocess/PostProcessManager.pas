@@ -240,7 +240,7 @@ begin
       end;
 
       // Eine externe App könnte das File gelöscht haben
-      if Entry.Data.Filesize <> High(UInt64) then // GetFileSize = Int64 => -1
+      if Entry.Data.Filesize > -1 then
       begin
         if ProcessFile(Entry) then
           WriteLog(Entry.Owner, Format(_('Postprocessor "%s" starting'), [Entry.ActiveThread.PostProcessor.Name]), ltPostProcess, llDebug)

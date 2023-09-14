@@ -53,8 +53,8 @@ type
   TPostProcessInformation = record
     Filename, FilenameConverted, WorkFilename, ReEncodedFilename, Station, Artist, Album, Title, Genre: string;
     TrackNumber: Cardinal;
-    Filesize: UInt64;
-    Length: UInt64;
+    Filesize: Int64;
+    Length: Cardinal;
     WasCut: Boolean;
     FullTitle: Boolean;
     StreamTitle: string;
@@ -209,7 +209,7 @@ uses
   AppData,
   DataManager;
 
-{ TProcessingEntry }
+  { TProcessingEntry }
 
 constructor TProcessingEntry.Create(Owner: TObject; ActiveThread: TPostProcessThreadBase; Data: TPostProcessInformation);
 begin
@@ -304,64 +304,71 @@ var
   Output: AnsiString;
   Arr: TPatternReplaceArray;
   EC: DWORD;
+  FileSize: Int64;
 begin
-  if Trim(FExe) <> '' then
-    if FileExists(FExe) then
-    begin
-      SetLength(Arr, 14);
-      Arr[0].C := 'artist';
-      Arr[0].Replace := FData.Artist;
-      Arr[1].C := 'title';
-      Arr[1].Replace := FData.Title;
-      Arr[2].C := 'album';
-      Arr[2].Replace := FData.Album;
-      Arr[3].C := 'streamname';
-      Arr[3].Replace := Trim(FData.Station);
-      Arr[4].C := 'streamtitle';
-      Arr[4].Replace := Trim(FData.StreamTitle);
-      Arr[5].C := 'day';
-      Arr[5].Replace := FormatDateTime('dd', Now);
-      Arr[6].C := 'month';
-      Arr[6].Replace := FormatDateTime('mm', Now);
-      Arr[7].C := 'year';
-      Arr[7].Replace := FormatDateTime('yy', Now);
-      Arr[8].C := 'hour';
-      Arr[8].Replace := FormatDateTime('hh', Now);
-      Arr[9].C := 'minute';
-      Arr[9].Replace := FormatDateTime('nn', Now);
-      Arr[10].C := 'second';
-      Arr[10].Replace := FormatDateTime('ss', Now);
-      Arr[11].C := 'number';
-      Arr[11].Replace := IntToStr(FData.TrackNumber);
-      Arr[12].C := 'filename';
-      if PostProcessor.GroupID = 0 then
-        Arr[12].Replace := FData.WorkFilename
-      else
-        Arr[12].Replace := FData.Filename;
-      Arr[13].C := 'genre';
-      Arr[13].Replace := FData.Genre;
+  if (FExe.Trim = '') or (not FileExists(FExe)) then
+    Exit;
 
-      Replaced := TFunctions.PatternReplaceNew(FParams, Arr);
-      if Trim(Replaced) <> '' then
-      begin
-        if LowerCase(ExtractFileExt(FExe)) = '.bat' then
-          // & ist für Batch nen Sonderzeichen. Also escapen.
-          Replaced := StringReplace(Replaced, '&', '^&', [rfReplaceAll]);
-        CmdLine := '"' + FExe + '" ' + Replaced;
-      end else
-        CmdLine := FExe;
-      Res := TFunctions.RunProcess(CmdLine, ExtractFilePath(FExe), 120000, Output, EC, @Terminated, False);
-      FData.Filesize := TFunctions.GetFileSize(FData.Filename);
-      FOutput := Output;
-      case Res of
-        rpWin:
-          FResult := arWin;
-        rpFail, rpTerminated:
-          FResult := arFail;
-        rpTimeout:
-          FResult := arTimeout;
-      end;
-    end;
+  SetLength(Arr, 14);
+  Arr[0].C := 'artist';
+  Arr[0].Replace := FData.Artist;
+  Arr[1].C := 'title';
+  Arr[1].Replace := FData.Title;
+  Arr[2].C := 'album';
+  Arr[2].Replace := FData.Album;
+  Arr[3].C := 'streamname';
+  Arr[3].Replace := Trim(FData.Station);
+  Arr[4].C := 'streamtitle';
+  Arr[4].Replace := Trim(FData.StreamTitle);
+  Arr[5].C := 'day';
+  Arr[5].Replace := FormatDateTime('dd', Now);
+  Arr[6].C := 'month';
+  Arr[6].Replace := FormatDateTime('mm', Now);
+  Arr[7].C := 'year';
+  Arr[7].Replace := FormatDateTime('yy', Now);
+  Arr[8].C := 'hour';
+  Arr[8].Replace := FormatDateTime('hh', Now);
+  Arr[9].C := 'minute';
+  Arr[9].Replace := FormatDateTime('nn', Now);
+  Arr[10].C := 'second';
+  Arr[10].Replace := FormatDateTime('ss', Now);
+  Arr[11].C := 'number';
+  Arr[11].Replace := IntToStr(FData.TrackNumber);
+  Arr[12].C := 'filename';
+  if PostProcessor.GroupID = 0 then
+    Arr[12].Replace := FData.WorkFilename
+  else
+    Arr[12].Replace := FData.Filename;
+  Arr[13].C := 'genre';
+  Arr[13].Replace := FData.Genre;
+
+  Replaced := TFunctions.PatternReplaceNew(FParams, Arr);
+  if Trim(Replaced) <> '' then
+  begin
+    if LowerCase(ExtractFileExt(FExe)) = '.bat' then
+      // & ist für Batch nen Sonderzeichen. Also escapen.
+      Replaced := StringReplace(Replaced, '&', '^&', [rfReplaceAll]);
+    CmdLine := '"' + FExe + '" ' + Replaced;
+  end else
+    CmdLine := FExe;
+
+  Res := TFunctions.RunProcess(CmdLine, ExtractFilePath(FExe), 120000, Output, EC, @Terminated, False);
+
+  if TFunctions.GetFileSize(FData.Filename, FileSize) then
+    FData.Filesize := FileSize
+  else
+    FData.Filesize := -1;
+
+  FOutput := Output;
+
+  case Res of
+    rpWin:
+      FResult := arWin;
+    rpFail, rpTerminated:
+      FResult := arFail;
+    rpTimeout:
+      FResult := arTimeout;
+  end;
 end;
 
 { TExternalPostProcess }

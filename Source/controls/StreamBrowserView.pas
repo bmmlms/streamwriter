@@ -167,7 +167,7 @@ type
     procedure RefreshStreams;
     procedure SwitchMode(Mode: TModes);
 
-    procedure HomeCommBytesTransferred(CommandHeader: TCommandHeader; Transferred: UInt64);
+    procedure HomeCommBytesTransferred(CommandHeader: TCommandHeader; Transferred: Cardinal);
 
     property Mode: TModes read FMode;
     property StreamTree: TMStreamTree read FStreamTree;
@@ -272,7 +272,7 @@ type
     function GetNodes(SelectedOnly: Boolean): TNodeArray;
     function Build(AlwaysBuild: Boolean; Search, Genre: string; AudioType: TAudioTypes; Bitrate: Cardinal): Boolean;
     procedure ReceiveError;
-    procedure HomeCommBytesTransferred(CommandHeader: TCommandHeader; Transferred: UInt64);
+    procedure HomeCommBytesTransferred(CommandHeader: TCommandHeader; Transferred: Cardinal);
 
     property PopupMenu2: TPopupMenu read FPopupMenu;
     property DraggedStreams: TStreamDataArray read FDraggedStreams;
@@ -693,7 +693,7 @@ begin
   end;
 end;
 
-procedure TMStreamTree.HomeCommBytesTransferred(CommandHeader: TCommandHeader; Transferred: UInt64);
+procedure TMStreamTree.HomeCommBytesTransferred(CommandHeader: TCommandHeader; Transferred: Cardinal);
 begin
   if FProgressBar.Position < 100 then
     FProgressBar.Position := FProgressBar.Position + 1;
@@ -1273,7 +1273,7 @@ begin
   HomeComm.OnServerDataReceived := HomeCommDataReceived;
 end;
 
-procedure TMStreamBrowserView.HomeCommBytesTransferred(CommandHeader: TCommandHeader; Transferred: UInt64);
+procedure TMStreamBrowserView.HomeCommBytesTransferred(CommandHeader: TCommandHeader; Transferred: Cardinal);
 begin
   FStreamTree.HomeCommBytesTransferred(CommandHeader, Transferred);
 end;

@@ -168,8 +168,8 @@ type
     FTime: TDateTime;
     FFilename: string;
     FStreamname: string;
-    FFilesize: UInt64;
-    FLength: UInt64;
+    FFilesize: Int64;
+    FLength: Cardinal;
     FWasCut: Boolean;
     FBitrate: Cardinal;
     FIsAuto: Boolean;
@@ -201,9 +201,9 @@ type
     // The name of the stream which led to recording of this title
     property Streamname: string read FStreamname write FStreamname;
     // The size of the file
-    property Filesize: UInt64 read FFilesize write FFilesize;
-    // The length of the file
-    property Length: UInt64 read FLength write FLength;
+    property Filesize: Int64 read FFilesize write FFilesize;
+    // The length in seconds of the file
+    property Length: Cardinal read FLength write FLength;
     // Indicates whether the title was cut (silence on begin/end detected)
     property WasCut: Boolean read FWasCut write FWasCut;
     // The bitrate of the file
@@ -576,7 +576,7 @@ type
     // Amount of bytes received
     FBytesReceived: UInt64;
     // Number of seconds the stream was played/recorded
-    FSecondsReceived: UInt64;
+    FSecondsReceived: Cardinal;
 
     // List of configured schedules for this stream
     FSchedules: TScheduleList;
@@ -619,7 +619,7 @@ type
 
     property SongsSaved: Cardinal read FSongsSaved write FSongsSaved;
     property BytesReceived: UInt64 read FBytesReceived write FBytesReceived;
-    property SecondsReceived: UInt64 read FSecondsReceived write FSecondsReceived;
+    property SecondsReceived: Cardinal read FSecondsReceived write FSecondsReceived;
 
     property Schedules: TScheduleList read FSchedules;
 
@@ -631,7 +631,7 @@ type
   TStreamList = class(TList<TStreamEntry>)
   private
   public
-    function Add(Entry: TStreamEntry): TStreamEntry; overload;
+    function Add(Entry: TStreamEntry): TStreamEntry; reintroduce;
     function Get(Name, URL: string; URLs: TStringList): TStreamEntry; overload;
   end;
 
@@ -782,7 +782,7 @@ type
     FGenreList: TGenreList;
     FLoadError: Boolean;
     FReceived: UInt64;
-    FSongsSaved: UInt64;
+    FSongsSaved: Cardinal;
     FSavedTitleHashes: TList<Cardinal>;
   public
     constructor Create;
@@ -831,13 +831,13 @@ type
     property LoadError: Boolean read FLoadError write FLoadError;
     // Overall amount of data received
     property Received: UInt64 read FReceived write FReceived;
-    property SongsSaved: UInt64 read FSongsSaved write FSongsSaved;
+    property SongsSaved: Cardinal read FSongsSaved write FSongsSaved;
 
     property SavedTitleHashes: TList<Cardinal> read FSavedTitleHashes write FSavedTitleHashes;
   end;
 
 const
-  DATAVERSION: Cardinal = 69;
+  DATAVERSION: Cardinal = 70;
   DATAMAGIC: array[0..3] of Byte = (118, 114, 110, 97);
   EXPORTMAGIC: array[0..3] of Byte = (97, 110, 114, 118);
 
@@ -1047,6 +1047,7 @@ var
   i, Count: Integer;
   EnumTmp: Byte;
   STmp, URL: string;
+  Dummy: UInt64;
 begin
   Result := TStreamEntry.Create;
 
@@ -1111,7 +1112,12 @@ begin
   Stream.Read(Result.FBytesReceived, IfThen<Boolean>(Version > 68, True, False));
 
   if Version >= 46 then
-    Stream.Read(Result.FSecondsReceived, IfThen<Boolean>(Version > 68, True, False));
+    if Version < 70 then
+    begin
+      Stream.Read(Dummy, IfThen<Boolean>(Version > 68, True, False));
+      Result.FSecondsReceived := Dummy;
+    end else
+      Stream.Read(Result.FSecondsReceived, True);
 
   if Version >= 17 then
     Stream.Read(Result.FWasRecording);
@@ -1330,6 +1336,7 @@ var
   ChartCategory: TChartCategory;
   TitleCount, Hash: Cardinal;
   ReadStream: TStream;
+  Dummy: UInt64;
 begin
   CleanLists;
 
@@ -1352,7 +1359,12 @@ begin
   try
     ReadStream.Read(FReceived, IfThen<Boolean>(Version > 68, True, False));
     if Version >= 56 then
-      ReadStream.Read(FSongsSaved, IfThen<Boolean>(Version > 68, True, False));
+      if Version < 70 then
+      begin
+        ReadStream.Read(Dummy, IfThen<Boolean>(Version > 68, True, False));
+        FSongsSaved := Dummy;
+      end else
+        ReadStream.Read(FSongsSaved, True);
 
     if Version <= 2 then
       while ReadStream.Position < ReadStream.Size do
@@ -1731,6 +1743,8 @@ begin
 end;
 
 class function TTrackInfo.Load(Stream: TStream; Version: Integer): TTrackInfo;
+var
+  Dummy: UInt64;
 begin
   Result := TTrackInfo.Create;
 
@@ -1742,7 +1756,12 @@ begin
   Stream.Read(Result.FFilesize, IfThen<Boolean>(Version > 68, True, False));
 
   if Version >= 13 then
-    Stream.Read(Result.FLength, IfThen<Boolean>(Version > 68, True, False));
+    if Version < 70 then
+    begin
+      Stream.Read(Dummy, IfThen<Boolean>(Version > 68, True, False));
+      Result.FLength := Dummy;
+    end else
+      Stream.Read(Result.FLength, True);
 
   Stream.Read(Result.FTime);
   Stream.Read(Result.FWasCut);
@@ -1814,20 +1833,6 @@ end;
 
 function TStreamList.Add(Entry: TStreamEntry): TStreamEntry;
 begin
-  // Der Name ist hier leer, da es Streams mit selben Namen
-  // aber anderen URLs gibt (z.B. "Die Neue 107.7")...
-
-  // Ausserdem glaube ich, dass das hier über ist. Doppelte Streams
-  // lassen sich nämlich nicht der Liste hinzufügen, deshalb
-  // dürfte das heir nichts bringen...
-  {
-  Result := Get('', Entry.StartURL, Entry.URLs);
-
-  if Result <> nil then
-  begin
-    Exit;
-  end;
-  }
   Result := Entry;
   inherited Add(Result);
 end;
