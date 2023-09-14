@@ -72,17 +72,17 @@ begin
 
   Ext := LowerCase(ExtractFileExt(Filename));
 
-  if (Ext <> '.m3u') and (Ext <> '.pls') then
+  if (Ext <> '.m3u') and (Ext <> '.m3u8') and (Ext <> '.pls') then
     Exit;
 
   MS := TMemoryStream.Create;
   try
     MS.LoadFromFile(Filename);
 
-    if Ext = '.m3u' then
-      Result := ParsePlaylist(MS.AsString, ptM3U, '')
+    if (Ext = '.m3u') or (Ext = '.m3u8') then
+      Result := ParsePlaylist(TFunctions.GetStringGuessEncoding(MS.Memory, MS.Size), ptM3U, '')
     else if Ext = '.pls' then
-      Result := ParsePlaylist(MS.AsString, ptPLS, '');
+      Result := ParsePlaylist(TFunctions.GetStringGuessEncoding(MS.Memory, MS.Size), ptPLS, '');
   finally
     MS.Free;
   end;

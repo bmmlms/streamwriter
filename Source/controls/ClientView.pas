@@ -531,7 +531,7 @@ begin
     Exit(False);
 
   if (Length(FDragNodes) = 0) and (Length(FBrowser.DraggedStreams) = 0) and (not (TFunctions.ReadDataObjectText(VTVDragManager.DataObject, S) and TFunctions.FilterHTTPUrls(S, URLs))) and
-    (not (TFunctions.ReadDataObjectFiles(VTVDragManager.DataObject, Files) and TFunctions.FilterEndsWith(Files, ['.m3u', '.pls'], OutFiles)))
+    (not (TFunctions.ReadDataObjectFiles(VTVDragManager.DataObject, Files) and TFunctions.FilterEndsWith(Files, ['.m3u', '.m3u8', '.pls'], OutFiles)))
   then
     Exit(False);
 
@@ -999,7 +999,7 @@ begin
   else if TFunctions.ReadDataObjectText(DataObject, S) and TFunctions.FilterHTTPUrls(S, URLs) then
     for S in URLs do
       OnStartStreaming(Self, 0, 0, '', S, nil, nil, nil, True, TargetNode, AttachMode)
-  else if TFunctions.ReadDataObjectFiles(DataObject, Files) and TFunctions.FilterEndsWith(Files, ['.m3u', '.pls'], OutFiles) then
+  else if TFunctions.ReadDataObjectFiles(DataObject, Files) and TFunctions.FilterEndsWith(Files, ['.m3u', '.m3u8', '.pls'], OutFiles) then
   begin
     PH := TPlaylistHandler.Create;
     try

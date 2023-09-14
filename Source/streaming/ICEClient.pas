@@ -1049,21 +1049,21 @@ end;
 
 function TICEClient.ParsePlaylist: Boolean;
 var
-  Data: string;
+  Data, CT: string;
   PH: TPlaylistHandler;
 begin
   Result := False;
 
   PH := TPlaylistHandler.Create;
   try
-    Data := FICEThread.RecvStream.RecvStream.AsString;
+    CT := FICEThread.RecvStream.ContentType;
+    Data := TFunctions.GetStringGuessEncoding(FICEThread.RecvStream.RecvStream.Memory, FICEThread.RecvStream.RecvStream.Size);
 
-    if (Copy(LowerCase(Data), 1, 10) = '[playlist]') or (Pos('audio/x-scpls', FICEThread.RecvStream.ContentType) > 0) or (Pos('application/x-scpls', FICEThread.RecvStream.ContentType) > 0) or
-      (Pos('application/pls+xml', FICEThread.RecvStream.ContentType) > 0) then // .pls
+    if Data.StartsWith('[playlist]', True) or CT.Contains('audio/x-scpls') or CT.Contains('application/x-scpls') or CT.Contains('application/pls+xml') then // .pls
       Result := PH.ParsePlaylist(Data, ptPLS, FCurrentURL)
-    else if (LowerCase(Copy(Data, 1, 7)) = '#extm3u') or (Pos('audio/x-mpegurl', FICEThread.RecvStream.ContentType) > 0) or (Pos('audio/mpegurl', FICEThread.RecvStream.ContentType) > 0) then // .m3u
+    else if Data.StartsWith('#extm3u', True) or CT.Contains('audio/x-mpegurl') or CT.Contains('audio/mpegurl') then // .m3u
       Result := PH.ParsePlaylist(Data, ptM3U, FCurrentURL)
-    else if Pos('application/octet-stream', FICEThread.RecvStream.ContentType) > 0 then
+    else if CT.Contains('application/octet-stream') then
       Result := PH.ParsePlaylist(Data, ptUnknown, FCurrentURL);
 
     if Result then
