@@ -441,6 +441,7 @@ end;
 procedure TICEStream.DoHeaderRemoved;
 var
   AudioContentType: TAudioTypes = atNone;
+  IsIcy: Boolean;
 begin
   inherited;
 
@@ -455,59 +456,60 @@ begin
     Exit;
   end;
 
+  if ResponseCode <> 200 then
+    raise Exception.Create(Format(_('Invalid responsecode (%d)'), [ResponseCode]));
+
   if (LowerCase(ContentType) = 'audio/mpeg') or (LowerCase(ContentType) = 'audio/mp3') then
     AudioContentType := atMPEG
   else if (LowerCase(ContentType) = 'audio/aacp') or (LowerCase(ContentType) = 'audio/aac') then
     AudioContentType := atAAC;
 
-  if (HeaderType = 'icy') or FHeader.ContainsKey('icy-metaint') or FHeader.ContainsKey('icy-name') or (AudioContentType in [atMPEG, atAAC]) then
+  IsIcy := HeaderType.Equals('icy') or FHeader.ContainsKey('icy-metaint') or FHeader.ContainsKey('icy-name') or FHeader.ContainsKey('icy-url');
+
+  if IsIcy or (AudioContentType <> atNone) then
   begin
     WriteExtLog(_('Audio-data response detected'), ltGeneral, llDebug);
     FHeaderType := 'icy';
 
-    if ResponseCode = 200 then
-    begin
-      FStreamName := GetHeaderValue('icy-name');
-      if FStreamCustomName = '' then
-        FStreamCustomName := FStreamName;
-      FStreamURL := GetHeaderValue('icy-url');
-      FGenre := GetHeaderValue('icy-genre');
+    FStreamName := GetHeaderValue('icy-name');
+    if FStreamCustomName = '' then
+      FStreamCustomName := FStreamName;
+    FStreamURL := GetHeaderValue('icy-url');
+    FGenre := GetHeaderValue('icy-genre');
 
-      if (AudioContentType = atMPEG) or ((ContentType = '') and ((FStreamName <> '') or (FStreamURL <> ''))) then
-        FAudioType := atMPEG
-      else if AudioContentType = atAAC then
-        FAudioType := atAAC
-      //else if LowerCase(ContentType) = 'application/ogg' then
-      //  FAudioType := atOGG
-      else
-        raise Exception.Create(_('Unknown content-type'));
+    if (AudioContentType = atMPEG) or (ContentType = '') then
+      FAudioType := atMPEG
+    else if AudioContentType = atAAC then
+      FAudioType := atAAC
+    //else if LowerCase(ContentType) = 'application/ogg' then
+    //  FAudioType := atOGG
+    else
+      raise Exception.Create(_('Unknown content-type'));
 
-      try
-        FMetaInt := StrToInt(GetHeaderValue('icy-metaint'));
-        FNextMetaInt := FMetaInt;
-      except
-        WriteExtLog(_('Meta-interval could not be found'), ltGeneral, llWarning);
-      end;
+    try
+      FMetaInt := StrToInt(GetHeaderValue('icy-metaint'));
+      FNextMetaInt := FMetaInt;
+    except
+      WriteExtLog(_('Meta-interval could not be found'), ltGeneral, llWarning);
+    end;
 
-      AppGlobals.Lock;
-      try
-        FAutoTuneInMinKbps := GetAutoTuneInMinKbps(FAudioType, AppGlobals.AutoTuneInMinQuality);
-      finally
-        AppGlobals.Unlock;
-      end;
+    AppGlobals.Lock;
+    try
+      FAutoTuneInMinKbps := GetAutoTuneInMinKbps(FAudioType, AppGlobals.AutoTuneInMinQuality);
+    finally
+      AppGlobals.Unlock;
+    end;
 
-      if FRecording then
-        StartRecording;
+    if FRecording then
+      StartRecording;
 
-      if FMonitoring then
-        StartMonitoring;
+    if FMonitoring then
+      StartMonitoring;
 
-      if Assigned(FOnTitleChanged) then
-        FOnTitleChanged(Self);
-      if Assigned(FOnDisplayTitleChanged) then
-        FOnDisplayTitleChanged(Self);
-    end else
-      raise Exception.Create(Format(_('Invalid responsecode (%d)'), [ResponseCode]));
+    if Assigned(FOnTitleChanged) then
+      FOnTitleChanged(Self);
+    if Assigned(FOnDisplayTitleChanged) then
+      FOnDisplayTitleChanged(Self);
   end else if HeaderType = 'http' then
     WriteExtLog(_('HTTP response detected'), ltGeneral, llDebug)
   else
@@ -1501,7 +1503,7 @@ end;
 
 procedure TFileChecker.GetFilename(Filesize: Int64; Artist, Title, Album, Genre, StreamTitle: string; AudioType: TAudioTypes; TitleState: TTitleStates; Killed: Boolean);
 var
-  Filename, Ext, Patterns: string;
+  Filename, Ext, OutFilename, Patterns: string;
   ExistingFileSize: Int64;
 begin
   FResult := crSave;
@@ -1519,15 +1521,16 @@ begin
 
   Filename := InfoToFilename(Artist, Title, Album, Genre, StreamTitle, TitleState, Patterns);
   Filename := GetValidFilename(Filename);
+  OutFilename := TFunctions.FixPathName(Filename + Ext);
 
-  if TFunctions.GetFileSize(ConcatPaths([FSaveDir, Filename + Ext]), ExistingFileSize) then
+  if TFunctions.GetFileSize(ConcatPaths([FSaveDir, OutFilename]), ExistingFileSize) then
   begin
     if FSettings.DiscardAlways then
       FResult := crDiscard
     else if FSettings.OverwriteSmaller and (ExistingFileSize < Filesize) then
     begin
       FResult := crOverwrite;
-      FFilename := Filename + Ext;
+      FFilename := OutFilename;
     end else if FSettings.DiscardSmaller and (ExistingFileSize >= Filesize) then
       FResult := crDiscardExistingIsLarger
     else
@@ -1535,7 +1538,7 @@ begin
   end else
   begin
     FResult := crSave;
-    FFilename := TFunctions.FixPathName(Filename + Ext);
+    FFilename := OutFilename;
   end;
 
   if FSettings.OutputFormat <> atNone then
