@@ -9,6 +9,7 @@ uses
   Generics.Collections,
   Generics.Defaults,
   Process,
+  Functions,
   Math,
   SysUtils,
   TypeDefs,
@@ -33,6 +34,8 @@ type
     property CalculatedEnd: TDateTime read FCalculatedEnd write FCalculatedEnd;
   end;
 
+  { TSchedulerThread }
+
   TSchedulerThread = class(TThread)
   private
     FSchedulesLock: TRTLCriticalSection;
@@ -51,12 +54,12 @@ type
     FOnSchedule: TScheduleThreadEvent;
 
     procedure DoSyncLog(Text: string);
-    procedure DoSyncSchedule(ScheduleID: Integer; IsStart: Boolean);
+    procedure DoSyncSchedule(const ScheduleID: Integer; const IsStart: Boolean);
 
     procedure SyncLog;
     procedure SyncSchedule;
 
-    function GetTimerTime(Time: TDateTime): Int64;
+    function GetTimerTime(const Time: TDateTime): Int64;
   protected
     procedure Execute; override;
   public
@@ -64,7 +67,7 @@ type
     destructor Destroy; override;
 
     procedure Terminate; reintroduce;
-    procedure Reload(ScheduleList: TList<TSchedulerSchedule>);
+    procedure Reload(const ScheduleList: TList<TSchedulerSchedule>);
 
     property OnLog: TLogEvent read FOnLog write FOnLog;
     property OnSchedule: TScheduleThreadEvent read FOnSchedule write FOnSchedule;
@@ -141,7 +144,7 @@ begin
   Synchronize(SyncLog);
 end;
 
-procedure TSchedulerThread.DoSyncSchedule(ScheduleID: Integer; IsStart: Boolean);
+procedure TSchedulerThread.DoSyncSchedule(const ScheduleID: Integer; const IsStart: Boolean);
 begin
   FScheduleID := ScheduleID;
   FIsStart := IsStart;
@@ -363,22 +366,16 @@ begin
   end;
 end;
 
-function TSchedulerThread.GetTimerTime(Time: TDateTime): Int64;
-var
-  ST: TSystemTime;
-  FT: TFileTime;
+function TSchedulerThread.GetTimerTime(const Time: TDateTime): Int64;
 begin
-  DateTimeToSystemTime(Time, ST);
-  if not SystemTimeToFileTime(ST, FT) then
+  try
+    Exit(Int64(TFunctions.DateTimeToFileTime(TFunctions.LocalToUTC(Time))));
+  except
     Exit(0);
-
-  if not LocalFileTimeToFileTime(FT, FT) then
-    Exit(0);
-
-  Result := Int64(FT);
+  end;
 end;
 
-procedure TSchedulerThread.Reload(ScheduleList: TList<TSchedulerSchedule>);
+procedure TSchedulerThread.Reload(const ScheduleList: TList<TSchedulerSchedule>);
 var
   i: Integer;
 begin
