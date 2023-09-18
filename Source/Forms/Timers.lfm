@@ -59,7 +59,6 @@ object frmTimers: TfrmTimers
   OnShow = FormShow
   Position = poOwnerFormCenter
   ShowHint = True
-  LCLVersion = '2.2.6.0'
   object pnlNav: TPanel
     Left = 4
     Height = 34
@@ -71,6 +70,7 @@ object frmTimers: TfrmTimers
     BevelOuter = bvNone
     ClientHeight = 34
     ClientWidth = 472
+    ParentBackground = False
     TabOrder = 0
     object Bevel2: TBevel
       Left = 0
@@ -103,6 +103,7 @@ object frmTimers: TfrmTimers
     BevelOuter = bvNone
     ClientHeight = 370
     ClientWidth = 472
+    ParentBackground = False
     TabOrder = 1
     object pnlConfig: TPanel
       Left = 0
@@ -114,6 +115,7 @@ object frmTimers: TfrmTimers
       BevelOuter = bvNone
       ClientHeight = 196
       ClientWidth = 472
+      ParentBackground = False
       TabOrder = 0
       object rbRecurring: TRadioButton
         Left = 0
@@ -248,6 +250,7 @@ object frmTimers: TfrmTimers
         BevelOuter = bvNone
         ClientHeight = 42
         ClientWidth = 472
+        ParentBackground = False
         TabOrder = 6
         object Panel4: TPanel
           Left = 0
@@ -259,6 +262,7 @@ object frmTimers: TfrmTimers
           BevelOuter = bvNone
           ClientHeight = 42
           ClientWidth = 86
+          ParentBackground = False
           TabOrder = 0
           object Label1: TLabel
             Left = 0
@@ -270,90 +274,75 @@ object frmTimers: TfrmTimers
             Caption = 'Start Time (24h):'
             ParentColor = False
           end
-          object txtStartHour: TEdit
+          object dtpStartTime: TDateTimePicker
             Left = 0
             Height = 23
             Top = 19
-            Width = 37
-            Align = alLeft
-            MaxLength = 2
+            Width = 86
+            CenturyFrom = 1941
+            MaxDate = 2958465
+            MinDate = -53780
             TabOrder = 0
-          end
-          object Label3: TLabel
-            Left = 41
-            Height = 23
-            Top = 19
-            Width = 3
-            Align = alLeft
-            Alignment = taCenter
-            BorderSpacing.Left = 4
-            BorderSpacing.Right = 4
-            Caption = ':'
-            Layout = tlCenter
-            ParentColor = False
-          end
-          object txtStartMinute: TEdit
-            Left = 48
-            Height = 23
-            Top = 19
-            Width = 37
-            Align = alLeft
-            MaxLength = 2
-            TabOrder = 1
+            TrailingSeparator = False
+            TextForNullDate = 'NULL'
+            LeadingZeros = True
+            Align = alClient
+            NullInputAllowed = False
+            Kind = dtkTime
+            TimeFormat = tf24
+            TimeDisplay = tdHMS
+            DateMode = dmComboBox
+            Date = 45187
+            UseDefaultSeparators = True
+            HideDateTimeParts = [dtpSecond]
+            MonthNames = 'Long'
           end
         end
         object Panel6: TPanel
           Left = 102
           Height = 42
           Top = 0
-          Width = 85
+          Width = 82
           Align = alLeft
           AutoSize = True
           BorderSpacing.Left = 16
           BevelOuter = bvNone
           ClientHeight = 42
-          ClientWidth = 85
+          ClientWidth = 82
+          ParentBackground = False
           TabOrder = 1
-          object txtEndHour: TEdit
-            Left = 0
-            Height = 23
-            Top = 19
-            Width = 37
-            Align = alLeft
-            MaxLength = 2
-            TabOrder = 0
-          end
-          object Label4: TLabel
-            Left = 41
-            Height = 23
-            Top = 19
-            Width = 3
-            Align = alLeft
-            Alignment = taCenter
-            BorderSpacing.Left = 4
-            BorderSpacing.Right = 4
-            Caption = ':'
-            Layout = tlCenter
-            ParentColor = False
-          end
-          object txtEndMinute: TEdit
-            Left = 48
-            Height = 23
-            Top = 19
-            Width = 37
-            Align = alLeft
-            MaxLength = 2
-            TabOrder = 1
-          end
           object Label2: TLabel
             Left = 0
             Height = 15
             Top = 0
-            Width = 85
+            Width = 82
             Align = alTop
             BorderSpacing.Bottom = 4
             Caption = 'End Time (24h):'
             ParentColor = False
+          end
+          object dtpEndTime: TDateTimePicker
+            Left = 0
+            Height = 23
+            Top = 19
+            Width = 82
+            CenturyFrom = 1941
+            MaxDate = 2958465
+            MinDate = -53780
+            TabOrder = 0
+            TrailingSeparator = False
+            TextForNullDate = 'NULL'
+            LeadingZeros = True
+            Align = alClient
+            NullInputAllowed = False
+            Kind = dtkTime
+            TimeFormat = tf24
+            TimeDisplay = tdHMS
+            DateMode = dmComboBox
+            Date = 45187
+            UseDefaultSeparators = True
+            HideDateTimeParts = [dtpSecond]
+            MonthNames = 'Long'
           end
         end
         object Panel5: TPanel
@@ -366,6 +355,7 @@ object frmTimers: TfrmTimers
           BevelOuter = bvNone
           ClientHeight = 42
           ClientWidth = 48
+          ParentBackground = False
           TabOrder = 2
           object btnAdd: TButton
             Left = 0
@@ -391,6 +381,7 @@ object frmTimers: TfrmTimers
       BorderSpacing.Top = 4
       BorderSpacing.Bottom = 4
       BevelOuter = bvNone
+      ParentBackground = False
       TabOrder = 1
     end
     object Panel3: TPanel
@@ -404,6 +395,7 @@ object frmTimers: TfrmTimers
       BevelOuter = bvNone
       ClientHeight = 25
       ClientWidth = 472
+      ParentBackground = False
       TabOrder = 2
       object btnRemove: TButton
         Left = 403

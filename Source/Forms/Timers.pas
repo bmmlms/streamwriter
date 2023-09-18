@@ -73,10 +73,10 @@ type
 
   TfrmTimers = class(TForm)
     btnAdd: TButton;
+    dtpStartTime: TDateTimePicker;
+    dtpEndTime: TDateTimePicker;
     Label1: TLabel;
     Label2: TLabel;
-    Label3: TLabel;
-    Label4: TLabel;
     Panel2: TPanel;
     Panel4: TPanel;
     Panel5: TPanel;
@@ -95,10 +95,6 @@ type
     Panel3: TPanel;
     btnRemove: TButton;
     chkAutoRemove: TCheckBox;
-    txtEndHour: TEdit;
-    txtEndMinute: TEdit;
-    txtStartHour: TEdit;
-    txtStartMinute: TEdit;
     procedure FormCreate(Sender: TObject);
     procedure btnOKClick(Sender: TObject);
     procedure rbRecurringClick(Sender: TObject);
@@ -118,7 +114,6 @@ type
     Tree: TScheduleTree;
     FEntry: TStreamEntry;
 
-    function TimesOkay: Boolean;
     procedure UpdateButtons;
 
     procedure TreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
@@ -159,19 +154,18 @@ end;
 
 procedure TfrmTimers.btnAddClick(Sender: TObject);
 begin
-  if not TimesOkay then
-  begin
+  try
+    TFunctions.DateTimeToFileTime(TFunctions.LocalToUTC(dtpStartTime.DateTime));
+    TFunctions.DateTimeToFileTime(TFunctions.LocalToUTC(dtpEndTime.DateTime));
+  except
     TFunctions.MsgBox(_('Please enter a valid start and end time for the schedule.'), _('Info'), MB_ICONINFORMATION);
     Exit;
   end;
 
   if rbRecurring.Checked then
-    Tree.Add(TScheduleInterval(lstInterval.ItemIndex), TScheduleDay(lstDay.ItemIndex),
-      StrToInt(txtStartHour.Text), StrToInt(txtStartMinute.Text), StrToInt(txtEndHour.Text),
-      StrToInt(txtEndMinute.Text))
+    Tree.Add(TScheduleInterval(lstInterval.ItemIndex), TScheduleDay(lstDay.ItemIndex), HourOf(dtpStartTime.Time), MinuteOf(dtpStartTime.Time), HourOf(dtpEndTime.Time), MinuteOf(dtpEndTime.Time))
   else
-    Tree.Add(dtpDate.DateTime, StrToInt(txtStartHour.Text), StrToInt(txtStartMinute.Text),
-      StrToInt(txtEndHour.Text), StrToInt(txtEndMinute.Text), chkAutoRemove.Checked);
+    Tree.Add(dtpDate.DateTime, HourOf(dtpStartTime.Time), MinuteOf(dtpStartTime.Time), HourOf(dtpEndTime.Time), MinuteOf(dtpEndTime.Time), chkAutoRemove.Checked);
 end;
 
 procedure TfrmTimers.btnRemoveClick(Sender: TObject);
@@ -196,10 +190,8 @@ begin
       dtpDate.DateTime := NodeData.Schedule.Date;
       chkAutoRemove.Checked := NodeData.Schedule.AutoRemove;
     end;
-    txtStartHour.Text := IntToStr(NodeData.Schedule.StartHour);
-    txtStartMinute.Text := IntToStr(NodeData.Schedule.StartMinute);
-    txtEndHour.Text := IntToStr(NodeData.Schedule.EndHour);
-    txtEndMinute.Text := IntToStr(NodeData.Schedule.EndMinute);
+    dtpStartTime.Time := EncodeTime(NodeData.Schedule.StartHour, NodeData.Schedule.StartMinute, 0, 0);
+    dtpEndTime.Time := EncodeTime(NodeData.Schedule.EndHour, NodeData.Schedule.EndMinute, 0, 0);
 
     NodeData.Schedule.Free;
     FreeNode := Node;
@@ -218,6 +210,9 @@ begin
 
   Constraints.MinWidth := Scale96ToFont(Constraints.MinWidth);
   Constraints.MinHeight := Scale96ToFont(Constraints.MinHeight);
+
+  dtpStartTime.Time := 0;
+  dtpEndTime.Time := 0;
 end;
 
 destructor TfrmTimers.Destroy;
@@ -302,32 +297,6 @@ end;
 procedure TfrmTimers.rbRecurringClick(Sender: TObject);
 begin
   UpdateButtons;
-end;
-
-function TfrmTimers.TimesOkay: Boolean;
-var
-  SH, SM, EH, EM: Integer;
-begin
-  Result := False;
-
-  SH := StrToIntDef(txtStartHour.Text, -1);
-  SM := StrToIntDef(txtStartMinute.Text, -1);
-  EH := StrToIntDef(txtEndHour.Text, -1);
-  EM := StrToIntDef(txtEndMinute.Text, -1);
-
-  if (SH = -1) or (SH > 23) or (SH < 0) then
-    Exit;
-
-  if (SM = -1) or (SM > 59) or (SM < 0) then
-    Exit;
-
-  if (EH = -1) or (EH > 23) or (EH < 0) then
-    Exit;
-
-  if (EM = -1) or (EM > 59) or (EM < 0) then
-    Exit;
-
-  Result := True;
 end;
 
 procedure TfrmTimers.TreeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
