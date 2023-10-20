@@ -286,18 +286,17 @@ end;
 
 function TDebugView.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var Index: Integer): TCustomImageList;
 begin
+  Index := -1;
   Result := Images;
 
-  Index := -1;
-  if Column = 0 then
-  begin
-    case FClient.DebugLog[Node.Index].Level of
-      llError: Index := TImages.ERROR;
-      llWarning: Index := TImages.EXCLAMATION;
-      llDebug: Index := TImages.BUG;
-    end;
+  if Column <> 0 then
+    Exit;
 
-    if Index = -1 then
+  case FClient.DebugLog[Node.Index].Level of
+    llError: Index := TImages.EXCLAMATION;
+    llWarning: Index := TImages.ERROR;
+    llDebug: Index := TImages.BUG;
+    llInfo:
       case FClient.DebugLog[Node.Index].T of
         ltSong:
           Index := TImages.MUSIC;
