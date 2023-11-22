@@ -26,8 +26,9 @@ interface
 uses
   AppData,
   AppMessages,
+  AudioEndpointNotificationListener,
   Classes,
-  DeviceNotificationListener,
+  DynBass,
   Logging,
   MessageBus,
   SyncObjs,
@@ -45,8 +46,7 @@ type
     FVolumeBeforeMute: Integer;
     FLastPlayer: TObject;
     FEQEnabled: Boolean;
-    FResumePlaybackOnDeviceAdd: Boolean;
-    FDeviceNotificationListener: TDeviceNotificationListener;
+    FAudioEndpointNotificationListener: TAudioEndpointNotificationListener;
 
     procedure Play(Player: TObject);
 
@@ -57,7 +57,7 @@ type
     procedure FSetEQEnabled(Value: Boolean);
 
     procedure PlayerOnStateChange(Sender: TObject);
-    procedure DeviceNotificationListenerDeviceNotification(const NotificationType: TDeviceNotificationType; const DeviceClass: TGUID; const DeviceName: string);
+    procedure AudioEndpointNotificationListenerDefaultDeviceChanged(Sender: TObject);
   public
     constructor Create;
     destructor Destroy; override;
@@ -92,7 +92,7 @@ uses
   ICEClient,
   Player;
 
-{ TPlayerManager }
+  { TPlayerManager }
 
 procedure TPlayerManager.AddPlayer(Player: TObject);
 var
@@ -114,9 +114,9 @@ begin
   FCS := TCriticalSection.Create;
   FPlayers := TList.Create;
 
-  FDeviceNotificationListener := TDeviceNotificationListener.Create;
-  FDeviceNotificationListener.OnDeviceNotification := DeviceNotificationListenerDeviceNotification;
-  FDeviceNotificationListener.Start;
+  FAudioEndpointNotificationListener := TAudioEndpointNotificationListener.Create;
+  FAudioEndpointNotificationListener.OnDefaultDeviceChanged := AudioEndpointNotificationListenerDefaultDeviceChanged;
+  FAudioEndpointNotificationListener.Start;
 
   FVolume := AppGlobals.PlayerVolume;
   FVolumeBeforeMute := AppGlobals.PlayerVolumeBeforeMute;
@@ -129,7 +129,7 @@ begin
   for i := FPlayers.Count - 1 downto 0 do
     RemovePlayer(FPlayers[i]);
 
-  FreeAndNil(FDeviceNotificationListener);
+  FreeAndNil(FAudioEndpointNotificationListener);
   FPlayers.Free;
   FCS.Free;
 
@@ -424,23 +424,13 @@ end;
 
 procedure TPlayerManager.PlayerOnStateChange(Sender: TObject);
 begin
-  FResumePlaybackOnDeviceAdd := False;
+
 end;
 
-procedure TPlayerManager.DeviceNotificationListenerDeviceNotification(const NotificationType: TDeviceNotificationType; const DeviceClass: TGUID; const DeviceName: string);
-const
-  GUID_DEVINTERFACE_AUDIO_PLAYBACK_DEVICE: TGUID = '{e6327cad-dcec-4949-ae8a-991e976a79d2}';
+procedure TPlayerManager.AudioEndpointNotificationListenerDefaultDeviceChanged(Sender: TObject);
 begin
-  if not IsEqualGUID(DeviceClass, GUID_DEVINTERFACE_AUDIO_PLAYBACK_DEVICE) then
-    Exit;
-
-  if (NotificationType = dntAdded) and Assigned(FLastPlayer) and FResumePlaybackOnDeviceAdd then
-    Play(FLastPlayer)
-  else if (NotificationType = dntRemoved) and AnyPlaying then
-  begin
+  if (AppGlobals.SoundDevice = TBassDevice.DEFAULT_DEVICE_ID) and AnyPlaying then
     PauseAll(True);
-    FResumePlaybackOnDeviceAdd := True;
-  end;
 end;
 
 end.

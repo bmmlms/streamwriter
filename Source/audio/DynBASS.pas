@@ -160,6 +160,8 @@ type
   ENCODEPROC = procedure(handle: DWORD; channel: DWORD; buffer: Pointer; length: DWORD; user: Pointer); stdcall;
 
   TBassDevice = class
+  const
+    DEFAULT_DEVICE_ID: string = 'Default';
   private
     FIndex: Cardinal;
     FID: string;
@@ -553,7 +555,7 @@ begin
   begin
     if (Info.flags and BASS_DEVICE_ENABLED) = BASS_DEVICE_ENABLED then
     begin
-      FDevices.Add(TBassDevice.Create(i, IfThen<string>(Info.driver = '', 'Default', Info.driver) , Info.Name, (not FoundDefault) and ((Info.flags and BASS_DEVICE_DEFAULT) = BASS_DEVICE_DEFAULT), False));
+      FDevices.Add(TBassDevice.Create(i, IfThen<string>(Info.driver = '', TBassDevice.DEFAULT_DEVICE_ID, Info.driver), Info.Name, (not FoundDefault) and ((Info.flags and BASS_DEVICE_DEFAULT) = BASS_DEVICE_DEFAULT), False));
       if not FoundDefault then
         FoundDefault := FDevices.Last.IsDefault;
     end;

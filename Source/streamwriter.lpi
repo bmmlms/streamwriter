@@ -119,7 +119,7 @@
         <PackageName Value="LCL"/>
       </Item6>
     </RequiredPackages>
-    <Units Count="111">
+    <Units Count="112">
       <Unit0>
         <Filename Value="streamwriter.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -639,6 +639,10 @@
         <Filename Value="..\SubModules\fpc-common\DeviceNotificationListener.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit110>
+      <Unit111>
+        <Filename Value="..\SubModules\fpc-common\AudioEndpointNotificationListener.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit111>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
