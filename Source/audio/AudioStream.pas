@@ -120,7 +120,7 @@ end;
 function TAudioStreamFile.SearchSilence(StartPos, EndPos, LenStart, LenEnd, MaxPeaks, MinDuration: Int64): TPosRect;
 var
   i, MaxLenIdx: Integer;
-  WD, WD2: TWaveData;
+  WD1, WD2: TWaveData;
   M1, M2: TMemoryStream;
   OldPos: Int64;
 begin
@@ -131,7 +131,7 @@ begin
 
   M1 := TMemoryStream.Create;
   M2 := TMemoryStream.Create;
-  WD := TWaveData.Create;
+  WD1 := TWaveData.Create;
   WD2 := TWaveData.Create;
   try
     try
@@ -155,23 +155,23 @@ begin
       Position := EndPos;
       M2.CopyFrom(Self, LenEnd);
 
-      WD.Load(M1);
+      WD1.Load(M1);
       WD2.Load(M2);
 
       if MaxPeaks > -1 then
         MaxPeaks := Trunc((MaxPeaks / 100) * 6000);
 
-      WD.AutoCut(False, MaxPeaks, MinDuration, 0, High(WD.WaveArray));
-      WD2.AutoCut(True, MaxPeaks, MinDuration, 0, High(WD.WaveArray));
+      WD1.AutoCut(False, MaxPeaks, MinDuration, 0, High(WD1.WaveArray));
+      WD2.AutoCut(True, MaxPeaks, MinDuration, 0, High(WD2.WaveArray));
 
-      if WD.Silence.Count > 0 then
+      if WD1.Silence.Count > 0 then
       begin
         MaxLenIdx := 0;
-        for i := 0 to WD.Silence.Count - 1 do
-          if WD.Silence[i].CutEnd - WD.Silence[i].CutStart > WD.Silence[MaxLenIdx].CutEnd - WD.Silence[MaxLenIdx].CutStart then
+        for i := 0 to WD1.Silence.Count - 1 do
+          if WD1.Silence[i].CutEnd - WD1.Silence[i].CutStart > WD1.Silence[MaxLenIdx].CutEnd - WD1.Silence[MaxLenIdx].CutStart then
             MaxLenIdx := i;
-        Result.DataStart := WD.WaveArray[WD.Silence[MaxLenIdx].CutEnd].Pos;
-        Result.DataStart := Round(Result.DataStart * M1.Size / WD.Wavesize);
+        Result.DataStart := WD1.WaveArray[WD1.Silence[MaxLenIdx].CutEnd].Pos;
+        Result.DataStart := Round(Result.DataStart * M1.Size / WD1.Wavesize);
         Result.DataStart := Result.DataStart + StartPos;
       end;
 
@@ -192,7 +192,7 @@ begin
   finally
     M1.Free;
     M2.Free;
-    WD.Free;
+    WD1.Free;
     WD2.Free;
   end;
 

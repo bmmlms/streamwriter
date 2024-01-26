@@ -162,6 +162,7 @@ type
   TBassDevice = class
   const
     DEFAULT_DEVICE_ID: string = 'Default';
+
   private
     FIndex: Cardinal;
     FID: string;
@@ -581,26 +582,26 @@ procedure TBassLoader.UninitializeBass;
 var
   i: Integer;
 begin
-  try
-    if FAACDLLHandle <> 0 then
-      BASSPluginFree(FAACDLLHandle);
-    if FMixerDLLHandle <> 0 then
-      FreeLibrary(FMixerDLLHandle);
-    if FEncDLLHandle <> 0 then
-      FreeLibrary(FEncDLLHandle);
-    if FWASAPIDLLHandle <> 0 then
-      FreeLibrary(FWASAPIDLLHandle);
+  if FAACDLLHandle <> 0 then
+    BASSPluginFree(FAACDLLHandle);
+  if FMixerDLLHandle <> 0 then
+    FreeLibrary(FMixerDLLHandle);
+  if FEncDLLHandle <> 0 then
+    FreeLibrary(FEncDLLHandle);
+  if FWASAPIDLLHandle <> 0 then
+    FreeLibrary(FWASAPIDLLHandle);
 
-    if FDLLHandle <> 0 then
+  if FDLLHandle <> 0 then
+  begin
+    for i := 0 to FDevices.Count - 1 do
     begin
-      for i := 0 to FDevices.Count - 1 do
-      begin
-        BASSSetDevice(FDevices[i].Index);
-        BASSFree;
-      end;
-      FreeLibrary(FDLLHandle);
+      BASSSetDevice(FDevices[i].Index);
+      BASSFree;
     end;
+    FreeLibrary(FDLLHandle);
+  end;
 
+  try
     if FBassDLLPath <> '' then
       SysUtils.DeleteFile(FBassDLLPath);
     if FBassAACDLLPath <> '' then
