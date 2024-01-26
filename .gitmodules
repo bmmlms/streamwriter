@@ -4,9 +4,6 @@
 [submodule "SubModules/TRegExpr"]
 	path = SubModules/TRegExpr
 	url = https://github.com/Alexey-T/TRegExpr.git
-[submodule "SubModules/mbedtls"]
-	path = SubModules/mbedtls
-	url = https://github.com/ARMmbed/mbedtls.git
 [submodule "SubModules/DDetours"]
 	path = SubModules/DDetours
 	url = https://github.com/MahdiSafsafi/DDetours
