@@ -33,6 +33,7 @@ uses
   Interfaces,
   JwaWinNT,
   LanguageObjects,
+  MbedTLS,
   Main,
   MessageBus,
   Patches,
@@ -61,6 +62,7 @@ var
   HideMain, Found: Boolean;
   ExceptionHandler: TExceptionHandler;
   frmStreamWriterMain: TfrmStreamWriterMain;
+  MbedTLS: TMbedTLSLoader;
 begin
   IsMultiThread := True;
 
@@ -109,8 +111,6 @@ begin
       TSplashThread.Create('Window', 'SPLASH', AppGlobals.Codename, AppGlobals.AppVersion.AsString, AppGlobals.GitSHA,
         AppGlobals.MainLeft, AppGlobals.MainTop, AppGlobals.MainWidth, AppGlobals.MainHeight);
 
-    TSocketThread.LoadCertificates('CERTIFICATES');
-
     // Now load everything from datafiles
     if not InitAppDataStageTwo then
       Exit;
@@ -122,6 +122,16 @@ begin
       TFunctions.MsgBox(_('The BASS library or it''s plugins could not be extracted/loaded. Without these libraries streamWriter cannot record/playback streams. Try to get help at streamWriter''s board.'), _('Error'), MB_ICONERROR);
       Exit;
     end;
+
+    // Initialize MbedTLS, quit application on error
+    MbedTLS := TMbedTLSLoader.Create;
+    if not MbedTLS.Initialize then
+    begin
+      TFunctions.MsgBox(_('The MbedTLS library could not be extracted/loaded. Try to get help at streamWriter''s board.'), _('Error'), MB_ICONERROR);
+      Exit;
+    end;
+
+    TSocketThread.LoadCertificates('CERTIFICATES');
 
     Found := False;
     for i := 0 to Bass.Devices.Count - 1 do
@@ -157,8 +167,10 @@ begin
     Players.Free;
     WSACleanup;
     TSocketThread.FreeCertificates;
-    if Bass <> nil then
+    if Assigned(Bass) then
       Bass.Free;
+    if Assigned(MbedTLS) then
+      MbedTLS.Free;
     ExceptionHandler.Free;
   end;
 end.
