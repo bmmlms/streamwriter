@@ -387,7 +387,10 @@ begin
     else
     begin
       FSyncSlide := BASSChannelSetSync(FPlayer, BASS_SYNC_SLIDE, 0, SlideEndSyncProc, Self);
+      {$PUSH}
+      {$RANGECHECKS OFF}
       BASSChannelSlideAttribute(FPlayer, 2, 0, Min(Trunc(Len - Pos - 10), 300));
+      {$POP}
       while BASSChannelIsActive(FPlayer) = BASS_ACTIVE_PLAYING do
         Sleep(50);
     end;
@@ -462,7 +465,10 @@ begin
       end else
       begin
         FSyncSlide := BASSChannelSetSync(FPlayer, BASS_SYNC_SLIDE, 0, SlideEndSyncProc, Self);
+        {$PUSH}
+        {$RANGECHECKS OFF}
         BASSChannelSlideAttribute(FPlayer, 2, 0, Min(Max(Trunc(Len - Pos - 10), 0), 300));
+        {$POP}
         while BASSChannelIsActive(FPlayer) = BASS_ACTIVE_PLAYING do
           Sleep(50);
         if Free then
