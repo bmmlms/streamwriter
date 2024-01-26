@@ -1682,7 +1682,7 @@ begin
 
   Replaced := FixPatternFilename(Replaced);
 
-  FSaveDir := TFunctions.FixPathName(ExtractFilePath(FSaveDir + Replaced));
+  FSaveDir := TFunctions.FixPathName(ExtractFilePath(ConcatPaths([FSaveDir, Replaced])));
   Result := ExtractFileName(Replaced);
 end;
 
