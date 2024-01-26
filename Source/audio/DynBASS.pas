@@ -189,11 +189,11 @@ type
     FBassMixerDLLPath: string;
     FBassEncDLLPath: string;
 
-    FDLLHandle: Cardinal;
-    FAACDLLHandle: Cardinal;
-    FWASAPIDLLHandle: Cardinal;
-    FMixerDLLHandle: Cardinal;
-    FEncDLLHandle: Cardinal;
+    FDLLHandle: THandle;
+    FAACDLLHandle: THandle;
+    FWASAPIDLLHandle: THandle;
+    FMixerDLLHandle: THandle;
+    FEncDLLHandle: THandle;
 
     FEffectsAvailable: Boolean;
 
