@@ -1789,7 +1789,7 @@ begin
             HomeComm.SendGetMonitorStreams(NewMonitorCount);
           end;
 
-          tabSaved.Tree.SetFileWatcher;
+          tabSaved.Tree.SetDirectoryWatchers;
 
           Language.Translate(Self);
 
@@ -1802,7 +1802,10 @@ begin
         stAuto:
         begin
           AppGlobals.Data.AutoRecordSettings.Assign(S.StreamSettings[0]);
+
           HomeComm.SendSetSettings(AppGlobals.Data.SaveList.AnyAutomatic and AppGlobals.AutoTuneIn);
+
+          tabSaved.Tree.SetDirectoryWatchers;
         end;
         stStream:
           for i := 0 to High(Clients) do
