@@ -34,12 +34,12 @@ uses
   Controls,
   DataManager,
   Dialogs,
+  DirectoryWatcher,
   DragDrop,
   DragDropFile,
   DynBASS,
   ExtCtrls,
   FileTagger,
-  FileWatcher,
   Forms,
   Functions,
   Generics.Collections,
@@ -305,7 +305,7 @@ type
     FDragSource: TDropFileSource;
     FTab: TSavedTab;
     FTrackList: TTrackList;
-    FFileWatcher, FFileWatcherAuto: TFileWatcher;
+    FFileWatcher, FFileWatcherAuto: TDirectoryWatcher;
     FStreamNode: PVirtualNode;
     FFileNode: PVirtualNode;
     FPattern: string;
@@ -344,7 +344,7 @@ type
 
     procedure CutCopy(Cut: Boolean);
 
-    procedure FileWatcherEvent(Sender: TObject; Action: TFileWatcherEventActions; Path, PathNew: string);
+    procedure DirectoryWatcherNotification(const Sender: TObject; const Notification: TNotification);
     procedure FileWatcherTerminate(Sender: TObject);
 
     procedure MessageReceived(Msg: TMessageBase);
@@ -381,7 +381,7 @@ type
     procedure Filter(S: string); overload;
     procedure Filter(S: string; ServerTitleHashes, ServerArtistHashes: TCardinalArray); overload;
     procedure Sort(Node: PVirtualNode; Column: TColumnIndex; Direction: VirtualTrees.TSortDirection; DoInit: Boolean = True); override;
-    procedure SetFileWatcher;
+    procedure SetDirectoryWatchers;
     procedure UpdateList;
 
     property Player: TPlayer read FPlayer;
@@ -1402,7 +1402,7 @@ begin
   NodeData := GetNodeData(FFileNode);
   NodeData.IsFileParent := True;
 
-  SetFileWatcher;
+  SetDirectoryWatchers;
 
   MsgBus.AddSubscriber(MessageReceived);
 
@@ -1598,12 +1598,10 @@ begin
     L += Scale96ToFont(16 + 2);
 
     if NodeData.Track.IsAuto then
-    begin
       if NodeData.Track.RecordBecauseArtist then
         ScaledImages.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.USER_GRAY_COOL)
       else
         ScaledImages.Draw(PaintInfo.Canvas, L, PaintInfo.ImageInfo[ImageInfoIndex].YPos, TImages.BRICKS);
-    end;
   end;
 end;
 
@@ -2067,7 +2065,7 @@ begin
   Change(nil);
 end;
 
-procedure TSavedTree.SetFileWatcher;
+procedure TSavedTree.SetDirectoryWatchers;
 begin
   if FFileWatcher <> nil then
   begin
@@ -2083,15 +2081,15 @@ begin
   FFileWatcher := nil;
   FFileWatcherAuto := nil;
 
-  FFileWatcher := TFileWatcher.Create(AppGlobals.Dir, FILE_NOTIFY_CHANGE_FILE_NAME or FILE_NOTIFY_CHANGE_DIR_NAME or FILE_NOTIFY_CHANGE_SIZE);
-  FFileWatcher.OnEvent := FileWatcherEvent;
+  FFileWatcher := TDirectoryWatcher.Create(AppGlobals.Dir, FILE_NOTIFY_CHANGE_FILE_NAME or FILE_NOTIFY_CHANGE_DIR_NAME or FILE_NOTIFY_CHANGE_SIZE);
+  FFileWatcher.OnNotification := DirectoryWatcherNotification;
   FFileWatcher.OnTerminate := FileWatcherTerminate;
   FFileWatcher.Start;
 
   if LowerCase(AppGlobals.Dir) <> LowerCase(AppGlobals.DirAuto) then
   begin
-    FFileWatcherAuto := TFileWatcher.Create(AppGlobals.DirAuto, FILE_NOTIFY_CHANGE_FILE_NAME or FILE_NOTIFY_CHANGE_DIR_NAME or FILE_NOTIFY_CHANGE_SIZE);
-    FFileWatcherAuto.OnEvent := FileWatcherEvent;
+    FFileWatcherAuto := TDirectoryWatcher.Create(AppGlobals.DirAuto, FILE_NOTIFY_CHANGE_FILE_NAME or FILE_NOTIFY_CHANGE_DIR_NAME or FILE_NOTIFY_CHANGE_SIZE);
+    FFileWatcherAuto.OnNotification := DirectoryWatcherNotification;
     FFileWatcherAuto.OnTerminate := FileWatcherTerminate;
     FFileWatcherAuto.Start;
   end;
@@ -2304,7 +2302,7 @@ begin
   inherited;
 end;
 
-procedure TSavedTree.FileWatcherEvent(Sender: TObject; Action: TFileWatcherEventActions; Path, PathNew: string);
+procedure TSavedTree.DirectoryWatcherNotification(const Sender: TObject; const Notification: TNotification);
 
   function GetTracks(StartingWith: string): TTrackInfoArray;
   var
@@ -2328,28 +2326,28 @@ var
   Tracks: TTrackInfoArray;
   Filesize: Int64;
 begin
-  if Action = eaAdded then
+  if Notification.Action = dwaAdded then
     Exit;
 
-  Track := AppGlobals.Data.TrackList.GetTrack(Path);
+  Track := AppGlobals.Data.TrackList.GetTrack(Notification.Path);
   if Assigned(Track) then
     Tracks := [Track]
   else
-    Tracks := GetTracks(Path);
+    Tracks := GetTracks(Notification.Path);
 
-  case Action of
-    eaMoved:
+  case Notification.Action of
+    dwaMoved:
       if Assigned(Track) then
-        Track.Filename := PathNew
+        Track.Filename := Notification.PathNew
       else
         for Track in Tracks do
-          Track.Filename := ConcatPaths([PathNew, Track.Filename.Remove(0, Path.Length)]);
-    eaModified:
+          Track.Filename := ConcatPaths([Notification.PathNew, Track.Filename.Remove(0, Notification.Path.Length)]);
+    dwaModified:
       if Assigned(Track) and TFunctions.GetFileSize(Track.Filename, Filesize) then
         Track.Filesize := Filesize;
   end;
 
-  if Action = eaRemoved then
+  if Notification.Action = dwaRemoved then
     RemoveTracks(Tracks)
   else
     UpdateTracks(Tracks);
