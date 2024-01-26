@@ -34,12 +34,6 @@ goto end
     rmdir /s /q "%OUTDIR%"
   )
 
-  REM Build libraries
-  copy /y "%PROJECTDIR%\SubModules\mbedtls_config.h" "%PROJECTDIR%\SubModules\mbedtls\include\mbedtls\mbedtls_config.h"
-  if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
-  call "%MSYS2%" -defterm -no-start -where "%PROJECTDIR%\SubModules\mbedtls" -mingw32 -c "make clean && make -j lib && exit"
-  if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
-
   cd "%SOURCEDIR%"
 
   instantfpc "%SCRIPTSDIR%\SetGitVersion.pas" streamwriter.lpi streamwriter_gitsha.lpi

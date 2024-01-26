@@ -31,6 +31,5 @@ Downloads are available at [streamwriter.org](https://streamwriter.org/downloads
 
 ### :gear: Building
 - Install Lazarus IDE and the tools to crosscompile
-- Install MSYS2 with mingw32 (required for building Mbed TLS)
 
 Edit "Scripts\SetEnvironment.bat" to set some required paths. Afterwards run "Scripts\Build.bat" to build a release build.
