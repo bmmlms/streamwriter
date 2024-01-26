@@ -1,5 +1,5 @@
 REM Path to fpc binaries
-SET "FPCBIN=D:\Lazarus\fpc\3.2.2\bin\x86_64-win64"
+SET "FPCBIN=C:\Lazarus\fpc\3.2.2\bin\x86_64-win64"
 
 IF NOT EXIST "%FPCBIN%" (
   ECHO.
@@ -14,7 +14,6 @@ SET "PATH=%PATH%;%FPCBIN%;%FPCBIN%\..\..\..\.."
 
 SET "INSTANTFPCOPTIONS=-Fu%FPCBIN%\..\..\..\..\lcl\units\x86_64-win64\win32 -Fu%FPCBIN%\..\..\..\..\lcl\units\x86_64-win64 -Fu%FPCBIN%\..\..\..\..\components\lazutils\lib\x86_64-win64"
 
-SET "ZIP=D:\7-Zip\7z.exe"
-SET "INNO=D:\Inno Setup\ISCC.exe"
+SET "ZIP=C:\Program Files\7-Zip\7z.exe"
+SET "INNO=C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 SET "PLINK=C:\Program Files\PuTTY\plink.exe"
-SET "MSYS2=D:\msys64\msys2_shell.cmd"
