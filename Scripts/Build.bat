@@ -100,7 +100,7 @@ goto end
   exit /b 0
 
 :upload
-  cd "%PUBLISHDIR%"
+  cd "%OUTDIR%\%~1"
 
   type "%APPNAME%.zip" | "%PLINK%" -batch ares streamwriter-update-build "%GITSHA%"
   if %ERRORLEVEL% GEQ 1 exit /B 1
@@ -127,7 +127,7 @@ goto end
   ))
 
   if "%1"=="upload" (
-    call :upload
+    call :upload i386
     if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
   )
 
