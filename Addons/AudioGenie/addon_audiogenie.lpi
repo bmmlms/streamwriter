@@ -26,7 +26,7 @@
           <Version Value="11"/>
           <PathDelim Value="\"/>
           <Target>
-            <Filename Value="..\..\Build\addon_audiogenie"/>
+            <Filename Value="..\..\Build\$(TargetCPU)\addon_audiogenie"/>
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
@@ -82,7 +82,7 @@
     <Version Value="11"/>
     <PathDelim Value="\"/>
     <Target>
-      <Filename Value="..\..\Build\addon_audiogenie"/>
+      <Filename Value="..\..\Build\$(TargetCPU)\addon_audiogenie"/>
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>

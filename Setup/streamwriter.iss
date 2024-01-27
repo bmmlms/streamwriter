@@ -1,8 +1,9 @@
-#define AppVersion GetFileVersion("..\Build\streamwriter.exe")
-#define AppCopyright GetStringFileInfo("..\Build\streamwriter.exe", LEGAL_COPYRIGHT)
+#define AppCpu "x86_64"
+#define AppVersion GetFileVersion("..\Build\{#AppCpu}\streamwriter.exe")
+#define AppCopyright GetStringFileInfo("..\Build\{#AppCpu}\streamwriter.exe", LEGAL_COPYRIGHT)
 
 [Files]
-Source: ..\Build\streamwriter.exe; DestDir: {app}; Flags: ignoreversion
+Source: ..\Build\{#AppCpu}\streamwriter.exe; DestDir: {app}; Flags: ignoreversion
 Source: .\WizModernSmallImage-IS.bmp; DestDir: {tmp}; Flags: dontcopy
 
 [Icons]
@@ -60,6 +61,9 @@ AppPublisher=Alexander Nottelmann
 AppPublisherURL=https://streamwriter.org
 CloseApplications=no
 PrivilegesRequiredOverridesAllowed=commandline dialog
+MinVersion=10.0.10240
+ArchitecturesAllowed=x64
+ArchitecturesInstallIn64BitMode=x64
 
 [Run]
 Filename: {app}\streamwriter.exe; WorkingDir: {app}; Flags: waituntilidle postinstall skipifsilent; Description: "{cm:Launch}"
