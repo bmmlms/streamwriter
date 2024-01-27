@@ -32,7 +32,7 @@
         <Resource_5 FileName="..\Resources\images\mainicon.ico" Type="ICON" ResourceName="MAINICON"/>
         <Resource_6 FileName="..\Resources\images\splash.png" Type="RCDATA" ResourceName="SPLASH"/>
         <Resource_7 FileName="..\Resources\certificates.pem" Type="RCDATA" ResourceName="CERTIFICATES"/>
-        <Resource_8 FileName="..\Resources\mbedtls-x86_64.dll" Type="RCDATA" ResourceName="MBEDTLS"/>
+        <Resource_8 FileName="..\Resources\mbedtls\mbedtls-x86_64.dll" Type="RCDATA" ResourceName="MBEDTLS"/>
       </Resources>
     </General>
     <VersionInfo>
