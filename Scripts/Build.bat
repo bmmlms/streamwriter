@@ -59,12 +59,12 @@ goto end
     move "%APPNAME%.dbg" "%APPNAME%-%GITSHA%.dbg"
   )
 
-  REM for %%f in (*.exe *.dll) do (
-  REM   type "%%f" | "%PLINK%" -batch gaia osslsigncode-sign.sh > "%%f-signed"
-  REM   if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
-  REM   move /y "%%f-signed" "%%f"
-  REM   if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
-  REM )
+  for %%f in (*.exe *.dll) do (
+    type "%%f" | "%PLINK%" -batch gaia osslsigncode-sign.sh > "%%f-signed"
+    if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
+    move /y "%%f-signed" "%%f"
+    if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
+  )
 
 :zip
   cd "%OUTDIR%\%~1"
