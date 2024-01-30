@@ -62,11 +62,11 @@ type
     function GetTimerTime(const Time: TDateTime): Int64;
   protected
     procedure Execute; override;
+    procedure TerminatedSet; override;
   public
     constructor Create;
     destructor Destroy; override;
 
-    procedure Terminate; reintroduce;
     procedure Reload(const ScheduleList: TList<TSchedulerSchedule>);
 
     property OnLog: TLogEvent read FOnLog write FOnLog;
@@ -116,13 +116,6 @@ begin
   FReloadEvent := CreateEvent(nil, True, False, nil);
   FTerminateEvent := CreateEvent(nil, True, False, nil);
   FReloadDoneEvent := CreateEvent(nil, True, False, nil);
-end;
-
-procedure TSchedulerThread.Terminate;
-begin
-  inherited;
-
-  SetEvent(FTerminateEvent);
 end;
 
 destructor TSchedulerThread.Destroy;
@@ -364,6 +357,13 @@ begin
       LeaveCriticalSection(FSchedulesLock);
     end;
   end;
+end;
+
+procedure TSchedulerThread.TerminatedSet;
+begin
+  inherited TerminatedSet;
+
+  SetEvent(FTerminateEvent);
 end;
 
 function TSchedulerThread.GetTimerTime(const Time: TDateTime): Int64;

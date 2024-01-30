@@ -2081,12 +2081,15 @@ begin
   FFileWatcher := nil;
   FFileWatcherAuto := nil;
 
-  FFileWatcher := TDirectoryWatcher.Create(AppGlobals.Dir, FILE_NOTIFY_CHANGE_FILE_NAME or FILE_NOTIFY_CHANGE_DIR_NAME or FILE_NOTIFY_CHANGE_SIZE);
-  FFileWatcher.OnNotification := DirectoryWatcherNotification;
-  FFileWatcher.OnTerminate := FileWatcherTerminate;
-  FFileWatcher.Start;
+  if AppGlobals.Dir.Trim <> '' then
+  begin
+    FFileWatcher := TDirectoryWatcher.Create(AppGlobals.Dir, FILE_NOTIFY_CHANGE_FILE_NAME or FILE_NOTIFY_CHANGE_DIR_NAME or FILE_NOTIFY_CHANGE_SIZE);
+    FFileWatcher.OnNotification := DirectoryWatcherNotification;
+    FFileWatcher.OnTerminate := FileWatcherTerminate;
+    FFileWatcher.Start;
+  end;
 
-  if LowerCase(AppGlobals.Dir) <> LowerCase(AppGlobals.DirAuto) then
+  if (AppGlobals.DirAuto.Trim <> '') and (LowerCase(AppGlobals.Dir) <> LowerCase(AppGlobals.DirAuto)) then
   begin
     FFileWatcherAuto := TDirectoryWatcher.Create(AppGlobals.DirAuto, FILE_NOTIFY_CHANGE_FILE_NAME or FILE_NOTIFY_CHANGE_DIR_NAME or FILE_NOTIFY_CHANGE_SIZE);
     FFileWatcherAuto.OnNotification := DirectoryWatcherNotification;
