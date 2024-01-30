@@ -370,6 +370,7 @@ end;
 procedure TPlayer.Pause(NoFadeOut: Boolean = False);
 var
   Pos, Len: Double;
+  MillisecondsLeft: Cardinal;
 begin
   if FPlayer > 0 then
   begin
@@ -381,16 +382,14 @@ begin
 
     Pos := BASSChannelBytes2Seconds(FPlayer, BASSChannelGetPosition(FPlayer, BASS_FILEPOS_CURRENT));
     Len := BASSChannelBytes2Seconds(FPlayer, BASSChannelGetLength(FPlayer, BASS_POS_BYTE));
+    MillisecondsLeft := Trunc((Len - Pos) * 1000);
 
-    if NoFadeOut or (Len - Pos < 0.300) then
+    if NoFadeOut or (MillisecondsLeft < 100) then
       BASSChannelPause(FPlayer)
     else
     begin
       FSyncSlide := BASSChannelSetSync(FPlayer, BASS_SYNC_SLIDE, 0, SlideEndSyncProc, Self);
-      {$PUSH}
-      {$RANGECHECKS OFF}
-      BASSChannelSlideAttribute(FPlayer, 2, 0, Min(Trunc(Len - Pos - 10), 300));
-      {$POP}
+      BASSChannelSlideAttribute(FPlayer, 2, 0, Min(MillisecondsLeft, 300));
       while BASSChannelIsActive(FPlayer) = BASS_ACTIVE_PLAYING do
         Sleep(50);
     end;
@@ -443,6 +442,7 @@ end;
 procedure TPlayer.Stop(Free: Boolean; NoFadeOut: Boolean = False);
 var
   Pos, Len: Double;
+  MillisecondsLeft: Cardinal;
 begin
   if FPlayer > 0 then
   begin
@@ -456,8 +456,9 @@ begin
     begin
       Pos := BASSChannelBytes2Seconds(FPlayer, BASSChannelGetPosition(FPlayer, BASS_FILEPOS_CURRENT));
       Len := BASSChannelBytes2Seconds(FPlayer, BASSChannelGetLength(FPlayer, BASS_POS_BYTE));
+      MillisecondsLeft := Trunc((Len - Pos) * 1000);
 
-      if (Len - Pos < 0.300) or NoFadeOut then
+      if NoFadeOut or (MillisecondsLeft < 100) then
       begin
         BASSChannelStop(FPlayer);
         if Free then
@@ -465,10 +466,7 @@ begin
       end else
       begin
         FSyncSlide := BASSChannelSetSync(FPlayer, BASS_SYNC_SLIDE, 0, SlideEndSyncProc, Self);
-        {$PUSH}
-        {$RANGECHECKS OFF}
-        BASSChannelSlideAttribute(FPlayer, 2, 0, Min(Max(Trunc(Len - Pos - 10), 0), 300));
-        {$POP}
+        BASSChannelSlideAttribute(FPlayer, 2, 0, Min(MillisecondsLeft, 300));
         while BASSChannelIsActive(FPlayer) = BASS_ACTIVE_PLAYING do
           Sleep(50);
         if Free then
