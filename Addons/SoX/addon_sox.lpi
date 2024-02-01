@@ -18,6 +18,7 @@
     </General>
     <VersionInfo>
       <UseVersionInfo Value="True"/>
+      <MajorVersionNr Value="1"/>
     </VersionInfo>
     <BuildModes Count="2">
       <Item1 Name="Debug" Default="True"/>
@@ -30,7 +31,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <UnitOutputDirectory Value="..\..\Build\Units\$(TargetCPU)\$(BuildMode)"/>
+            <UnitOutputDirectory Value="..\..\Build\$(TargetCPU)\Units\$(BuildMode)"/>
           </SearchPaths>
           <Parsing>
             <SyntaxOptions>
