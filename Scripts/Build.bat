@@ -35,9 +35,6 @@ goto end
   instantfpc "%SCRIPTSDIR%\SetGitVersion.pas" "streamwriter.lpi" "streamwriter-%~1.lpi"
   if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
 
-  powershell -Command "(gc 'streamwriter-%~1.lpi') -replace '-x86_64.dll', '-%~1.dll' | Out-File 'streamwriter-%~1.lpi'"
-  if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
-
   REM Build executables
   lazbuild --build-all --cpu=%~1 --build-mode=Release --quiet --quiet "streamwriter-%~1.lpi"
   if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
@@ -49,13 +46,7 @@ goto end
   for /R "..\Addons" %%f in (*.lpi) do (
     cd "%%~dpf"
 
-    powershell -Command "(gc '%%~nxf') -replace '-x86_64.dll', '-%~1.dll' | Out-File '%%~nf-%~1.lpi'"
-    if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
-
-    lazbuild --build-all --cpu=%~1 --build-mode=Release --quiet --quiet "%%~nf-%~1.lpi"
-    if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
-
-    del "%%~nf-%~1.lpi"
+    lazbuild --build-all --cpu=%~1 --build-mode=Release --quiet --quiet "%%~nxf"
     if %ERRORLEVEL% GEQ 1 exit /B %ERRORLEVEL%
   )
 
