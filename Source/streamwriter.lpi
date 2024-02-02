@@ -24,15 +24,15 @@
         <TextDesc Value="streamWriter"/>
       </XPManifest>
       <Resources Count="9">
-        <Resource_0 FileName="..\Resources\bass\bass-x86_64.dll" Type="RCDATA" ResourceName="BASS"/>
-        <Resource_1 FileName="..\Resources\bass\bass_aac-x86_64.dll" Type="RCDATA" ResourceName="BASS_AAC"/>
+        <Resource_0 FileName="..\Resources\bass\bass-$(TargetCPU).dll" Type="RCDATA" ResourceName="BASS"/>
+        <Resource_1 FileName="..\Resources\bass\bass_aac-$(TargetCPU).dll" Type="RCDATA" ResourceName="BASS_AAC"/>
         <Resource_2 FileName="..\Resources\about\thanksimage0.jpg" Type="RCDATA" ResourceName="THANKSIMAGE0"/>
         <Resource_3 FileName="..\Resources\about\thankstext_de.txt" Type="RCDATA" ResourceName="THANKSTEXT_DE"/>
         <Resource_4 FileName="..\Resources\about\thankstext_en.txt" Type="RCDATA" ResourceName="THANKSTEXT_EN"/>
         <Resource_5 FileName="..\Resources\images\mainicon.ico" Type="ICON" ResourceName="MAINICON"/>
         <Resource_6 FileName="..\Resources\images\splash.png" Type="RCDATA" ResourceName="SPLASH"/>
         <Resource_7 FileName="..\Resources\certificates.pem" Type="RCDATA" ResourceName="CERTIFICATES"/>
-        <Resource_8 FileName="..\Resources\mbedtls\mbedtls-x86_64.dll" Type="RCDATA" ResourceName="MBEDTLS"/>
+        <Resource_8 FileName="..\Resources\mbedtls\mbedtls-$(TargetCPU).dll" Type="RCDATA" ResourceName="MBEDTLS"/>
       </Resources>
     </General>
     <VersionInfo>
