@@ -684,11 +684,7 @@ begin
     begin
       if ParsePlaylist then
       begin
-        {$IFDEF DEBUG}
-        WriteLog(_('Playlist parsed'), FEntry.URLs.Text, ltGeneral, llInfo);
-        {$ELSE}
-        WriteLog(_('Playlist parsed'), ltGeneral, llInfo);
-        {$ENDIF}
+        WriteLog(_('Playlist parsed'){$IFDEF DEBUG}, FEntry.URLs.Text{$ENDIF}, ltGeneral, llInfo);
 
         // ClientManager prüft, ob es in einem anderen Client schon eine der URLs gibt.
         // Wenn ja, tötet der ClientManager den neu hinzugefügten Client.

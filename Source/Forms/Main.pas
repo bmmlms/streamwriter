@@ -1639,15 +1639,8 @@ begin
   if tabClients <> nil then
     Nodes := tabClients.ClientView.GetNodes(ntClient, False);
 
-  NewCaption := 'streamWriter';
-  {$IFDEF DEBUG}
-  NewCaption := NewCaption + ' -: DEBUG BUiLD :- ';
-  {$ENDIF}
-
-  NewHint := 'streamWriter';
-  {$IFDEF DEBUG}
-  NewHint := NewHint + ' -: DEBUG BUiLD :- ';
-  {$ENDIF}
+  NewCaption := 'streamWriter'{$IFDEF DEBUG}+ ' (Debug build)'{$ENDIF};
+  NewHint := 'streamWriter'{$IFDEF DEBUG}+ ' (Debug build)'{$ENDIF};
 
   PlayerManager.Players.GetPlayingInfo(Artist, Title, Stream, Filename);
 

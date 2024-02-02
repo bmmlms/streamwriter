@@ -434,13 +434,10 @@ begin
     FLogHeaderPosition[i] := -1;
 
   // Set some application-specific settings
-  SetLength(FProjectUpdateLinks, 2);
   {$IFDEF DEBUG}
-  FProjectUpdateLinks[0] := 'https://streamwriter.gaia';
-  FProjectUpdateLinks[1] := 'https://streamwriter.gaia';
+  FProjectUpdateLinks := ['http://streamwriter.gaia', 'http://streamwriter.gaia'];
   {$ELSE}
-  FProjectUpdateLinks[0] := 'https://streamwriter.org';
-  FProjectUpdateLinks[1] := 'https://streamwriter.de';
+  FProjectUpdateLinks := ['https://streamwriter.org', 'https://streamwriter.de'];
   {$ENDIF}
   FProjectHomepageLink := 'https://streamwriter.org';
   FProjectLink := 'https://streamwriter.org';

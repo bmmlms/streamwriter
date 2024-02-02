@@ -1596,11 +1596,7 @@ begin
 
     if UseCompression then
     begin
-      {$IFDEF DEBUG}
-      TFunctions.CompressStream(CompressedStream, S, clDefault);
-      {$ELSE}
-      TFunctions.CompressStream(CompressedStream, S, clDefault);
-      {$ENDIF}
+      TFunctions.CompressStream(CompressedStream, S, {$IFDEF DEBUG}clFastest{$ELSE}clDefault{$ENDIF});
     end else
       S.CopyFrom(CompressedStream, CompressedStream.Size);
   finally
