@@ -130,7 +130,7 @@
         <ResourceBaseClass Value="Form"/>
       </Unit1>
       <Unit2>
-        <Filename Value="controls\ClientView.pas"/>
+        <Filename Value="Controls\ClientView.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit2>
       <Unit3>
@@ -226,47 +226,47 @@
         <ResourceBaseClass Value="Form"/>
       </Unit19>
       <Unit20>
-        <Filename Value="controls\StreamBrowserView.pas"/>
+        <Filename Value="Controls\StreamBrowserView.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit20>
       <Unit21>
-        <Filename Value="controls\StationCombo.pas"/>
+        <Filename Value="Controls\StationCombo.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit21>
       <Unit22>
-        <Filename Value="controls\StreamInfoView.pas"/>
+        <Filename Value="Controls\StreamInfoView.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit22>
       <Unit23>
-        <Filename Value="controls\StreamDebugView.pas"/>
+        <Filename Value="Controls\StreamDebugView.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit23>
       <Unit24>
-        <Filename Value="audio\AudioStream.pas"/>
+        <Filename Value="Audio\AudioStream.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit24>
       <Unit25>
-        <Filename Value="controls\ClientTab.pas"/>
+        <Filename Value="Controls\ClientTab.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit25>
       <Unit26>
-        <Filename Value="controls\CutTab.pas"/>
+        <Filename Value="Controls\CutTab.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit26>
       <Unit27>
-        <Filename Value="controls\Tabs.pas"/>
+        <Filename Value="Controls\Tabs.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit27>
       <Unit28>
-        <Filename Value="controls\CutView.pas"/>
+        <Filename Value="Controls\CutView.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit28>
       <Unit29>
-        <Filename Value="controls\SavedTab.pas"/>
+        <Filename Value="Controls\SavedTab.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit29>
       <Unit30>
-        <Filename Value="audio\WaveData.pas"/>
+        <Filename Value="Audio\WaveData.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit30>
       <Unit31>
@@ -281,7 +281,7 @@
         <IsPartOfProject Value="True"/>
       </Unit32>
       <Unit33>
-        <Filename Value="controls\ListsTab.pas"/>
+        <Filename Value="Controls\ListsTab.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit33>
       <Unit34>
@@ -292,31 +292,31 @@
         <ResourceBaseClass Value="Form"/>
       </Unit34>
       <Unit35>
-        <Filename Value="controls\SharedControls.pas"/>
+        <Filename Value="Controls\SharedControls.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit35>
       <Unit36>
-        <Filename Value="streaming\ClientManager.pas"/>
+        <Filename Value="Streaming\ClientManager.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit36>
       <Unit37>
-        <Filename Value="streaming\ICEClient.pas"/>
+        <Filename Value="Streaming\ICEClient.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit37>
       <Unit38>
-        <Filename Value="streaming\ICEPlayer.pas"/>
+        <Filename Value="Streaming\ICEPlayer.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit38>
       <Unit39>
-        <Filename Value="streaming\ICEStream.pas"/>
+        <Filename Value="Streaming\ICEStream.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit39>
       <Unit40>
-        <Filename Value="streaming\ICEThread.pas"/>
+        <Filename Value="Streaming\ICEThread.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit40>
       <Unit41>
-        <Filename Value="audio\MPEG.pas"/>
+        <Filename Value="Audio\MPEG.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit41>
       <Unit42>
@@ -355,23 +355,23 @@
         <IsPartOfProject Value="True"/>
       </Unit49>
       <Unit50>
-        <Filename Value="audio\Player.pas"/>
+        <Filename Value="Audio\Player.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit50>
       <Unit51>
-        <Filename Value="audio\PlayerManager.pas"/>
+        <Filename Value="Audio\PlayerManager.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit51>
       <Unit52>
-        <Filename Value="postprocess\PostProcess.pas"/>
+        <Filename Value="Postprocess\PostProcess.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit52>
       <Unit53>
-        <Filename Value="postprocess\PostProcessSetTags.pas"/>
+        <Filename Value="Postprocess\PostProcessSetTags.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit53>
       <Unit54>
-        <Filename Value="postprocess\PostProcessManager.pas"/>
+        <Filename Value="Postprocess\PostProcessManager.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit54>
       <Unit55>
@@ -386,7 +386,7 @@
         <ResourceBaseClass Value="Form"/>
       </Unit56>
       <Unit57>
-        <Filename Value="postprocess\PostProcessSoX.pas"/>
+        <Filename Value="Postprocess\PostProcessSoX.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit57>
       <Unit58>
@@ -401,7 +401,7 @@
         <IsPartOfProject Value="True"/>
       </Unit59>
       <Unit60>
-        <Filename Value="postprocess\ConfigureSoX.pas"/>
+        <Filename Value="Postprocess\ConfigureSoX.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmConfigureSoX"/>
         <HasResources Value="True"/>
@@ -419,7 +419,7 @@
         <IsPartOfProject Value="True"/>
       </Unit62>
       <Unit63>
-        <Filename Value="controls\CutTabSearchSilence.pas"/>
+        <Filename Value="Controls\CutTabSearchSilence.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmCutTabSearchSilence"/>
         <HasResources Value="True"/>
@@ -430,18 +430,18 @@
         <IsPartOfProject Value="True"/>
       </Unit64>
       <Unit65>
-        <Filename Value="controls\ChartsTab.pas"/>
+        <Filename Value="Controls\ChartsTab.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit65>
       <Unit66>
-        <Filename Value="controls\ChartsTabAdjustTitleName.pas"/>
+        <Filename Value="Controls\ChartsTabAdjustTitleName.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmChartsTabAdjustTitleName"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit66>
       <Unit67>
-        <Filename Value="postprocess\ConfigureSetTags.pas"/>
+        <Filename Value="Postprocess\ConfigureSetTags.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmConfigureSetTags"/>
         <HasResources Value="True"/>
@@ -456,11 +456,11 @@
         <IsPartOfProject Value="True"/>
       </Unit69>
       <Unit70>
-        <Filename Value="controls\StatusBar.pas"/>
+        <Filename Value="Controls\StatusBar.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit70>
       <Unit71>
-        <Filename Value="postprocess\PostProcessMP4Box.pas"/>
+        <Filename Value="Postprocess\PostProcessMP4Box.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit71>
       <Unit72>
@@ -468,7 +468,7 @@
         <IsPartOfProject Value="True"/>
       </Unit72>
       <Unit73>
-        <Filename Value="audio\FileConvertor.pas"/>
+        <Filename Value="Audio\FileConvertor.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit73>
       <Unit74>
@@ -479,58 +479,58 @@
         <ResourceBaseClass Value="Form"/>
       </Unit74>
       <Unit75>
-        <Filename Value="postprocess\PostProcessConvert.pas"/>
+        <Filename Value="Postprocess\PostProcessConvert.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit75>
       <Unit76>
-        <Filename Value="audio\FileTagger.pas"/>
+        <Filename Value="Audio\FileTagger.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit76>
       <Unit77>
-        <Filename Value="audio\AudioGenie.pas"/>
+        <Filename Value="Audio\AudioGenie.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit77>
       <Unit78>
-        <Filename Value="controls\SavedTabEditTags.pas"/>
+        <Filename Value="Controls\SavedTabEditTags.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmEditTags"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit78>
       <Unit79>
-        <Filename Value="addon\AddonAudioGenie.pas"/>
+        <Filename Value="Addon\AddonAudioGenie.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit79>
       <Unit80>
-        <Filename Value="addon\AddonBase.pas"/>
+        <Filename Value="Addon\AddonBase.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit80>
       <Unit81>
-        <Filename Value="addon\AddonFAAC.pas"/>
+        <Filename Value="Addon\AddonFAAC.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit81>
       <Unit82>
-        <Filename Value="addon\AddonLAME.pas"/>
+        <Filename Value="Addon\AddonLAME.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit82>
       <Unit83>
-        <Filename Value="addon\AddonManager.pas"/>
+        <Filename Value="Addon\AddonManager.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit83>
       <Unit84>
-        <Filename Value="addon\AddonMP4Box.pas"/>
+        <Filename Value="Addon\AddonMP4Box.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit84>
       <Unit85>
-        <Filename Value="addon\AddonOGGEnc.pas"/>
+        <Filename Value="Addon\AddonOGGEnc.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit85>
       <Unit86>
-        <Filename Value="addon\AddonSoX.pas"/>
+        <Filename Value="Addon\AddonSoX.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit86>
       <Unit87>
-        <Filename Value="audio\AudioFunctions.pas"/>
+        <Filename Value="Audio\AudioFunctions.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit87>
       <Unit88>
@@ -541,7 +541,7 @@
         <ResourceBaseClass Value="Form"/>
       </Unit88>
       <Unit89>
-        <Filename Value="audio\PlaylistHandler.pas"/>
+        <Filename Value="Audio\PlaylistHandler.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit89>
       <Unit90>
@@ -575,11 +575,11 @@
         <ResourceBaseClass Value="DataModule"/>
       </Unit95>
       <Unit96>
-        <Filename Value="streaming\MonitorAnalyzer.pas"/>
+        <Filename Value="Streaming\MonitorAnalyzer.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit96>
       <Unit97>
-        <Filename Value="controls\LogTab.pas"/>
+        <Filename Value="Controls\LogTab.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit97>
       <Unit98>
@@ -602,19 +602,19 @@
         <IsPartOfProject Value="True"/>
       </Unit101>
       <Unit102>
-        <Filename Value="audio\DynBASS.pas"/>
+        <Filename Value="Audio\DynBASS.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit102>
       <Unit103>
-        <Filename Value="controls\CutToolBar.pas"/>
+        <Filename Value="Controls\CutToolBar.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit103>
       <Unit104>
-        <Filename Value="controls\ChartsPopup.pas"/>
+        <Filename Value="Controls\ChartsPopup.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit104>
       <Unit105>
-        <Filename Value="controls\ClientAddressBar.pas"/>
+        <Filename Value="Controls\ClientAddressBar.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit105>
       <Unit106>
