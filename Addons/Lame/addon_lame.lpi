@@ -15,6 +15,9 @@
       <Title Value="addon_lame"/>
       <UseAppBundle Value="False"/>
       <ResourceType Value="res"/>
+      <Resources Count="1">
+        <Resource_0 FileName="Resources\lame.exe" Type="RCDATA" ResourceName="LAME_EXE"/>
+      </Resources>
     </General>
     <VersionInfo>
       <UseVersionInfo Value="True"/>

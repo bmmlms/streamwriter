@@ -15,6 +15,12 @@
       <Title Value="addon_sox"/>
       <UseAppBundle Value="False"/>
       <ResourceType Value="res"/>
+      <Resources Count="4">
+        <Resource_0 FileName="Resources\libgomp-1.dll" Type="RCDATA" ResourceName="LIBGOMP-1_DLL"/>
+        <Resource_1 FileName="Resources\pthreadgc2.dll" Type="RCDATA" ResourceName="PTHREADGC2_DLL"/>
+        <Resource_2 FileName="Resources\sox.exe" Type="RCDATA" ResourceName="SOX_EXE"/>
+        <Resource_3 FileName="Resources\zlib1.dll" Type="RCDATA" ResourceName="ZLIB1_DLL"/>
+      </Resources>
     </General>
     <VersionInfo>
       <UseVersionInfo Value="True"/>
