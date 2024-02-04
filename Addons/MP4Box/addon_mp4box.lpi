@@ -15,10 +15,8 @@
       <Title Value="addon_mp4box"/>
       <UseAppBundle Value="False"/>
       <ResourceType Value="res"/>
-      <Resources Count="3">
-        <Resource_0 FileName="Resources\js32.dll" Type="RCDATA" ResourceName="JS32_DLL"/>
-        <Resource_1 FileName="Resources\MP4Box.exe" Type="RCDATA" ResourceName="MP4BOX_EXE"/>
-        <Resource_2 FileName="Resources\msvcr100.dll" Type="RCDATA" ResourceName="MSVCR100_DLL"/>
+      <Resources Count="1">
+        <Resource_0 FileName="Resources\MP4Box-$(TargetCPU).exe" Type="RCDATA" ResourceName="MP4BOX_EXE"/>
       </Resources>
     </General>
     <VersionInfo>

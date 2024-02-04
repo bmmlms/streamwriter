@@ -94,9 +94,7 @@ begin
   FFilesDir := ConcatPaths([AppGlobals.TempDir, 'addon_mp4box']);
   FMP4BoxEXEPath := ConcatPaths([FFilesDir, 'MP4Box.exe']);
 
-  FFilenames.Add('js32.dll');
   FFilenames.Add('MP4Box.exe');
-  FFilenames.Add('msvcr100.dll');
 
   FNeededVersion := TFunctions.ParseVersion('1.0.0.1');
 end;

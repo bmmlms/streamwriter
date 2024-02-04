@@ -16,7 +16,7 @@
       <UseAppBundle Value="False"/>
       <ResourceType Value="res"/>
       <Resources Count="1">
-        <Resource_0 FileName="Resources\faac.exe" Type="RCDATA" ResourceName="FAAC_EXE"/>
+        <Resource_0 FileName="Resources\faac-$(TargetCPU).exe" Type="RCDATA" ResourceName="FAAC_EXE"/>
       </Resources>
     </General>
     <VersionInfo>

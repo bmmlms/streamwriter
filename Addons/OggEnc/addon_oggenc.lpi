@@ -16,7 +16,7 @@
       <UseAppBundle Value="False"/>
       <ResourceType Value="res"/>
       <Resources Count="1">
-        <Resource_0 FileName="Resources\oggenc2.exe" Type="RCDATA" ResourceName="OGGENC2_EXE"/>
+        <Resource_0 FileName="Resources\oggenc2-$(TargetCPU).exe" Type="RCDATA" ResourceName="OGGENC2_EXE"/>
       </Resources>
     </General>
     <VersionInfo>
