@@ -8,6 +8,7 @@ uses
   DragDropFile,
   DragDropPIDL,
   StrUtils,
+  SysUtils,
   VirtualTrees,
   Windows;
 
@@ -60,6 +61,7 @@ end;
 
 var
   DrawTextExWOld: function(DC: HDC; lpchText: LPWSTR; cchText: Integer; var p4: TRect; dwDTFormat: UINT; DTParams: PDrawTextParams): Integer; stdcall;
+  DirectoryExistsOld: function(const Directory: RawByteString; FollowLink: Boolean): Boolean;
 
 function DrawTextExWNew(DC: HDC; lpchText: LPWSTR; cchText: Integer; var p4: TRect; dwDTFormat: UINT; DTParams: PDrawTextParams): Integer; stdcall;
 begin
@@ -69,9 +71,15 @@ begin
   Result := DrawTextExWOld(DC, lpchText, cchText, p4, dwDTFormat, DTParams);
 end;
 
+function DirectoryExistsNew(const Directory: RawByteString; FollowLink: Boolean): Boolean;
+begin
+  Result := DirectoryExistsOld(Directory, False);
+end;
+
 initialization
   InterceptCreate(@FinalizeGlobalStructures, @FinalizeGlobalStructuresNew);
   InterceptCreate(@GetPIDLsFromFilenames, @GetPIDLsFromFilenamesNew);
+  @DirectoryExistsOld := InterceptCreate(@DirectoryExists, @DirectoryExistsNew);
   @DrawTextExWOld := InterceptCreate(@DrawTextExW, @DrawTextExWNew);
 
 end.
