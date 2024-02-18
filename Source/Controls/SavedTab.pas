@@ -1082,8 +1082,7 @@ begin
     end;
     taImportFolder:
     begin
-      Dir := TFunctions.BrowseDialog(GetParentForm(Self), _('Select folder with files to import'));
-      if Dir <> '' then
+      if TFunctions.BrowseDialog(GetParentForm(Self), _('Select folder with files to import'), Dir) and DirectoryExists(Dir) then
       begin
         KnownFiles := TStringList.Create;
         for Track in AppGlobals.Data.TrackList do

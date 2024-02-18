@@ -2210,9 +2210,7 @@ begin
   else
     Msg := 'Select folder for saved songs';
 
-  Dir := TFunctions.BrowseDialog(Self, _(Msg));
-
-  if Dir = '' then
+  if not TFunctions.BrowseDialog(Self, _(Msg), Dir) then
     Exit;
 
   if DirectoryExists(Dir) then

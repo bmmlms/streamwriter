@@ -172,9 +172,13 @@ procedure TfrmWizard.cmdBrowseClick(Sender: TObject);
 var
   Dir: string;
 begin
-  Dir := TFunctions.BrowseDialog(Self, _('Select folder for saved songs'));
+  if not TFunctions.BrowseDialog(Self, _('Select folder for saved songs'), Dir) then
+    Exit;
+
   if DirectoryExists(Dir) then
-    txtDir.Control.Text := Dir;
+    txtDir.Control.Text := Dir
+  else
+    TFunctions.MsgBox(_('The selected folder does not exist. Please choose another one.'), _('Info'), MB_ICONINFORMATION);
 end;
 
 end.
