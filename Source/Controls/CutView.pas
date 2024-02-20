@@ -1,7 +1,7 @@
 ﻿{
     ------------------------------------------------------------------------
     streamWriter
-    Copyright (c) 2010-2023 Alexander Nottelmann
+    Copyright (c) 2010-2024 Alexander Nottelmann
 
     Portions created by Ralf Kruse
 
