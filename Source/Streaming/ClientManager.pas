@@ -633,14 +633,14 @@ begin
 
   if Kbps < AutoTuneInMinKbps then
   begin
-    Text := Format('Automatic recording of "%s" won''t be started because the bitrate is too low (%d Kbps)', [ParsedTitle, Kbps]);
+    Text := Format(_('Automatic recording of "%s" won''t be started because the bitrate is too low (%d Kbps)'), [ParsedTitle, Kbps]);
     MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llWarning, _('Automatic recording'), Text));
     Exit;
   end;
 
   if (AppGlobals.AutoTuneInFormat > 0) and (TAudioTypes(AppGlobals.AutoTuneInFormat) <> AudioType) then
   begin
-    Text := Format('Automatic recording of "%s" won''t be started because the audio format is not allowed', [ParsedTitle]);
+    Text := Format(_('Automatic recording of "%s" won''t be started because the audio format is not allowed'), [ParsedTitle]);
     MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llWarning, _('Automatic recording'), Text));
     Exit;
   end;
@@ -648,7 +648,7 @@ begin
   for i := 0 to AppGlobals.Data.StreamBlacklist.Count - 1 do
     if AppGlobals.Data.StreamBlacklist[i] = Name then
     begin
-      Text := Format('Automatic recording of "%s" won''t be started because the stream is on the blacklist', [ParsedTitle]);
+      Text := Format(_('Automatic recording of "%s" won''t be started because the stream is on the blacklist'), [ParsedTitle]);
       MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llWarning, _('Automatic recording'), Text));
       Exit;
     end;
@@ -657,7 +657,7 @@ begin
     for n := 0 to AppGlobals.Data.IgnoreList.Count - 1 do
       if TFunctions.Like(Title, AppGlobals.Data.IgnoreList[n].Pattern) then
       begin
-        Text := Format('Automatic recording of "%s" won''t be started because it matches "%s" on the ignorelist', [ParsedTitle, AppGlobals.Data.IgnoreList[n].Pattern]);
+        Text := Format(_('Automatic recording of "%s" won''t be started because it matches "%s" on the ignorelist'), [ParsedTitle, AppGlobals.Data.IgnoreList[n].Pattern]);
         MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llWarning, _('Automatic recording'), Text));
         Exit;
       end;
