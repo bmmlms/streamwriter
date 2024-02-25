@@ -1,4 +1,6 @@
 @ECHO OFF
+
+REM required to get ERRORLEVEL in for loop
 setlocal enabledelayedexpansion
 
 if "%FPCBIN%" == "" (
