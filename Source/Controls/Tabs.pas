@@ -61,6 +61,8 @@ type
   { TMainPageControl }
 
   TMainPageControl = class(TMPageControl)
+  protected
+    procedure CreateHandle; override;
   public
     constructor Create(AOwner: TComponent); override;
 
@@ -77,13 +79,20 @@ implementation
 uses
   CutTab;
 
-{ TMainPageControl }
+  { TMainPageControl }
 
 constructor TMainPageControl.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
 
-  TabHeight := Scale96ToFont(22);
+  TabHeight := Scale96ToFont(24);
+end;
+
+procedure TMainPageControl.CreateHandle;
+begin
+  inherited CreateHandle;
+
+  SendMessage(Handle, TCM_SETPADDING, 0, MAKELPARAM(Scale96ToFont(6), 5)); // Default seems to be MAKELPARAM(6, 3)
 end;
 
 function TMainPageControl.FindCut(Filename: string): TMainTabSheet;
