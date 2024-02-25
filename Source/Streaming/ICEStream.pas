@@ -86,7 +86,8 @@ type
 
     function LimitToMaxPath(Filename: string): string;
     function GetValidFilename(Name: string): string;
-    function GetAppendNumber(Dir, Filename: string): Integer;
+    function AnyFileExists(Filename: string): Boolean;
+    function GetAvailableFilename(Filename: string): string;
     function InfoToFilename(Artist, Title, Album, Genre, StreamTitle: string; TitleState: TTitleStates; Patterns: string): string;
   public
     constructor Create(Streamname, Dir: string; SongsSaved: Cardinal; Settings: TStreamSettings);
@@ -755,8 +756,8 @@ begin
 
       RemoveData;
 
-      FSavedFilename := Dir + Filename;
-      FSavedFilenameConverted := Dir + FilenameConverted;
+      FSavedFilename := ConcatPaths([Dir, Filename]);
+      FSavedFilenameConverted := ConcatPaths([Dir, FilenameConverted]);
       FSavedSize := P.DataEnd - P.DataStart;
       FSavedFullTitle := FullTitle;
       FSavedStreamTitle := Title;
@@ -1469,46 +1470,41 @@ begin
   FSettings := Settings;
 end;
 
-function TFileChecker.GetAppendNumber(Dir, Filename: string): Integer;
-
-  function AnyFileExists(Filename: string): Boolean;
-  var
-    i: Integer;
-  begin
-    Result := False;
-    for i := 0 to Ord(High(TAudioTypes)) do
-      if TAudioTypes(i) <> atNone then
-        if FileExists(Filename + FormatToFiletype(TAudioTypes(i))) then
-          Exit(True);
-  end;
-
+function TFileChecker.AnyFileExists(Filename: string): Boolean;
 var
-  Append: Integer;
-  FilenameTmp: string;
+  i: Integer;
 begin
-  Result := -1;
+  Filename := TFunctions.RemoveFileExt(Filename);
 
-  Append := 0;
-  FilenameTmp := Filename;
+  Result := False;
+  for i := 0 to Ord(High(TAudioTypes)) do
+    if TAudioTypes(i) <> atNone then
+      if FileExists(Filename + FormatToFiletype(TAudioTypes(i))) then
+        Exit(True);
+end;
 
-  while AnyFileExists(ConcatPaths([Dir, FilenameTmp])) do
+function TFileChecker.GetAvailableFilename(Filename: string): string;
+var
+  Append: Integer = 0;
+  Ext, Basename: string;
+begin
+  Result := Filename;
+  Ext := ExtractFileExt(Filename);
+  Basename := TFunctions.RemoveFileExt(Filename);
+
+  while AnyFileExists(Result) do
   begin
     Inc(Append);
-    FilenameTmp := Filename + ' (' + IntToStr(Append) + ')';
+    Result := '%s (%d)%s'.Format([Basename, Append, Ext]);
   end;
-
-  if Append > 0 then
-    Result := Append;
 end;
 
 procedure TFileChecker.GetFilename(Filesize: Int64; Artist, Title, Album, Genre, StreamTitle: string; AudioType: TAudioTypes; TitleState: TTitleStates; Killed: Boolean);
 var
-  Filename, Ext, OutFilename, Patterns: string;
+  FilePath, Patterns: string;
   ExistingFileSize: Int64;
 begin
   FResult := crSave;
-
-  Ext := FormatToFiletype(AudioType);
 
   case TitleState of
     tsAuto:
@@ -1519,26 +1515,23 @@ begin
       Patterns := 'artist|title|album|genre|streamtitle|number|streamname|day|month|year|hour|minute|second';
   end;
 
-  Filename := InfoToFilename(Artist, Title, Album, Genre, StreamTitle, TitleState, Patterns);
-  Filename := GetValidFilename(Filename);
-  OutFilename := TFunctions.FixPathName(Filename + Ext);
+  FFilename := InfoToFilename(Artist, Title, Album, Genre, StreamTitle, TitleState, Patterns);
+  FFilename := GetValidFilename(FFilename);
+  FFilename := TFunctions.FixPathName(FFilename + FormatToFiletype(AudioType));
+  FilePath := ConcatPaths([FSaveDir, FFilename]);
 
-  if TFunctions.GetFileSize(ConcatPaths([FSaveDir, OutFilename]), ExistingFileSize) then
+  // Using AnyFileExists() here is important since the extension of the existing file might not match parameter AudioType
+  // which could lead to unexpected overwriting of existing files when converting the file after saving.
+  if AnyFileExists(FilePath) then
   begin
     if FSettings.DiscardAlways then
       FResult := crDiscard
-    else if FSettings.OverwriteSmaller and (ExistingFileSize < Filesize) then
-    begin
-      FResult := crOverwrite;
-      FFilename := OutFilename;
-    end else if FSettings.DiscardSmaller and (ExistingFileSize >= Filesize) then
+    else if FSettings.OverwriteSmaller and TFunctions.GetFileSize(FilePath, ExistingFileSize) and (ExistingFileSize < Filesize) then
+      FResult := crOverwrite
+    else if FSettings.DiscardSmaller and TFunctions.GetFileSize(FilePath, ExistingFileSize) and (ExistingFileSize >= Filesize) then
       FResult := crDiscardExistingIsLarger
     else
-      FFilename := TFunctions.FixPathName(Filename + ' (' + IntToStr(GetAppendNumber(FSaveDir, Filename)) + ')' + Ext);
-  end else
-  begin
-    FResult := crSave;
-    FFilename := OutFilename;
+      FFilename := ExtractFileName(GetAvailableFilename(FilePath));
   end;
 
   if FSettings.OutputFormat <> atNone then
@@ -1553,19 +1546,8 @@ end;
 procedure TFileChecker.GetStreamFilename(Name: string; AudioType: TAudioTypes);
 var
   i: Integer;
-  Ext: string;
+  FilePath: string;
 begin
-  case AudioType of
-    atNone:
-      raise Exception.Create('');
-    atMPEG:
-      Ext := '.mp3';
-    atAAC:
-      Ext := '.aac';
-    atOGG:
-      Ext := '.ogg';
-  end;
-
   repeat
     for i := 1 to Length(FSettings.RemoveChars) do
       Name := StringReplace(Name, FSettings.RemoveChars[i], '', [rfReplaceAll]);
@@ -1574,21 +1556,19 @@ begin
       Name := _('Unknown stream');
 
     Name := InfoToFilename('', '', '', '', '', tsStream, 'streamname|day|month|year|hour|minute|second');
-    FFilename := GetValidFilename(Name);
+    FilePath := ConcatPaths([FSaveDir, GetValidFilename(Name + FormatToFiletype(AudioType))]);
 
-    if FileExists(ConcatPaths([FSaveDir, Filename + Ext])) then
-      FFilename := Filename + ' (' + IntToStr(GetAppendNumber(FSaveDir, Filename)) + ')' + Ext
-    else
-      FFilename := Filename + Ext;
+    if FileExists(FilePath) then
+      FilePath := GetAvailableFilename(FilePath);
 
-    if Length(ConcatPaths([FSaveDir, FFilename])) > MAX_PATH - 2 then
+    if Length(FilePath) > MAX_PATH - 2 then
       if Length(Name) = 1 then
         raise Exception.Create(_('Could not save file because it exceeds the maximum path length'))
       else
         Name := Copy(Name, 1, Length(Name) - 1);
-  until Length(ConcatPaths([FSaveDir, FFilename])) <= MAX_PATH - 2;
+  until Length(FilePath) <= MAX_PATH - 2;
 
-  FFilename := TFunctions.FixPathName(FFilename);
+  FFilename := TFunctions.FixPathName(ExtractFileName(FilePath));
 end;
 
 function TFileChecker.GetValidFilename(Name: string): string;
@@ -1612,8 +1592,6 @@ var
   Arr: TPatternReplaceArray;
   PList: TStringList;
 begin
-  inherited;
-
   for i := 1 to Length(FSettings.RemoveChars) do
     Artist := StringReplace(Artist, FSettings.RemoveChars[i], '', [rfReplaceAll]);
   for i := 1 to Length(FSettings.RemoveChars) do
