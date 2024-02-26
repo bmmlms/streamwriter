@@ -30,6 +30,8 @@ Visit [streamwriter.org](https://streamwriter.org) for more information.
 Downloads are available at [streamwriter.org](https://streamwriter.org/downloads).
 
 ### :gear: Building
-- Install Lazarus IDE and the tools to crosscompile
-
-Edit "Scripts\SetEnvironment.bat" to set some required paths. Afterwards run "Scripts\Build.bat" to build a release build.
+- Install Lazarus IDE
+- Clone repository and init submodules
+- Install package `SubModules\fpc-common\controls\mcontrols.lpk`
+- Set variables in `Scripts\SetEnvironment.bat`
+- Run `Scripts\Build.bat` to build a release build
