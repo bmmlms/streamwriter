@@ -88,7 +88,8 @@ begin
   FDownloader.Thread.RecvDataStream.Seek(0, soFromBeginning);
 
   try
-    FDownloader.Thread.RecvDataStream.SaveToFile(ConcatPaths([AppGlobals.Storage.DataDir, FDownloadPackage]));
+    ForceDirectories(AppGlobals.Storage.AddonDir);
+    FDownloader.Thread.RecvDataStream.SaveToFile(ConcatPaths([AppGlobals.Storage.AddonDir, FDownloadPackage]));
     FDownloaded := True;
   except
     FError := True;

@@ -1015,8 +1015,6 @@ begin
 
     AppGlobals.FAddonManager := TAddonManager.Create;
     AppGlobals.FPostProcessManager := TPostProcessManager.Create;
-
-    AppGlobals.Data.CheckEncodersAndPostProcessors;
   except
     on E: Exception do
     begin

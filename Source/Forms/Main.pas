@@ -25,6 +25,7 @@ interface
 uses
   About,
   ActnList,
+  AddonBase,
   AddonManager,
   AppDataBase,
   AppMessages,
@@ -764,7 +765,9 @@ end;
 
 procedure TfrmStreamWriterMain.AfterShown(var Msg: TMessage);
 var
+  Addon: TAddonBase;
   FormIntro: TfrmIntro;
+  AddonError: Boolean = False;
 begin
   if FSkipAfterShown then
     Exit;
@@ -794,6 +797,13 @@ begin
     if StartupMessagesNeeded then
       if (AppGlobals.AutoUpdate) and (AppGlobals.LastUpdateChecked + 1 < Now) then
         FUpdater.Start(uaVersion, True);
+
+    for Addon in AppGlobals.Data.GetMissingAddons do
+      if Assigned(Addon) and not AppGlobals.AddonManager.EnableAddon(Self, Addon, False) then
+        AddonError := True;
+
+    if AddonError then
+      TFunctions.MsgBox(_('An error occured while downloading/initializing at least one addon.'), _('Error'), MB_ICONEXCLAMATION);
   end;
 end;
 
@@ -1879,6 +1889,9 @@ begin
   if not AppGlobals.FirstStartShown then
     Exit(True);
 
+  if Length(AppGlobals.Data.GetMissingAddons) > 0 then
+    Exit(True);
+
   Exit(False);
 end;
 
@@ -1918,7 +1931,7 @@ begin
       if TFunctions.MsgBox(_('To cut the selected file the required encoder-addon needs to be installed. Do you want to download and install the required addon now?'), _('Question'),
         MB_ICONINFORMATION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
       begin
-        if not AppGlobals.AddonManager.InstallEncoderFor(Self, AudioType) then
+        if not AppGlobals.AddonManager.EnableAddon(Self, AppGlobals.AddonManager.Find(AudioType), True) then
           Exit;
       end else
         Exit;
@@ -1977,7 +1990,7 @@ begin
     if TFunctions.MsgBox(_('To cut the selected file the required encoder-addon needs to be installed. Do you want to download and install the required addon now?'), _('Question'),
       MB_ICONINFORMATION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
     begin
-      if not AppGlobals.AddonManager.InstallEncoderFor(Self, AudioType) then
+      if not AppGlobals.AddonManager.EnableAddon(Self, AppGlobals.AddonManager.Find(AudioType), False) then
         Exit;
     end else
       Exit;

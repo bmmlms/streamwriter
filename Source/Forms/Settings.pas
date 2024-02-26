@@ -1127,9 +1127,9 @@ begin
     Exit;
   end;
 
-  if AppGlobals.AddonManager.CanEncode(TAudioTypes(lstOutputFormat.Control.ItemIndex)) <> ceOkay then
+  if AppGlobals.AddonManager.CanEncode(TAudioTypes(lstOutputFormat.Control.ItemIndex)) = ceAddonNeeded then
     if TFunctions.MsgBox(_('Additional addons are needed to use the selected output format. Do you want to download these addons now?'), _('Question'), MB_YESNO or MB_DEFBUTTON1 or MB_ICONQUESTION) = IDYES then
-      AppGlobals.AddonManager.InstallEncoderFor(Self, TAudioTypes(lstOutputFormat.Control.ItemIndex));
+      AppGlobals.AddonManager.EnableAddon(Self, AppGlobals.AddonManager.Find(TAudioTypes(lstOutputFormat.Control.ItemIndex)), True);
 
   if AppGlobals.AddonManager.CanEncode(TAudioTypes(lstOutputFormat.Control.ItemIndex)) <> ceOkay then
     lstOutputFormat.Control.ItemIndex := OutputFormatLastIndex

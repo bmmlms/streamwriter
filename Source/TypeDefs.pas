@@ -31,6 +31,7 @@ type
   TIntArray = array of Integer;
   TCardinalArray = array of Cardinal;
   TStringArray = array of string;
+  TClassArray = array of TClass;
 
   TLogType = (ltGeneral, ltSong, ltSaved, ltPostProcess, ltSchedule, ltSecure);
   TLogSource = (lsGeneral, lsAutomatic, lsStream, lsHome);

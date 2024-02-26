@@ -794,7 +794,7 @@ type
     procedure Load(const Stream: TStream; const Filename: string); overload;
     procedure Save(const Filename: string; const UseCompression: Boolean); overload;
     procedure Save(const S: TStream; const UseCompression: Boolean); overload;
-    procedure CheckEncodersAndPostProcessors;
+    function GetMissingAddons: TAddonArray;
 
     class procedure VerifyMagic(S: TStream; MinVersion: Cardinal; IsData: Boolean);
 
@@ -1199,35 +1199,37 @@ end;
 
 { TStreamDataList }
 
-procedure TDataLists.CheckEncodersAndPostProcessors;
+function TDataLists.GetMissingAddons: TAddonArray;
 var
-  i, n: Integer;
+  AddonClass: TClass;
+  Stream: TStreamEntry;
+  PostProcessor: TPostProcessBase;
 begin
-  if AppGlobals.AddonManager.CanEncode(FStreamSettings.OutputFormat) <> ceOkay then
-    FStreamSettings.OutputFormat := atNone;
+  Result := [];
 
-  if AppGlobals.AddonManager.CanEncode(FAutoRecordSettings.OutputFormat) <> ceOkay then
-    FAutoRecordSettings.OutputFormat := atNone;
+  if AppGlobals.AddonManager.CanEncode(FStreamSettings.OutputFormat) = ceAddonNeeded then
+    Result += [AppGlobals.AddonManager.Find(FStreamSettings.OutputFormat)];
 
-  for i := 0 to FStreamList.Count - 1 do
-    if AppGlobals.AddonManager.CanEncode(FStreamList[i].Settings.OutputFormat) <> ceOkay then
-      FStreamList[i].Settings.OutputFormat := atNone;
+  if AppGlobals.AddonManager.CanEncode(FAutoRecordSettings.OutputFormat) = ceAddonNeeded then
+    Result += [AppGlobals.AddonManager.Find(FAutoRecordSettings.OutputFormat)];
 
-  for n := 0 to FStreamSettings.PostProcessors.Count - 1 do
-    if FStreamSettings.PostProcessors[n].ClassType.InheritsFrom(TInternalPostProcess) then
-      if not TInternalPostProcess(FStreamSettings.PostProcessors[n]).DependenciesMet then
-        FStreamSettings.PostProcessors[n].Active := False;
+  for PostProcessor in FStreamSettings.PostProcessors do
+    if PostProcessor.Active and PostProcessor.ClassType.InheritsFrom(TInternalPostProcess) and not TInternalPostProcess(PostProcessor).DependenciesMet then
+      Result += AppGlobals.AddonManager.Find(TInternalPostProcess(PostProcessor).NeededAddons);
 
-  for n := 0 to FAutoRecordSettings.PostProcessors.Count - 1 do
-    if FAutoRecordSettings.PostProcessors[n].ClassType.InheritsFrom(TInternalPostProcess) then
-      if not TInternalPostProcess(FAutoRecordSettings.PostProcessors[n]).DependenciesMet then
-        FAutoRecordSettings.PostProcessors[n].Active := False;
+  for PostProcessor in FAutoRecordSettings.PostProcessors do
+    if PostProcessor.Active and PostProcessor.ClassType.InheritsFrom(TInternalPostProcess) and not TInternalPostProcess(PostProcessor).DependenciesMet then
+      Result += AppGlobals.AddonManager.Find(TInternalPostProcess(PostProcessor).NeededAddons);
 
-  for i := 0 to FStreamList.Count - 1 do
-    for n := 0 to FStreamList[i].Settings.PostProcessors.Count - 1 do
-      if FStreamList[i].Settings.PostProcessors[n].ClassType.InheritsFrom(TInternalPostProcess) then
-        if not TInternalPostProcess(FStreamList[i].Settings.PostProcessors[n]).DependenciesMet then
-          FStreamList[i].Settings.PostProcessors[n].Active := False;
+  for Stream in FStreamList do
+  begin
+    if AppGlobals.AddonManager.CanEncode(Stream.Settings.OutputFormat) = ceAddonNeeded then
+      Result += [AppGlobals.AddonManager.Find(Stream.Settings.OutputFormat)];
+
+    for PostProcessor in Stream.Settings.PostProcessors do
+      if PostProcessor.Active and PostProcessor.ClassType.InheritsFrom(TInternalPostProcess) and not TInternalPostProcess(PostProcessor).DependenciesMet then
+       Result += AppGlobals.AddonManager.Find(TInternalPostProcess(PostProcessor).NeededAddons);
+  end;
 end;
 
 procedure TDataLists.CleanLists;
