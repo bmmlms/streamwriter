@@ -56,7 +56,6 @@ begin
   inherited;
 
   FDownloadName := Source.DownloadName;
-  FDownloadPackage := Source.DownloadPackage;
 end;
 
 function TAddonAudioGenie.Copy: TAddonBase;
@@ -72,7 +71,6 @@ begin
   inherited;
 
   FDownloadName := 'addon_audiogenie';
-  FDownloadPackage := 'addon_audiogenie.dll';
 
   FFilesDir := ConcatPaths([AppGlobals.TempDir, 'addon_audiogenie']);
   FDLLPath := ConcatPaths([FFilesDir, 'audiogenie3.dll']);

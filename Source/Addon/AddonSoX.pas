@@ -56,7 +56,6 @@ begin
   inherited;
 
   FDownloadName := Source.DownloadName;
-  FDownloadPackage := Source.DownloadPackage;
 end;
 
 function TAddonSoX.Copy: TAddonBase;
@@ -72,7 +71,6 @@ begin
   inherited;
 
   FDownloadName := 'addon_sox';
-  FDownloadPackage := 'addon_sox.dll';
 
   FFilesDir := ConcatPaths([AppGlobals.TempDir, 'addon_sox\']);
   FEXEPath := ConcatPaths([FFilesDir, 'sox.exe']);

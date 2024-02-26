@@ -63,7 +63,6 @@ begin
   inherited;
 
   FDownloadName := Source.DownloadName;
-  FDownloadPackage := Source.DownloadPackage;
 end;
 
 function TAddonLAME.CanEncode(AudioType: TAudioTypes): Boolean;
@@ -84,7 +83,6 @@ begin
   inherited;
 
   FDownloadName := 'addon_lame';
-  FDownloadPackage := 'addon_lame.dll';
   FHasInitMessage := True;
 
   FFilesDir := ConcatPaths([AppGlobals.TempDir, 'addon_lame']);

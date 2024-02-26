@@ -62,7 +62,6 @@ begin
   inherited;
 
   FDownloadName := Source.DownloadName;
-  FDownloadPackage := Source.DownloadPackage;
 end;
 
 function TAddonOGGEnc.CanEncode(AudioType: TAudioTypes): Boolean;
@@ -83,7 +82,6 @@ begin
   inherited;
 
   FDownloadName := 'addon_oggenc';
-  FDownloadPackage := 'addon_oggenc.dll';
 
   FFilesDir := ConcatPaths([AppGlobals.TempDir, 'addon_oggenc']);
   FEXEPath := ConcatPaths([FFilesDir, 'oggenc2.exe']);

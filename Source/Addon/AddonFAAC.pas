@@ -63,7 +63,6 @@ begin
   inherited;
 
   FDownloadName := Source.DownloadName;
-  FDownloadPackage := Source.DownloadPackage;
 end;
 
 function TAddonFAAC.CanEncode(AudioType: TAudioTypes): Boolean;
@@ -84,7 +83,6 @@ begin
   inherited;
 
   FDownloadName := 'addon_faac';
-  FDownloadPackage := 'addon_faac.dll';
   FHasInitMessage := True;
 
   FFilesDir := ConcatPaths([AppGlobals.TempDir, 'addon_faac']);

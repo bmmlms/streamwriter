@@ -64,7 +64,6 @@ begin
   inherited;
 
   FDownloadName := Source.DownloadName;
-  FDownloadPackage := Source.DownloadPackage;
 
   FMP4BoxEXEPath := TAddonMP4Box(Source).MP4BoxEXEPath;
 end;
@@ -86,10 +85,9 @@ constructor TAddonMP4Box.Create;
 begin
   inherited;
 
-  FNeededAddons.Add(TAddonFAAC);
+  FNeededAddons := [TAddonFAAC];
 
   FDownloadName := 'addon_mp4box';
-  FDownloadPackage := 'addon_mp4box.dll';
 
   FFilesDir := ConcatPaths([AppGlobals.TempDir, 'addon_mp4box']);
   FMP4BoxEXEPath := ConcatPaths([FFilesDir, 'MP4Box.exe']);
