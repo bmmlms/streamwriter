@@ -27,6 +27,7 @@ uses
   Classes,
   Functions,
   SysUtils,
+  TypeDefs,
   Windows;
 
 type
@@ -42,14 +43,14 @@ type
     FOrder: Integer;
     FOnlyIfCut: Boolean;
 
-    FDownloadPackage: string;
     FDownloadName: string;
     FHasInitMessage: Boolean;
 
     FFilenames: TStringList;
-    FNeededAddons: TList;
+    FNeededAddons: TClassArray;
     FNeededVersion: TAppVersion;
 
+    function FGetDownloadPackage: string;
     function FGetFilesExtracted: Boolean; virtual;
     function FGetPackageDownloaded: Boolean; virtual;
     function FGetVersionOkay: Boolean;
@@ -77,10 +78,10 @@ type
     property Name: string read FGetName;
     property Help: string read FGetHelp;
 
-    property DownloadPackage: string read FDownloadPackage;
     property DownloadName: string read FDownloadName;
-    property NeededAddons: TList read FNeededAddons;
+    property NeededAddons: TClassArray read FNeededAddons;
 
+    property DownloadPackage: string read FGetDownloadPackage;
     property FilesExtracted: Boolean read FGetFilesExtracted;
     property PackageDownloaded: Boolean read FGetPackageDownloaded;
     property VersionOkay: Boolean read FGetVersionOkay;
@@ -93,7 +94,7 @@ implementation
 uses
   AppData;
 
-{ TAddonBase }
+  { TAddonBase }
 
 procedure TAddonBase.Assign(Source: TAddonBase);
 begin
@@ -110,7 +111,6 @@ begin
   inherited;
 
   FFilenames := TStringList.Create;
-  FNeededAddons := TList.Create;
   FNeededVersion := TFunctions.ParseVersion('1.0.0.0');
 end;
 
@@ -133,7 +133,6 @@ destructor TAddonBase.Destroy;
 begin
   DeleteFiles;
   FFilenames.Free;
-  FNeededAddons.Free;
 
   inherited;
 end;
@@ -149,43 +148,48 @@ begin
     Exit(True);
 
   Result := False;
-  LibraryPath := ConcatPaths([AppGlobals.Storage.DataDir, FDownloadPackage]);
+  LibraryPath := ConcatPaths([AppGlobals.Storage.AddonDir, DownloadPackage]);
 
-  ForceDirectories(FFilesDir);
-  if FileExists(LibraryPath) then
+  if not FileExists(LibraryPath) then
+    Exit;
+
+  H := LoadLibrary(PChar(LibraryPath));
+  if H > 0 then
   begin
-    H := LoadLibrary(PChar(LibraryPath));
-    if H > 0 then
-    begin
-      for i := 0 to FFilenames.Count - 1 do
-        try
-          Res := TResourceStream.Create(H, StringReplace(FFilenames[i], '.', '_', [rfReplaceAll]), Windows.RT_RCDATA);
-          try
-            Res.SaveToFile(ConcatPaths([FFilesDir, FFilenames[i]]));
-          finally
-            Res.Free;
-          end;
-        except
-        end;
-      Result := FilesExtracted;
-      FreeLibrary(H);
-    end else
-      SysUtils.DeleteFile(LibraryPath);
-  end;
+    for i := 0 to FFilenames.Count - 1 do
+    try
+      Res := TResourceStream.Create(H, StringReplace(FFilenames[i], '.', '_', [rfReplaceAll]), Windows.RT_RCDATA);
+      try
+        ForceDirectories(FFilesDir);
+        Res.SaveToFile(ConcatPaths([FFilesDir, FFilenames[i]]));
+      finally
+        Res.Free;
+      end;
+    except
+    end;
+    Result := FilesExtracted;
+    FreeLibrary(H);
+  end else
+    SysUtils.DeleteFile(LibraryPath);
 end;
 
 function TAddonBase.FGetDependenciesMet: Boolean;
 var
-  i: Integer;
+  AddonClass: TClass;
   Addon: TAddonBase;
 begin
-  for i := 0 to FNeededAddons.Count - 1 do
+  for AddonClass in FNeededAddons do
   begin
-    Addon := AppGlobals.AddonManager.Find(FNeededAddons[i]);
+    Addon := AppGlobals.AddonManager.Find(AddonClass);
     if (Addon = nil) or (not Addon.FilesExtracted) then
       Exit(False);
   end;
   Exit(True);
+end;
+
+function TAddonBase.FGetDownloadPackage: string;
+begin
+  Result := '%s-%s.dll'.Format([FDownloadName, {$IF defined(CPU64)}'x86_64'{$ELSEIF defined(CPU32)}'i386'{$ELSE}Unknown Architecture{$ENDIF}]);
 end;
 
 function TAddonBase.FGetFilesExtracted: Boolean;
@@ -213,7 +217,7 @@ end;
 
 function TAddonBase.FGetPackageDownloaded: Boolean;
 begin
-  Result := FileExists(ConcatPaths([AppGlobals.Storage.DataDir, FDownloadPackage]));
+  Result := FileExists(ConcatPaths([AppGlobals.Storage.AddonDir, DownloadPackage]));
 end;
 
 function TAddonBase.FGetVersionOkay: Boolean;
@@ -222,7 +226,7 @@ var
 begin
   Result := True;
   try
-    Ver := TFunctions.GetFileVersion(ConcatPaths([AppGlobals.Storage.DataDir, FDownloadPackage]));
+    Ver := TFunctions.GetFileVersion(ConcatPaths([AppGlobals.Storage.AddonDir, DownloadPackage]));
     if TFunctions.IsVersionNewer(Ver, FNeededVersion) then
       Result := False;
   except
@@ -230,7 +234,7 @@ begin
   end;
 
   if not Result then
-    SysUtils.DeleteFile(ConcatPaths([AppGlobals.Storage.DataDir, FDownloadPackage]));
+    SysUtils.DeleteFile(ConcatPaths([AppGlobals.Storage.AddonDir, DownloadPackage]));
 end;
 
 function TAddonBase.ShowInitMessage(Handle: THandle): Boolean;
