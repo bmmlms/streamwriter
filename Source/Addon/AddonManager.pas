@@ -132,7 +132,7 @@ begin
   begin
     MsgShown := False;
 
-    for RequiredAddonClass in Addon.NeededAddons do
+    for RequiredAddonClass in Addon.RequiredAddons do
     begin
       RequiredAddon := Find(RequiredAddonClass);
 
@@ -144,9 +144,6 @@ begin
 
   if not Addon.PackageDownloaded then
   begin
-    if Assigned(Owner) and not Addon.ShowInitMessage(Owner.Handle) then
-      Exit(False);
-
     DA := TfrmDownloadAddons.Create(Owner, Addon);
     try
       DA.ShowModal;

@@ -36,12 +36,8 @@ uses
 
 type
   TPostProcessMP4BoxThread = class(TPostProcessThreadBase)
-  private
-    FMP4BoxPath: string;
   protected
     procedure Execute; override;
-  public
-    constructor Create(Data: PPostProcessInformation; Addon: TPostProcessBase);
   end;
 
   TPostProcessMP4Box = class(TInternalPostProcess)
@@ -51,6 +47,7 @@ type
     function FGetHelp: string; override;
   public
     constructor Create;
+
     function CanProcess(Data: PPostProcessInformation; ProcessingList: TList<TPostprocessBase>): Boolean; override;
     function ProcessFile(Data: PPostProcessInformation): TPostProcessThreadBase; override;
     function Copy: TPostProcessBase; override;
@@ -65,13 +62,6 @@ uses
   ConfigureSoX;
 
 { TPostProcessMP4BoxThread }
-
-constructor TPostProcessMP4BoxThread.Create(Data: PPostProcessInformation; Addon: TPostProcessBase);
-begin
-  inherited Create(Data, Addon);
-
-  FMP4BoxPath := TAddonMP4Box(AppGlobals.AddonManager.Find(TAddonMP4Box)).MP4BoxEXEPath;
-end;
 
 procedure TPostProcessMP4BoxThread.Execute;
 var
@@ -155,7 +145,7 @@ var
 begin
   Result := arFail;
 
-  MP4BoxPath := (AppGlobals.AddonManager.Find(TAddonMP4Box) as TAddonMP4Box).MP4BoxEXEPath;
+  MP4BoxPath := AppGlobals.AddonManager.Find(TAddonMP4Box).ModuleFilePath;
 
   CmdLine := '"' + MP4BoxPath + '" -add "' + InFile + '" "' + OutFile + '"';
 

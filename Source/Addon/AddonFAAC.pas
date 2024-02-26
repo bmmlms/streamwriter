@@ -33,8 +33,6 @@ uses
 
 type
   TAddonFAAC = class(TAddonBase)
-  private
-    FEXEPath: string;
   protected
     function FGetName: string; override;
     function FGetHelp: string; override;
@@ -42,13 +40,8 @@ type
     constructor Create;
 
     function Copy: TAddonBase; override;
-    procedure Assign(Source: TAddonBase); override;
-
-    function ShowInitMessage(Handle: THandle): Boolean; override;
 
     function CanEncode(AudioType: TAudioTypes): Boolean; override;
-
-    property EXEPath: string read FEXEPath;
   end;
 
 implementation
@@ -58,13 +51,6 @@ uses
 
 { TAddonFAAC }
 
-procedure TAddonFAAC.Assign(Source: TAddonBase);
-begin
-  inherited;
-
-  FDownloadName := Source.DownloadName;
-end;
-
 function TAddonFAAC.CanEncode(AudioType: TAudioTypes): Boolean;
 begin
   Result := AudioType = atAAC;
@@ -73,22 +59,12 @@ end;
 function TAddonFAAC.Copy: TAddonBase;
 begin
   Result := TAddonFAAC.Create;
-
   Result.Copied := True;
-  Result.Assign(Self);
 end;
 
 constructor TAddonFAAC.Create;
 begin
-  inherited;
-
-  FDownloadName := 'addon_faac';
-  FHasInitMessage := True;
-
-  FFilesDir := ConcatPaths([AppGlobals.TempDir, 'addon_faac']);
-  FEXEPath := ConcatPaths([FFilesDir, 'faac.exe']);
-
-  FFilenames.Add('faac.exe');
+  inherited Create('addon_faac', ['faac.exe'], 'faac.exe');
 end;
 
 function TAddonFAAC.FGetHelp: string;
@@ -99,11 +75,6 @@ end;
 function TAddonFAAC.FGetName: string;
 begin
   Result := _('Support encoding of AAC using FAAC');
-end;
-
-function TAddonFAAC.ShowInitMessage(Handle: THandle): Boolean;
-begin
-  Result := True;
 end;
 
 end.

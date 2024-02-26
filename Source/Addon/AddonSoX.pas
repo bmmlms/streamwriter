@@ -30,8 +30,6 @@ uses
 
 type
   TAddonSoX = class(TAddonBase)
-  private
-    FEXEPath: string;
   protected
     function FGetName: string; override;
     function FGetHelp: string; override;
@@ -39,9 +37,6 @@ type
     constructor Create;
 
     function Copy: TAddonBase; override;
-    procedure Assign(Source: TAddonBase); override;
-
-    property EXEPath: string read FEXEPath;
   end;
 
 implementation
@@ -51,31 +46,15 @@ uses
 
 { TAddonSoX }
 
-procedure TAddonSoX.Assign(Source: TAddonBase);
-begin
-  inherited;
-
-  FDownloadName := Source.DownloadName;
-end;
-
 function TAddonSoX.Copy: TAddonBase;
 begin
   Result := TAddonSoX.Create;
-
   Result.Copied := True;
-  Result.Assign(Self);
 end;
 
 constructor TAddonSoX.Create;
 begin
-  inherited;
-
-  FDownloadName := 'addon_sox';
-
-  FFilesDir := ConcatPaths([AppGlobals.TempDir, 'addon_sox\']);
-  FEXEPath := ConcatPaths([FFilesDir, 'sox.exe']);
-
-  FFilenames.Add('sox.exe');
+  inherited Create('addon_sox', ['sox.exe'], 'sox.exe');
 end;
 
 function TAddonSoX.FGetHelp: string;

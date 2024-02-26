@@ -33,8 +33,6 @@ uses
 
 type
   TAddonLAME = class(TAddonBase)
-  private
-    FEXEPath: string;
   protected
     function FGetName: string; override;
     function FGetHelp: string; override;
@@ -42,13 +40,8 @@ type
     constructor Create;
 
     function Copy: TAddonBase; override;
-    procedure Assign(Source: TAddonBase); override;
-
-    function ShowInitMessage(Handle: THandle): Boolean; override;
 
     function CanEncode(AudioType: TAudioTypes): Boolean; override;
-
-    property EXEPath: string read FEXEPath;
   end;
 
 implementation
@@ -58,13 +51,6 @@ uses
 
 { TAddonLAME }
 
-procedure TAddonLAME.Assign(Source: TAddonBase);
-begin
-  inherited;
-
-  FDownloadName := Source.DownloadName;
-end;
-
 function TAddonLAME.CanEncode(AudioType: TAudioTypes): Boolean;
 begin
   Result := AudioType = atMPEG;
@@ -73,22 +59,12 @@ end;
 function TAddonLAME.Copy: TAddonBase;
 begin
   Result := TAddonLAME.Create;
-
   Result.Copied := True;
-  Result.Assign(Self);
 end;
 
 constructor TAddonLAME.Create;
 begin
-  inherited;
-
-  FDownloadName := 'addon_lame';
-  FHasInitMessage := True;
-
-  FFilesDir := ConcatPaths([AppGlobals.TempDir, 'addon_lame']);
-  FEXEPath := ConcatPaths([FFilesDir, 'lame.exe']);
-
-  FFilenames.Add('lame.exe');
+  inherited Create('addon_lame', ['lame.exe'], 'lame.exe');
 end;
 
 function TAddonLAME.FGetHelp: string;
@@ -99,11 +75,6 @@ end;
 function TAddonLAME.FGetName: string;
 begin
   Result := _('Support encoding of MP3 using LAME');
-end;
-
-function TAddonLAME.ShowInitMessage(Handle: THandle): Boolean;
-begin
-  Result := True;
 end;
 
 end.

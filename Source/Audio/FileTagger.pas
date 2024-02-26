@@ -106,7 +106,7 @@ begin
 
   FileTaggerLock.Enter;
   try
-    AG := TAudioGenie3.Create(TAddonAudioGenie(AppGlobals.AddonManager.Find(TAddonAudioGenie)).DLLPath);
+    AG := TAudioGenie3.Create(AppGlobals.AddonManager.Find(TAddonAudioGenie).ModuleFilePath);
 
     try
       FAudioType := AG.AUDIOAnalyzeFileW(Filename);
@@ -148,12 +148,12 @@ var
 begin
   Result := False;
 
-  if not TAddonAudioGenie(AppGlobals.AddonManager.Find(TAddonAudioGenie)).FilesExtracted then
+  if not AppGlobals.AddonManager.Find(TAddonAudioGenie).FilesExtracted then
     Exit;
 
   FileTaggerLock.Enter;
   try
-    AG := TAudioGenie3.Create(TAddonAudioGenie(AppGlobals.AddonManager.Find(TAddonAudioGenie)).DLLPath);
+    AG := TAudioGenie3.Create(AppGlobals.AddonManager.Find(TAddonAudioGenie).ModuleFilePath);
     try
       if AG.AUDIOAnalyzeFileW(Filename) <> TAudioFormatID.UNKNOWN then
       begin

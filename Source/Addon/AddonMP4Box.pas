@@ -33,8 +33,6 @@ uses
 
 type
   TAddonMP4Box = class(TAddonBase)
-  private
-    FMP4BoxEXEPath: string;
   protected
     function FGetName: string; override;
     function FGetHelp: string; override;
@@ -42,13 +40,8 @@ type
     constructor Create;
 
     function Copy: TAddonBase; override;
-    procedure Assign(Source: TAddonBase); override;
-
-    function ShowInitMessage(Handle: THandle): Boolean; override;
 
     function CanEncode(AudioType: TAudioTypes): Boolean; override;
-
-    property MP4BoxEXEPath: string read FMP4BoxEXEPath;
   end;
 
 implementation
@@ -59,15 +52,6 @@ uses
 
 { TAddonMP4Box }
 
-procedure TAddonMP4Box.Assign(Source: TAddonBase);
-begin
-  inherited;
-
-  FDownloadName := Source.DownloadName;
-
-  FMP4BoxEXEPath := TAddonMP4Box(Source).MP4BoxEXEPath;
-end;
-
 function TAddonMP4Box.CanEncode(AudioType: TAudioTypes): Boolean;
 begin
   Result := AudioType = atM4A;
@@ -76,25 +60,14 @@ end;
 function TAddonMP4Box.Copy: TAddonBase;
 begin
   Result := TAddonMP4Box.Create;
-
   Result.Copied := True;
-  Result.Assign(Self);
 end;
 
 constructor TAddonMP4Box.Create;
 begin
-  inherited;
+  inherited Create('addon_mp4box', ['MP4Box.exe'], 'MP4Box.exe', '1.0.0.1');
 
-  FNeededAddons := [TAddonFAAC];
-
-  FDownloadName := 'addon_mp4box';
-
-  FFilesDir := ConcatPaths([AppGlobals.TempDir, 'addon_mp4box']);
-  FMP4BoxEXEPath := ConcatPaths([FFilesDir, 'MP4Box.exe']);
-
-  FFilenames.Add('MP4Box.exe');
-
-  FNeededVersion := TFunctions.ParseVersion('1.0.0.1');
+  FRequiredAddons := [TAddonFAAC];
 end;
 
 function TAddonMP4Box.FGetHelp: string;
@@ -105,11 +78,6 @@ end;
 function TAddonMP4Box.FGetName: string;
 begin
   Result := _('Support conversion of AAC files to M4A container');
-end;
-
-function TAddonMP4Box.ShowInitMessage(Handle: THandle): Boolean;
-begin
-  Result := True;
 end;
 
 end.

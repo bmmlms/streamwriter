@@ -375,8 +375,8 @@ begin
       end;
   end;
 
-  CmdLine := Addon.EXEPath + ' ' + Opts + ' -o "' + ToFileTemp + '" "' + FromFile + '"';
-  case TFunctions.RunProcess(CmdLine, ExtractFilePath(Addon.EXEPath), CONVERT_TIMEOUT, Output, EC, TerminateFlag, True, ReadCallbackAAC) of
+  CmdLine := Addon.ModuleFilePath + ' ' + Opts + ' -o "' + ToFileTemp + '" "' + FromFile + '"';
+  case TFunctions.RunProcess(CmdLine, ExtractFilePath(Addon.ModuleFilePath), CONVERT_TIMEOUT, Output, EC, TerminateFlag, True, ReadCallbackAAC) of
     rpWin:
       Result := FileExists(ToFileTemp);
     rpFail, rpTerminated, rpTimeout:
@@ -440,8 +440,8 @@ begin
       end;
   end;
 
-  CmdLine := Addon.EXEPath + ' ' + Opts + ' "' + FromFile + '" "' + ToFileTemp + '"';
-  case TFunctions.RunProcess(CmdLine, ExtractFilePath(Addon.EXEPath), CONVERT_TIMEOUT, Output, EC, TerminateFlag, True, ReadCallbackMP3) of
+  CmdLine := Addon.ModuleFilePath + ' ' + Opts + ' "' + FromFile + '" "' + ToFileTemp + '"';
+  case TFunctions.RunProcess(CmdLine, ExtractFilePath(Addon.ModuleFilePath), CONVERT_TIMEOUT, Output, EC, TerminateFlag, True, ReadCallbackMP3) of
     rpWin:
       Result := FileExists(ToFileTemp);
     rpFail, rpTerminated, rpTimeout:
@@ -481,8 +481,8 @@ begin
       end;
   end;
 
-  CmdLine := Addon.EXEPath + ' ' + Opts + ' "' + FromFile + '" -o "' + ToFileTemp + '"';
-  case TFunctions.RunProcess(CmdLine, ExtractFilePath(Addon.EXEPath), CONVERT_TIMEOUT, Output, EC, TerminateFlag, True, ReadCallbackOGG) of
+  CmdLine := Addon.ModuleFilePath + ' ' + Opts + ' "' + FromFile + '" -o "' + ToFileTemp + '"';
+  case TFunctions.RunProcess(CmdLine, ExtractFilePath(Addon.ModuleFilePath), CONVERT_TIMEOUT, Output, EC, TerminateFlag, True, ReadCallbackOGG) of
     rpWin:
       Result := FileExists(ToFileTemp);
     rpFail, rpTerminated, rpTimeout:

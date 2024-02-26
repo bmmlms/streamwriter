@@ -1050,7 +1050,7 @@ begin
   FPB.BuildDrawBuffer;
   FPB.Paint;
 
-  FProcessThread := TProcessThread.Create(CmdLine, ExtractFilePath((AppGlobals.AddonManager.Find(TAddonSoX) as TAddonSoX).EXEPath), FWorkingFilename, TempFile);
+  FProcessThread := TProcessThread.Create(CmdLine, ExtractFilePath(AppGlobals.AddonManager.Find(TAddonSoX).ModuleFilePath), FWorkingFilename, TempFile);
   FProcessThread.OnSuccess := ProcessThreadSuccess;
   FProcessThread.OnError := ProcessThreadError;
   FProcessThread.OnTerminate := ProcessThreadTerminate;
@@ -1083,7 +1083,7 @@ begin
   if not CheckSoX then
     Exit;
 
-  CmdLine := '"' + (AppGlobals.AddonManager.Find(TAddonSoX) as TAddonSoX).EXEPath + '" --show-progress "' + FWorkingFilename + '" ' + '"[[TEMPFILE]]" ';
+  CmdLine := '"' + AppGlobals.AddonManager.Find(TAddonSoX).ModuleFilePath + '" --show-progress "' + FWorkingFilename + '" ' + '"[[TEMPFILE]]" ';
 
   if CanApplyFadeIn then
   begin
@@ -1147,9 +1147,9 @@ begin
       if (CmdLine <> '') or F.Normalize then
       begin
         if F.Normalize then
-          CmdLine := '"' + (AppGlobals.AddonManager.Find(TAddonSoX) as TAddonSoX).EXEPath + '" --show-progress --norm "' + FWorkingFilename + '" ' + '"[[TEMPFILE]]" ' + CmdLine
+          CmdLine := '"' + AppGlobals.AddonManager.Find(TAddonSoX).ModuleFilePath + '" --show-progress --norm "' + FWorkingFilename + '" ' + '"[[TEMPFILE]]" ' + CmdLine
         else
-          CmdLine := '"' + (AppGlobals.AddonManager.Find(TAddonSoX) as TAddonSoX).EXEPath + '" --show-progress "' + FWorkingFilename + '" ' + '"[[TEMPFILE]]" ' + CmdLine;
+          CmdLine := '"' + AppGlobals.AddonManager.Find(TAddonSoX).ModuleFilePath + '" --show-progress "' + FWorkingFilename + '" ' + '"[[TEMPFILE]]" ' + CmdLine;
 
         StartProcessing(CmdLine);
       end;

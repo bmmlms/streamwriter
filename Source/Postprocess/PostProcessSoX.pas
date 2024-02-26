@@ -87,7 +87,7 @@ constructor TPostProcessSoxThread.Create(Data: PPostProcessInformation; Addon: T
 begin
   inherited Create(Data, Addon);
 
-  FSoxPath := TAddonSoX(AppGlobals.AddonManager.Find(TAddonSoX)).EXEPath;
+  FSoxPath := AppGlobals.AddonManager.Find(TAddonSoX).ModuleFilePath;
 end;
 
 procedure TPostProcessSoxThread.Execute;

@@ -30,8 +30,6 @@ uses
 
 type
   TAddonAudioGenie = class(TAddonBase)
-  private
-    FDLLPath: string;
   protected
     function FGetName: string; override;
     function FGetHelp: string; override;
@@ -39,9 +37,6 @@ type
     constructor Create;
 
     function Copy: TAddonBase; override;
-    procedure Assign(Source: TAddonBase); override;
-
-    property DLLPath: string read FDLLPath;
   end;
 
 implementation
@@ -51,31 +46,15 @@ uses
 
 { TAddonAudioGenie }
 
-procedure TAddonAudioGenie.Assign(Source: TAddonBase);
-begin
-  inherited;
-
-  FDownloadName := Source.DownloadName;
-end;
-
 function TAddonAudioGenie.Copy: TAddonBase;
 begin
   Result := TAddonAudioGenie.Create;
-
   Result.Copied := True;
-  Result.Assign(Self);
 end;
 
 constructor TAddonAudioGenie.Create;
 begin
-  inherited;
-
-  FDownloadName := 'addon_audiogenie';
-
-  FFilesDir := ConcatPaths([AppGlobals.TempDir, 'addon_audiogenie']);
-  FDLLPath := ConcatPaths([FFilesDir, 'audiogenie3.dll']);
-
-  FFilenames.Add('audiogenie3.dll');
+  inherited Create('addon_audiogenie', ['audiogenie3.dll'], 'audiogenie3.dll');
 end;
 
 function TAddonAudioGenie.FGetHelp: string;
