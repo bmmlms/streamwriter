@@ -248,7 +248,7 @@ constructor TPostProcessSoX.Create;
 begin
   inherited;
 
-  //  FNeededAddons.Add(TAddonSoX);
+  FNeededAddons += [TAddonSoX];
 
   FCanConfigure := True;
   FOrder := 100;

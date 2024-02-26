@@ -23,6 +23,7 @@ unit PostProcessSetTags;
 interface
 
 uses
+  AddonAudioGenie,
   AudioFunctions,
   Classes,
   ConfigureSetTags,
@@ -227,7 +228,7 @@ constructor TPostProcessSetTags.Create;
 begin
   inherited;
 
-  //  FNeededAddons.Add(TAddonAudioGenie);
+  FNeededAddons += [TAddonAudioGenie];
 
   FCanConfigure := True;
   FGroupID := 1;

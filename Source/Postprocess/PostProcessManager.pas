@@ -316,11 +316,11 @@ begin
       Exit(False);
 
     if TFunctions.MsgBox(_('This postprocessor needs additional addons. Do you want to download these addons now?'), _('Question'), MB_YESNO or MB_DEFBUTTON1 or MB_ICONQUESTION) = IDYES then
-    {
-      for i := 0 to PostProcess.NeededAddons.Count - 1 do
-        if not AppGlobals.AddonManager.EnableAddon(Owner, AppGlobals.AddonManager.Find(PostProcess.NeededAddons[i]), False) then
+    begin
+      for i := 0 to High(PostProcess.NeededAddons) do
+        if not AppGlobals.AddonManager.EnableAddon(Owner, AppGlobals.AddonManager.Find(PostProcess.NeededAddons[i]), True) then
           Exit(False);
-      } else
+    end else
       Exit(False);
   end;
 

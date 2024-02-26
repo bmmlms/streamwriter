@@ -138,7 +138,7 @@ constructor TPostProcessMP4Box.Create;
 begin
   inherited;
 
-  //  FNeededAddons.Add(TAddonMP4Box);
+  FNeededAddons += [TAddonMP4Box];
 
   FCanConfigure := False;
   FGroupID := 1;

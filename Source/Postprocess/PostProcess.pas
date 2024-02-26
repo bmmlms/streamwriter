@@ -32,6 +32,7 @@ uses
   StreamHelper,
   SWFunctions,
   SysUtils,
+  TypeDefs,
   Windows;
 
 type
@@ -156,14 +157,11 @@ type
   TInternalPostProcess = class(TPostProcessBase)
   private
   protected
-    FNeededAddons: Classes.TList;
+    FNeededAddons: TClassArray;
 
     function FGetDependenciesMet: Boolean; virtual;
   public
-    constructor Create;
-    destructor Destroy; override;
-
-    property NeededAddons: Classes.TList read FNeededAddons;
+    property NeededAddons: TClassArray read FNeededAddons;
     property DependenciesMet: Boolean read FGetDependenciesMet;
   end;
 
@@ -524,26 +522,12 @@ end;
 
 { TInternalPostProcess }
 
-constructor TInternalPostProcess.Create;
-begin
-  inherited;
-
-  FNeededAddons := Classes.TList.Create;
-end;
-
-destructor TInternalPostProcess.Destroy;
-begin
-  FNeededAddons.Free;
-
-  inherited;
-end;
-
 function TInternalPostProcess.FGetDependenciesMet: Boolean;
 var
   i: Integer;
   Addon: TAddonBase;
 begin
-  for i := 0 to FNeededAddons.Count - 1 do
+  for i := 0 to High(FNeededAddons) do
   begin
     Addon := AppGlobals.AddonManager.Find(FNeededAddons[i]);
     if (Addon = nil) or (not Addon.FilesExtracted) then
