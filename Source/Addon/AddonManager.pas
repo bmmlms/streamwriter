@@ -37,10 +37,13 @@ uses
   Generics.Collections,
   LanguageObjects,
   SysUtils,
+  TypeDefs,
   Windows;
 
 type
   TCanEncodeResults = (ceNoAddon, ceAddonNeeded, ceOkay);
+
+  TAddonArray = array of TAddonBase;
 
   TAddonManager = class
   private
@@ -50,10 +53,11 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    function Find(ClassType: TClass): TAddonBase;
-    function EnableAddon(Owner: TCustomForm; Addon: TAddonBase; ShowMessage: Boolean): Boolean;
+    function EnableAddon(Owner: TCustomForm; Addon: TAddonBase; ShowErrors: Boolean): Boolean;
     function CanEncode(AudioType: TAudioTypes): TCanEncodeResults; overload;
-    function InstallEncoderFor(Owner: TCustomForm; AudioType: TAudioTypes): Boolean;
+    function Find(ClassTypes: TClassArray): TAddonArray; overload;
+    function Find(ClassType: TClass): TAddonBase; overload;
+    function Find(AudioType: TAudioTypes): TAddonBase; overload;
 
     property ShowVersionWarning: Boolean read FShowVersionWarning;
     property Addons: TList<TAddonBase> read FAddons;
@@ -64,27 +68,21 @@ implementation
 uses
   DownloadAddons;
 
-{ TAddonManager }
+  { TAddonManager }
 
 function TAddonManager.CanEncode(AudioType: TAudioTypes): TCanEncodeResults;
 var
-  i: Integer;
+  Addon: TAddonBase;
 begin
   Result := ceNoAddon;
-  for i := 0 to Addons.Count - 1 do
-    if Addons[i].CanEncode(AudioType) then
-    begin
-      Result := ceAddonNeeded;
-      if Addons[i].FilesExtracted then
-        Result := ceOkay;
-      Exit;
-    end;
+  for Addon in FAddons do
+    if Addon.CanEncode(AudioType) then
+      Exit(IfThen<TCanEncodeResults>(Addon.FilesExtracted, ceOkay, ceAddonNeeded));
 end;
 
 constructor TAddonManager.Create;
 var
-  i: Integer;
-  PB: TAddonBase;
+  Addon: TAddonBase;
 begin
   inherited;
 
@@ -97,38 +95,35 @@ begin
   FAddons.Add(TAddonMP4Box.Create);
   FAddons.Add(TAddonAudioGenie.Create);
 
-  for i := 0 to FAddons.Count - 1 do
-    if FAddons[i].ClassType.InheritsFrom(TAddonBase) then
-    begin
-      PB := TAddonBase(Addons[i]);
-      if (PB.PackageDownloaded) and (not PB.FilesExtracted) then
-        try
-          if not PB.VersionOkay then
-          begin
-            FShowVersionWarning := True;
-            Continue;
-          end;
-          PB.ExtractFiles;
-        except
-        end;
+  for Addon in FAddons do
+    if (Addon.PackageDownloaded) and (not Addon.FilesExtracted) then
+    try
+      if not Addon.VersionOkay then
+      begin
+        FShowVersionWarning := True;
+        Continue;
+      end;
+      Addon.ExtractFiles;
+    except
     end;
 end;
 
 destructor TAddonManager.Destroy;
 var
-  i: Integer;
+  Addon: TAddonBase;
 begin
-  for i := 0 to FAddons.Count - 1 do
-    FAddons[i].Free;
+  for Addon in FAddons do
+    Addon.Free;
 
   FAddons.Free;
 
   inherited;
 end;
 
-function TAddonManager.EnableAddon(Owner: TCustomForm; Addon: TAddonBase; ShowMessage: Boolean): Boolean;
+function TAddonManager.EnableAddon(Owner: TCustomForm; Addon: TAddonBase; ShowErrors: Boolean): Boolean;
 var
-  i: Integer;
+  RequiredAddonClass: TClass;
+  RequiredAddon: TAddonBase;
   Res: Integer;
   MsgShown: Boolean;
   DA: TfrmDownloadAddons;
@@ -137,84 +132,78 @@ begin
   begin
     MsgShown := False;
 
-    for i := 0 to Addon.NeededAddons.Count - 1 do
-      if not Addon.FilesExtracted then
-      begin
-        if not MsgShown then
-        begin
-          if TFunctions.MsgBox(_('The selected addon has some unmet dependencies.'#13#10'Do you want do download the required addons now?'), _('Question'), MB_ICONQUESTION or MB_YESNO) = IDNO then
-            Exit(False);
-          MsgShown := True;
-        end;
-        if not EnableAddon(Owner, Find(Addon.NeededAddons[i]), False) then
+    for RequiredAddonClass in Addon.NeededAddons do
+    begin
+      RequiredAddon := Find(RequiredAddonClass);
+
+      if not RequiredAddon.FilesExtracted then
+        if not EnableAddon(Owner, RequiredAddon, ShowErrors) then
           Exit(False);
-      end;
+    end;
   end;
 
   if not Addon.PackageDownloaded then
   begin
-    if ShowMessage then
-      Res := TFunctions.MsgBox(Format(_('The addon "%s" cannot be activated because needed files have not been downloaded.'#13#10'Do you want to download these files now?'), [Addon.Name]), _('Question'), MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON1)
-    else
-      Res := IDYES;
-
-    if Res = IDYES then
-    begin
-      if not Addon.ShowInitMessage(Owner.Handle) then
-        Exit(False);
-
-      DA := TfrmDownloadAddons.Create(Owner, Addon);
-      try
-        DA.ShowModal;
-
-        if not DA.Downloaded then
-        begin
-          if DA.Error then
-            TFunctions.MsgBox(_('An error occured while downloading the file.'), _('Error'), MB_ICONEXCLAMATION);
-
-          Exit(False);
-        end;
-      finally
-        DA.Free;
-      end;
-    end else if Res = IDNO then
+    if Assigned(Owner) and not Addon.ShowInitMessage(Owner.Handle) then
       Exit(False);
+
+    DA := TfrmDownloadAddons.Create(Owner, Addon);
+    try
+      DA.ShowModal;
+
+      if not DA.Downloaded then
+      begin
+        if ShowErrors and DA.Error then
+          TFunctions.MsgBox(_('An error occured while downloading the file.'), _('Error'), MB_ICONEXCLAMATION);
+
+        Exit(False);
+      end;
+    finally
+      DA.Free;
+    end;
   end;
 
   if not Addon.ExtractFiles then
   begin
-    TFunctions.MsgBox(_('The addon is not ready for use. This might happen when it''s files could not be extracted.'), _('Error'), MB_ICONEXCLAMATION);
+    if ShowErrors then
+      TFunctions.MsgBox(_('The addon is not ready for use. This might happen when it''s files could not be extracted.'), _('Error'), MB_ICONEXCLAMATION);
+
     Exit(False);
   end;
 
   Exit(True);
 end;
 
-function TAddonManager.Find(ClassType: TClass): TAddonBase;
+function TAddonManager.Find(ClassTypes: TClassArray): TAddonArray;
 var
-  i: Integer;
+  ClassType: TClass;
+  Addon: TAddonBase;
 begin
-  Result := nil;
-
-  for i := 0 to FAddons.Count - 1 do
-    if FAddons[i].ClassType = ClassType then
-    begin
-      Result := FAddons[i];
-      Break;
-    end;
+  Result := [];
+  for ClassType in ClassTypes do
+    for Addon in FAddons do
+      if Addon.ClassType = ClassType then
+        Result += [Addon];
 end;
 
-function TAddonManager.InstallEncoderFor(Owner: TCustomForm; AudioType: TAudioTypes): Boolean;
+function TAddonManager.Find(ClassType: TClass): TAddonBase;
 var
-  i: Integer;
+  Addon: TAddonBase;
 begin
-  Result := False;
-  for i := 0 to FAddons.Count - 1 do
-    if FAddons[i].CanEncode(AudioType) then
-    begin
-      Result := EnableAddon(Owner, FAddons[i], False);
-      Exit;
-    end;
+  Result := nil;
+  for Addon in FAddons do
+    if Addon.ClassType = ClassType then
+      Exit(Addon);
+end;
+
+function TAddonManager.Find(AudioType: TAudioTypes): TAddonBase;
+var
+  Addon: TAddonBase;
+begin
+  Result := nil;
+  for Addon in FAddons do
+    if Addon.CanEncode(AudioType) then
+      Exit(Addon);
 end;
 
 end.
