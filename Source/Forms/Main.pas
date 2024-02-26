@@ -803,7 +803,7 @@ begin
         AddonError := True;
 
     if AddonError then
-      TFunctions.MsgBox(_('An error occured while downloading/initializing at least one addon.'), _('Error'), MB_ICONEXCLAMATION);
+      TFunctions.MsgBox(_('At least one addon could not be downloaded or initialized, encoders or postprocessors requiring any of these missing addons will not work until the required addons have been installed.'), _('Error'), MB_ICONEXCLAMATION);
   end;
 end;
 
