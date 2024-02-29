@@ -311,7 +311,7 @@ end;
 
 procedure TfrmSetStreamData.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
-  if Key = 27 then
+  if Key = VK_ESCAPE then
   begin
     Key := 0;
     Close;

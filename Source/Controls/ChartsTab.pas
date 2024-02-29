@@ -1060,7 +1060,7 @@ procedure TChartsTree.KeyPress(var Key: Char);
 begin
   inherited;
 
-  if Key = #13 then
+  if Key = Char(VK_RETURN) then
   begin
     if SelectedCount > 0 then
       ExecDefaultAction;

@@ -123,7 +123,7 @@ begin
     Item := TMenuItem.Create(Self);
     Item.Caption := Tree.Header.Columns[i].Text;
     Item.OnClick := ColItemsClick;
-    Item.Tag := Integer(Tree.Header.Columns[i]);
+    Item.Tag := PtrInt(Tree.Header.Columns[i]);
     Items.Add(Item);
   end;
 

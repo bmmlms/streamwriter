@@ -1143,7 +1143,7 @@ procedure TClientTab.FClientViewKeyPress(Sender: TObject; var Key: Char);
 var
   Dummy: THitInfo;
 begin
-  if Key = #13 then
+  if Key = Char(VK_RETURN) then
   begin
     Dummy.HitPositions := [hiOnItem];
     FClientViewNodeDblClick(FClientView, Dummy);

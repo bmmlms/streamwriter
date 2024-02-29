@@ -1308,7 +1308,7 @@ end;
 
 procedure TTitlePanel.AddEditKeyPress(Sender: TObject; var Key: Char);
 begin
-  if Key = #13 then
+  if Key = Char(VK_RETURN) then
   begin
     FToolbar.FAdd.Click;
     Key := #0;

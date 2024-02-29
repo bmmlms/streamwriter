@@ -2646,9 +2646,9 @@ begin
     // Die Bedingung hier für ist dreckig. In China ist das bestimmt kein 'C' und eigentlich
     // sollte das über einen Menü-Shortcut laufen. Naja.... hauptsache funzt,
     // dann ich geb kein Fick drauf.
-    if Key = Ord('C') then
+    if Key = VK_C then
       CutCopy(False)
-    else if Key = Ord('X') then
+    else if Key = VK_X then
       CutCopy(True);
 end;
 
@@ -2656,7 +2656,7 @@ procedure TSavedTree.KeyPress(var Key: Char);
 var
   Tracks: TTrackInfoArray;
 begin
-  if Key = #13 then
+  if Key = Char(VK_RETURN) then
   begin
     Key := #0;
     Tracks := GetSelected;

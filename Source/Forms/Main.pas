@@ -845,13 +845,13 @@ begin
     begin
       Item := TMenuItem.Create(mnuMain);
       Item.Caption := Cat.Category.Name;
-      Item.Tag := Integer(Cat);
+      Item.Tag := PtrInt(Cat);
       Item.OnClick := mnuMoveToCategory;
       mnuMoveToCategory1.Add(Item);
 
       Item := TMenuItem.Create(mnuMain);
       Item.Caption := Cat.Category.Name;
-      Item.Tag := Integer(Cat);
+      Item.Tag := PtrInt(Cat);
       Item.OnClick := mnuMoveToCategory;
       mnuMoveToCategory2.Add(Item);
     end;

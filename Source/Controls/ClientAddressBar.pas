@@ -136,7 +136,7 @@ end;
 
 procedure TClientAddressBar.FStationsKeyPress(Sender: TObject; var Key: Char);
 begin
-  if Key = #13 then
+  if Key = Char(VK_RETURN) then
     FStart.Click
   else
     FStations.ItemIndex := -1;

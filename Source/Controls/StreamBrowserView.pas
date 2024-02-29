@@ -736,7 +736,8 @@ end;
 procedure TMStreamTree.KeyPress(var Key: Char);
 begin
   inherited;
-  if Key = #13 then
+
+  if Key = Char(VK_RETURN) then
   begin
     case AppGlobals.DefaultActionNewStream of
       oaStart:
@@ -1545,25 +1546,25 @@ begin
   FItemName := TMenuItem.Create(Self);
   FItemName.Caption := _('Name');
   FItemName.RadioItem := True;
-  FItemName.Tag := Integer(stName);
+  FItemName.Tag := PtrInt(stName);
   Items.Add(FItemName);
 
   FItemKbps := TMenuItem.Create(Self);
   FItemKbps.Caption := _('Kbps');
   FItemKbps.RadioItem := True;
-  FItemKbps.Tag := Integer(stBitrate);
+  FItemKbps.Tag := PtrInt(stBitrate);
   Items.Add(FItemKbps);
 
   FItemType := TMenuItem.Create(Self);
   FItemType.Caption := _('Type');
   FItemType.RadioItem := True;
-  FItemType.Tag := Integer(stType);
+  FItemType.Tag := PtrInt(stType);
   Items.Add(FItemType);
 
   FItemRating := TMenuItem.Create(Self);
   FItemRating.Caption := _('Rating');
   FItemRating.RadioItem := True;
-  FItemRating.Tag := Integer(stRating);
+  FItemRating.Tag := PtrInt(stRating);
   Items.Add(FItemRating);
 end;
 
