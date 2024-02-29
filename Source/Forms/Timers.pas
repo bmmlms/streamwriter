@@ -95,6 +95,8 @@ type
     Panel3: TPanel;
     btnRemove: TButton;
     chkAutoRemove: TCheckBox;
+    procedure dtpEndTimeKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure dtpStartTimeKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure FormCreate(Sender: TObject);
     procedure btnOKClick(Sender: TObject);
     procedure rbRecurringClick(Sender: TObject);
@@ -256,9 +258,27 @@ begin
   UpdateButtons;
 end;
 
+procedure TfrmTimers.dtpStartTimeKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+  if Key = VK_RETURN then
+  begin
+    Key := 0;
+    dtpEndTime.SetFocus;
+  end;
+end;
+
+procedure TfrmTimers.dtpEndTimeKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+  if Key = VK_RETURN then
+  begin
+    Key := 0;
+    btnAddClick(btnAdd);
+  end;
+end;
+
 procedure TfrmTimers.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
-  if Key = 27 then
+  if Key = VK_ESCAPE then
   begin
     Key := 0;
     Close;

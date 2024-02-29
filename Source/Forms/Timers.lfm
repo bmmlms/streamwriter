@@ -126,9 +126,9 @@ object frmTimers: TfrmTimers
         BorderSpacing.Bottom = 4
         Caption = 'Recurring schedule'
         Checked = True
-        OnClick = rbRecurringClick
         TabOrder = 0
         TabStop = True
+        OnClick = rbRecurringClick
       end
       object rbDate: TRadioButton
         Left = 0
@@ -139,8 +139,8 @@ object frmTimers: TfrmTimers
         BorderSpacing.Top = 4
         BorderSpacing.Bottom = 4
         Caption = 'Specific date'
-        OnClick = rbDateClick
         TabOrder = 1
+        OnClick = rbDateClick
       end
       object lstInterval: TComboBoxEx
         Left = 18
@@ -296,6 +296,7 @@ object frmTimers: TfrmTimers
             UseDefaultSeparators = True
             HideDateTimeParts = [dtpSecond]
             MonthNames = 'Long'
+            OnKeyDown = dtpStartTimeKeyDown
           end
         end
         object Panel6: TPanel
@@ -343,6 +344,7 @@ object frmTimers: TfrmTimers
             UseDefaultSeparators = True
             HideDateTimeParts = [dtpSecond]
             MonthNames = 'Long'
+            OnKeyDown = dtpEndTimeKeyDown
           end
         end
         object Panel5: TPanel
@@ -365,8 +367,8 @@ object frmTimers: TfrmTimers
             Align = alBottom
             AutoSize = True
             Caption = '&Add'
-            OnClick = btnAddClick
             TabOrder = 0
+            OnClick = btnAddClick
           end
         end
       end
@@ -406,8 +408,8 @@ object frmTimers: TfrmTimers
         AutoSize = True
         Caption = '&Remove'
         Enabled = False
-        OnClick = btnRemoveClick
         TabOrder = 0
+        OnClick = btnRemoveClick
       end
     end
   end
