@@ -132,7 +132,6 @@ end;
 
 procedure TfrmDownloadAddons.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
-  FDownloader.Kill;
   FDownloader.Free;
 end;
 
