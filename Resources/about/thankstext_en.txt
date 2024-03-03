@@ -42,7 +42,7 @@ jQuery
 LAME
 Lazarus IDE
 Let's Encrypt
-mbed TLS
+Mbed TLS
 MP4Box
 MySQL
 Node.js
