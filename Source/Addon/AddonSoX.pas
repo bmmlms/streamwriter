@@ -54,7 +54,7 @@ end;
 
 constructor TAddonSoX.Create;
 begin
-  inherited Create('addon_sox', ['sox.exe'], 'sox.exe');
+  inherited Create('addon_sox', ['sox.exe'], 'sox.exe', '1.0.0.1');
 end;
 
 function TAddonSoX.FGetHelp: string;
