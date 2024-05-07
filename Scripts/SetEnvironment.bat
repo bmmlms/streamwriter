@@ -16,4 +16,3 @@ SET "INSTANTFPCOPTIONS=-Fu%FPCBIN%\..\..\..\..\lcl\units\x86_64-win64\win32 -Fu%
 
 SET "ZIP=C:\Program Files\7-Zip\7z.exe"
 SET "INNO=C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
-SET "PLINK=C:\Program Files\PuTTY\plink.exe"
