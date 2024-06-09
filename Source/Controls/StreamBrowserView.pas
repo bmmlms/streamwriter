@@ -650,24 +650,28 @@ var
   i: Integer;
   Nodes: TNodeArray;
   NodeData: PStreamNodeData;
+  StreamData: TStreamData;
 begin
+  Result := [];
   Nodes := GetNodes(True);
-  SetLength(Result, Length(Nodes));
+
   for i := 0 to High(Nodes) do
   begin
     NodeData := GetNodeData(Nodes[i]);
 
-    Result[i].ID := NodeData.Data.ID;
-    Result[i].Bitrate := NodeData.Data.Bitrate;
-    Result[i].Name := NodeData.Data.Name;
-    Result[i].URL := NodeData.Data.URL;
-    Result[i].URLs := NodeData.Data.URLs;
-    Result[i].Website := NodeData.Data.Website;
-    Result[i].Rating := NodeData.Data.Rating;
-    Result[i].RegExes := NodeData.Data.RegExes;
-    Result[i].RecordingOkay := NodeData.Data.RecordingOkay;
-    Result[i].IgnoreTitles := NodeData.Data.IgnoreTitles;
-    Result[i].CanSetRegExps := NodeData.Data.CanSetRegExps;
+    StreamData.ID := NodeData.Data.ID;
+    StreamData.Bitrate := NodeData.Data.Bitrate;
+    StreamData.Name := NodeData.Data.Name;
+    StreamData.URL := NodeData.Data.URL;
+    StreamData.URLs := NodeData.Data.URLs;
+    StreamData.Website := NodeData.Data.Website;
+    StreamData.Rating := NodeData.Data.Rating;
+    StreamData.RegExes := NodeData.Data.RegExes;
+    StreamData.RecordingOkay := NodeData.Data.RecordingOkay;
+    StreamData.IgnoreTitles := NodeData.Data.IgnoreTitles;
+    StreamData.CanSetRegExps := NodeData.Data.CanSetRegExps;
+
+    Result += [StreamData];
   end;
 end;
 
@@ -1128,14 +1132,13 @@ function TMStreamTree.DoGetNodeTooltip(Node: PVirtualNode; Column: TColumnIndex;
 var
   NodeData: PStreamNodeData;
 begin
-  inherited;
+  Result := inherited;
 
   LineBreakStyle := hlbForceMultiLine;
   DoGetText(Node, Column, ttNormal, Result);
   NodeData := GetNodeData(Node);
   if NodeData.Data.Genre <> '' then
     Result := Result + #13#10 + NodeData.Data.Genre;
-  Result := Result;
 end;
 
 { TMStreamView }

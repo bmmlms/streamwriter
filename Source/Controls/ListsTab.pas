@@ -242,7 +242,6 @@ type
     procedure PostTranslate; override;
 
     function GetNodes(NodeTypes: TNodeTypes; SelectedOnly: Boolean): TNodeArray;
-    function NodesToData(Nodes: TNodeArray): TTitleDataArray;
   end;
 
 const
@@ -1832,19 +1831,6 @@ begin
     Header.Columns[Index].Options := Header.Columns[Index].Options - [coVisible];
 
   AppGlobals.ListCols := AppGlobals.ListCols xor (1 shl Index);
-end;
-
-function TTitleTree.NodesToData(Nodes: TNodeArray): TTitleDataArray;
-var
-  i: Integer;
-  Data: PTitleNodeData;
-begin
-  SetLength(Result, Length(Nodes));
-  for i := 0 to High(Nodes) do
-  begin
-    Data := GetNodeData(Nodes[i]);
-    Result[i] := Data;
-  end;
 end;
 
 procedure TTitleTree.PopupMenuClick(Sender: TObject);

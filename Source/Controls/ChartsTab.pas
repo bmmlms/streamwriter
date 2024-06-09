@@ -1035,15 +1035,11 @@ end;
 
 function TChartsTree.NodesToData(Nodes: TNodeArray): TChartDataArray;
 var
-  i: Integer;
-  Data: PChartNodeData;
+  Node: PVirtualNode;
 begin
-  SetLength(Result, Length(Nodes));
-  for i := 0 to High(Nodes) do
-  begin
-    Data := GetNodeData(Nodes[i]);
-    Result[i] := Data;
-  end;
+  Result := [];
+  for Node in Nodes do
+    Result += [GetNodeData(Node)];
 end;
 
 procedure TChartsTree.PostTranslate;
