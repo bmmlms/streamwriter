@@ -386,7 +386,7 @@ begin
     FileVerInfo.Free;
   end;
 
-  FCodename := 'Innominatam';
+  FCodename := 'Vivere';
 
   // Adjust count of column headers and initialize them.
   // Initialization is important because otherwise when finishing the wizard on
