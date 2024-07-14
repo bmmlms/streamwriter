@@ -1,7 +1,8 @@
-#define AppCpu "x86_64"
-#define AppVersion GetFileVersion("..\Build\{#AppCpu}\streamwriter.exe")
-#define AppCopyright GetStringFileInfo("..\Build\{#AppCpu}\streamwriter.exe", LEGAL_COPYRIGHT)
-
+#define AppCpu       "x86_64"
+#define AppName      "streamwriter"
+#define AppVersion   GetFileVersion("..\Build\" + Appcpu + "\streamwriter.exe")
+#define CurrentYear  GetDateTimeString('yyyy','','')
+#define AppCopyright "(c) 2010-" + CurrentYear + " Alexander Nottelmann"
 [Files]
 Source: ..\Build\{#AppCpu}\streamwriter.exe; DestDir: {app}; Flags: ignoreversion
 Source: .\WizModernSmallImage-IS.bmp; DestDir: {tmp}; Flags: dontcopy
@@ -10,8 +11,9 @@ Source: .\WizModernSmallImage-IS.bmp; DestDir: {tmp}; Flags: dontcopy
 Name: {group}\streamWriter; Filename: {app}\streamwriter.exe; IconFilename: {app}\streamwriter.exe; IconIndex: 0
 
 [Languages]
-Name: Deutsch; MessagesFile: compiler:Languages\German.isl
 Name: English; MessagesFile: compiler:Default.isl
+Name: Deutsch; MessagesFile: compiler:Languages\German.isl
+Name: Italian; MessagesFile: compiler:Languages\Italian.isl
 
 [CustomMessages]
 Deutsch.Launch=streamWriter starten
@@ -38,27 +40,51 @@ English.Running8=streamWriter is currently running and needs to be closed to con
 English.ExitApp=Close streamWriter
 English.PleaseRestart=The update was installed successfully. Please restart streamWriter.
 
+Italian.Launch=Avvia streamWriter
+Italian.Running=streamWriter è attualmente in esecuzione e per continuare la configurazione deve essere chiuso.\nLa configurazione continuerà automaticamente una volta chiuso streamWriter.
+Italian.Running2=Chiusrura streamWriter...
+Italian.Running3=streamWriter è in esecuzione
+Italian.Running4=Per continuare streamWriter deve essere chiuso
+Italian.Running5=Sembra che non sia possibile chiudere streamWriter.\nScarica il file di installazione della versione più recente da streamwriter.org e aggiorna streamwriter manualmente.
+Italian.Running6=streamWriter è attualmente in esecuzione e deve essere chiuso per continuare l'installazione.\nChiudi streamWriter e seleziona "OK" per continuare.
+Italian.Running7=Impossibile chiudere streamWriter.\nPer continuare chiudi streamWriter.
+Italian.Running8=streamWriter è attualmente in esecuzione e per continuare la disinstallazione deve essere chiuso.\nPer chiudere streamWriter seleziona "OK".
+Italian.ExitApp=Chiudi streamWriter
+Italian.PleaseRestart=Aggiornamento completato.\nRiavvia streamWriter.
+
 [Setup]
+AppName=streamWriter
+AppVersion={#AppVersion}
+AppVerName={#AppName} {#AppVersion}
+
+VersionInfoDescription={#AppName} installer
+VersionInfoProductName={#AppName}
+VersionInfoVersion={#AppVersion}
+
+AppPublisher=Alexander Nottelmann
+AppCopyright={#AppCopyright}
+
+AppPublisherURL=https://streamwriter.org
+AppSupportURL=https://streamwriter.org
+AppUpdatesURL=https://streamwriter.org
+
+ShowLanguageDialog=yes
+UsePreviousLanguage=no
+LanguageDetectionMethod=uilanguage
+
+UninstallDisplayName={#AppName}
+UninstallDisplayIcon={app}\streamwriter.exe
+
 OutputBaseFilename=streamwriter_setup
 InternalCompressLevel=ultra
-AppName=streamWriter
-AppVerName=streamWriter
 PrivilegesRequired=admin
 DefaultDirName={autopf}\streamWriter
 AllowNetworkDrive=no
 DefaultGroupName=streamWriter
-ShowLanguageDialog=yes
-LanguageDetectionMethod=none
 AlwaysShowComponentsList=false
 WizardSmallImageFile=WizModernSmallImage-IS.bmp
 Compression=lzma2/ultra
 LicenseFile=license.txt
-AppVersion={#AppVersion}
-VersionInfoVersion={#AppVersion}
-AppCopyright={#AppCopyright}
-UninstallDisplayIcon={app}\streamwriter.exe
-AppPublisher=Alexander Nottelmann
-AppPublisherURL=https://streamwriter.org
 CloseApplications=no
 PrivilegesRequiredOverridesAllowed=commandline dialog
 MinVersion=10.0.10240
@@ -367,4 +393,3 @@ begin
       Abort;
   end;
 end;
-
