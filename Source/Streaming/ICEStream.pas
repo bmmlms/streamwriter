@@ -276,7 +276,7 @@ implementation
 
 { TICEStream }
 
-// Das hier ist genau so im Server. Ändert man an einem Programm was
+// Das hier ist genau so im Server. Ã„ndert man an einem Programm was
 // muss es im anderen Programm nachgezogen werden!
 function TICEStream.AdjustDisplayTitle(Title: string): string;
 var
@@ -284,8 +284,8 @@ var
   C: Char;
   NextUpper: Boolean;
 begin
-  // ´ und ` durch ' ersetzen
-  Title := TFunctions.RegExReplace('[´`]', '''', Title);
+  // Â´ und ` durch ' ersetzen
+  Title := TFunctions.RegExReplace('[Â´`]', '''', Title);
 
   // Featuring-Dinge fitmachen
   Title := TFunctions.RegExReplace('(\s+|^|\()(ft\.?|feat)(\s+|$|\))', '$1 Feat. $3', Title);
@@ -294,7 +294,7 @@ begin
   Title := TFunctions.RegExReplace('''+', '''', Title);
 
   // dont, cant, wont, etc ersetzen
-  Title := TFunctions.RegExReplace('(\s+|^|\()(won|can|don)([\s´`]{0,1}t)(\s+|$|\))', '$1 $2''t $4', Title);
+  Title := TFunctions.RegExReplace('(\s+|^|\()(won|can|don)([\sÂ´`]{0,1}t)(\s+|$|\))', '$1 $2''t $4', Title);
 
   // _ durch ' ' ersetzen
   Title := TFunctions.RegExReplace('_', ' ', Title);
@@ -449,8 +449,8 @@ begin
   GetSettings;
 
   // Wenn es ein Redirect ist dann die Standard-HTTP-Ausgabe nehmen.
-  // Ein paar Streams haben als Header ICY mit Code 302.. das würde sonst im Block
-  // hier drunter zur Exception führen.
+  // Ein paar Streams haben als Header ICY mit Code 302.. das wÃ¼rde sonst im Block
+  // hier drunter zur Exception fÃ¼hren.
   if RedirURL <> '' then
   begin
     WriteExtLog(_('HTTP response detected'), ltGeneral, llDebug);
@@ -596,8 +596,8 @@ procedure TICEStream.SaveData(S, E: Int64; Title: string; FullTitle: Boolean);
     i: Integer;
     BufLen, RemoveLen: Int64;
   begin
-    // Für das nächste Lied einen Puffer daüberlassen, Rest abschneiden. Puffer ist der größere
-    // der beiden Werte, weil wir nicht wissen, ob für das nächste Lied Stille gefunden wird,
+    // FÃ¼r das nÃ¤chste Lied einen Puffer daÃ¼berlassen, Rest abschneiden. Puffer ist der grÃ¶ÃŸere
+    // der beiden Werte, weil wir nicht wissen, ob fÃ¼r das nÃ¤chste Lied Stille gefunden wird,
     // oder der normale Puffer genutzt wird.
     if FAudioStream.ClassType.InheritsFrom(TAudioStreamMemory) then
     begin
@@ -613,7 +613,7 @@ procedure TICEStream.SaveData(S, E: Int64; Title: string; FullTitle: Boolean);
         if RemoveLen <= 0 then
           Exit;
 
-        // Weil wir gleich abschneiden, müssen wir eventuell vorgemerkte Tracks anfassen
+        // Weil wir gleich abschneiden, mÃ¼ssen wir eventuell vorgemerkte Tracks anfassen
         for i := 1 to FStreamTracks.Count - 1 do
         begin
           if FStreamTracks[i].S > -1 then
@@ -662,12 +662,12 @@ begin
     end;
 
     // GetSettings ist hier, um FKilled zu bekommen. Wenn es True ist, findet keine Nachbearbeitung
-    // statt, und FileCheck.GetFileName liefert die Original-Dateierweiterung zurück.
+    // statt, und FileCheck.GetFileName liefert die Original-Dateierweiterung zurÃ¼ck.
     // Ausserdem muss es FSongsSaved aktualisieren.
     GetSettings;
 
-    // Wird hier temporär nur für das Speichern hier erhöht. Wird später vom ICEClient
-    // wieder über GetSettings() geholt.
+    // Wird hier temporÃ¤r nur fÃ¼r das Speichern hier erhÃ¶ht. Wird spÃ¤ter vom ICEClient
+    // wieder Ã¼ber GetSettings() geholt.
     Inc(FSongsSaved);
     try
       FSaveAllowedTitle := Title;
@@ -763,7 +763,7 @@ begin
       FSavedStreamTitle := Title;
       FSavedIsStreamFile := False;
 
-      // Wenn der Stream VBR oder die Datei kleiner als 20MB ist, dann ermitteln wir die Länge immer neu
+      // Wenn der Stream VBR oder die Datei kleiner als 20MB ist, dann ermitteln wir die LÃ¤nge immer neu
       FSavedLength := 0;
       if FAudioInfo.VBR or (FSavedSize < 20971520) then
       begin
@@ -896,8 +896,8 @@ begin
     FStreamTracks.Clear;
 
     // Falls schon abgespielt wurde, jetzt aufgenommen wird und 'nur ganze Lieder' speichern aus ist,
-    // können wir hier direkt mit der Aufnahme anfangen.
-    // Achtung: Der Block hier ist so ähnlich in ProcessData() nochmal!
+    // kÃ¶nnen wir hier direkt mit der Aufnahme anfangen.
+    // Achtung: Der Block hier ist so Ã¤hnlich in ProcessData() nochmal!
     if (not FSettings.OnlySaveFull) and (FAudioStream <> nil) and (FMetaCounter >= 1) and (FTitle <> '') then
     begin
       FRecordingTitleFound := True;
@@ -911,8 +911,8 @@ end;
 procedure TICEStream.StopRecordingInternal;
 begin
   // Das hier wird nur aufgerufen, wenn Play noch aktiv ist, also
-  // die Verbindung nicht beendet wird. Dann müssen wir hier am
-  // Disconnect aufrufen, damit er ein halbes Lied speichert falls gewünscht.
+  // die Verbindung nicht beendet wird. Dann mÃ¼ssen wir hier am
+  // Disconnect aufrufen, damit er ein halbes Lied speichert falls gewÃ¼nscht.
   Disconnected;
 
   FreeAudioStream;
@@ -1073,8 +1073,8 @@ const
 begin
   RecvStream.Position := 0;
 
-  // Falls Einstellungen vom User geändert wurde, die nicht zu unserem Stream-Typ passen, müssen
-  // diese rückgängig gemacht werden. Beim nächsten Aufnahmestart müsstes dann passen.
+  // Falls Einstellungen vom User geÃ¤ndert wurde, die nicht zu unserem Stream-Typ passen, mÃ¼ssen
+  // diese rÃ¼ckgÃ¤ngig gemacht werden. Beim nÃ¤chsten Aufnahmestart mÃ¼sstes dann passen.
   if FAudioStream <> nil then
   begin
     if (FAudioStream.InheritsFrom(TAudioStreamMemory)) then
@@ -1109,7 +1109,7 @@ begin
         raise Exception.Create(_('Bytes per second could not be calculated'));
       end;
 
-    // Wenn der Stream im Speicher sitzt und größer als 200MB ist, dann wird der Stream hier geplättet.
+    // Wenn der Stream im Speicher sitzt und grÃ¶ÃŸer als 200MB ist, dann wird der Stream hier geplÃ¤ttet.
     if (FAudioStream.InheritsFrom(TAudioStreamMemory)) and (FAudioStream.Size > 204800000) then
     begin
       WriteExtLog(_('Clearing recording buffer because size exceeds 200MB'), ltGeneral, llWarning);
@@ -1221,7 +1221,7 @@ begin
                 Inc(FMetaCounter);
                 Inc(FRecordingSessionMetaCounter);
 
-                // Ist nur dafür da, um dem Server zu sagen "hier läuft jetzt ein volles Lied"
+                // Ist nur dafÃ¼r da, um dem Server zu sagen "hier lÃ¤uft jetzt ein volles Lied"
                 if (FMetaCounter >= 2) then
                   FFullTitleFound := True;
 
@@ -1232,7 +1232,7 @@ begin
               end;
 
               if (not FMonitoring) and FSettings.SeparateTracks and DisplayTitleChanged then
-                // Achtung: Der Block hier ist so ähnlich in StartRecordingInternal() nochmal!
+                // Achtung: Der Block hier ist so Ã¤hnlich in StartRecordingInternal() nochmal!
                 if FRecordingTitleFound then
                 begin
                   if FAudioStream <> nil then
@@ -1271,7 +1271,7 @@ procedure TICEStream.ParseTitle(S, Pattern: string; var Artist: string; var Titl
 
   function MyUpperCase(C: Char): Char;
   begin
-    if CharInSet(C, ['ä', 'Ä', 'ö', 'Ö', 'ü', 'Ü']) then
+    if CharInSet(C, ['Ã¤', 'Ã„', 'Ã¶', 'Ã–', 'Ã¼', 'Ãœ']) then
       Result := AnsiUpperCase(C)[1]
     else
       Result := UpperCase(C)[1];
@@ -1279,7 +1279,7 @@ procedure TICEStream.ParseTitle(S, Pattern: string; var Artist: string; var Titl
 
   function MyLowerCase(C: Char): Char;
   begin
-    if CharInSet(C, ['ä', 'Ä', 'ö', 'Ö', 'ü', 'Ü']) then
+    if CharInSet(C, ['Ã¤', 'Ã„', 'Ã¶', 'Ã–', 'Ã¼', 'Ãœ']) then
       Result := AnsiLowerCase(C)[1]
     else
       Result := LowerCase(C);
@@ -1443,7 +1443,7 @@ begin
 
   // Wenn wir automatisch aufnehmen und der Titel der Titel ist, den wir haben wollen
   // und dabei der erste empfangene ist, dann nutzen wir nicht den Start bei
-  // empfangener Meta-Länge, sondern den Start des Streams.
+  // empfangener Meta-LÃ¤nge, sondern den Start des Streams.
   // Vielleicht gibt es da noch 1-2 Sekunden mehr vom Song...
   if (FRecordTitle <> '') and (Title = FRecordTitle) and (Count = 0) then
   begin
@@ -1669,7 +1669,7 @@ var
   F, E: string;
 begin
   Result := Filename;
-  // Überall MAX_PATH-2.... -1 funzt nicht immer. Ich bin angetrunken und habe keine Lust das zu untersuchen!
+  // Ãœberall MAX_PATH-2.... -1 funzt nicht immer. Ich bin angetrunken und habe keine Lust das zu untersuchen!
   if (Length(Filename) > 0) and (Length(ConcatPaths([FSaveDir, Filename])) > MAX_PATH - 2) then
   begin
     E := ExtractFileExt(Filename);

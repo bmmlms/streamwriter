@@ -586,10 +586,10 @@ begin
 
         // Remark: Ich limitiere hier die maximal-Version auf 10. Das liegt daran, dass es manchmal vorkommt,
         //         dass Menschen die Einstellungsdatei importieren. Ich kann dann eine passende Fehlermeldung ausgeben.
-        //         Weil es dreckig so gelˆst ist, stehen bei neuen exportierten Dateien/gespeicherten Einstellungsdateien
+        //         Weil es dreckig so gel√∂st ist, stehen bei neuen exportierten Dateien/gespeicherten Einstellungsdateien
         //         in Zukunft immer "magische Bytes" am Anfang. Wenn es diese neuen Dateiversionen lange genug gibt,
         //         dann kann ich den Versionshack hier auslassen und nur noch die Bytes auswerten.
-        //         Mˆgliche F‰lle:
+        //         M√∂gliche F√§lle:
         //          - User importiert alte normale Einstellungsdatei, Version ist > 10, keine EXPORTMAGIC, Exception
         //          - User importiert alte exportierte Datei, Version ist 1, alles cool
         //          - User importiert neue normale Einstellungsdatei (mit Magic), Version ist > 10 durch Magic, keine EXPORTMAGIC, Exception
@@ -600,7 +600,7 @@ begin
         Lst := TSettingsList.Load(S);
         try
           AppGlobals.Storage.Assign(Lst);
-          // Hier wird das eben gespeicherte neu geladen, damit das anschlieﬂende
+          // Hier wird das eben gespeicherte neu geladen, damit das anschlie√üende
           // verarbeiten der Datendatei (AppGlobals.Data.Load()) Zugriff auf
           // LastUsedVersion aus den Registry-/Ini-Einstellungen hat.
           AppGlobals.Load;
@@ -779,7 +779,7 @@ begin
   if not FExiting then
   begin
     // Remark: Der Vergleich hier nach dem "and" kann irgendwann raus. Wenn Version > 5.0.0.1 lange genug
-    //         verˆffentlicht ist, rausmachen.
+    //         ver√∂ffentlicht ist, rausmachen.
     if (not AppGlobals.IntroShown) and (AppGlobals.LastUsedDataVersion <= 39) then
     begin
       FormIntro := TfrmIntro.Create(Self);
@@ -791,7 +791,7 @@ begin
       AppGlobals.FirstStartShown := True;
       AppGlobals.IntroShown := True;
     end else
-      // Remark: Das kann irgendwann raus. Genau dann, wenn der dumme Vergleich hier dr¸ber auch rausfliegt.
+      // Remark: Das kann irgendwann raus. Genau dann, wenn der dumme Vergleich hier dr√ºber auch rausfliegt.
       AppGlobals.IntroShown := True;
 
     if StartupMessagesNeeded then
@@ -888,7 +888,7 @@ begin
     Left := AppGlobals.MainLeft;
     Top := AppGlobals.MainTop;
 
-    // Wenn Fenster nicht auf Bildschirmen, Position zur¸cksetzen
+    // Wenn Fenster nicht auf Bildschirmen, Position zur√ºcksetzen
     R := Classes.Rect(Left + 20, Top + 20, Left + Width - 40, Top + Height - 40);
     for i := 0 to Screen.MonitorCount - 1 do
       if Screen.Monitors[i].WorkareaRect.IntersectsWith(R) then
@@ -1084,7 +1084,7 @@ begin
   if FWasShown then
     Exit;
 
-  // Das hier darf erst aufgerufen werden nachdem der SavedTree bef¸llt wurde
+  // Das hier darf erst aufgerufen werden nachdem der SavedTree bef√ºllt wurde
   tabSavedRefresh(nil);
 
   if Application.ShowMainForm then
@@ -2023,7 +2023,7 @@ begin
     FCheckFiles.OnTerminate := CheckFilesTerminate;
     FCheckFiles.Start;
   finally
-    // Wird vom Thread erledigt. Unschˆn, aber...
+    // Wird vom Thread erledigt. Unsch√∂n, aber...
     // Files.Free;
   end;
 end;
@@ -2201,7 +2201,7 @@ end;
 
 procedure TfrmStreamWriterMain.tabClientsBrowserViewStreamsReceived(Sender: TObject);
 begin
-  // Nach einer Neuinstallation kˆnnen wir noch keine Monitors anfragen, weil wir noch keine Streams kennen.
+  // Nach einer Neuinstallation k√∂nnen wir noch keine Monitors anfragen, weil wir noch keine Streams kennen.
   // Wenn die Streams angekommen sind, dann machen wir das hier klar!
   if AppGlobals.SubmitStats and AppGlobals.MonitorMode and (AppGlobals.MonitorCount > 0) and (AppGlobals.Data.BrowserList.Count > 0) and (FClientManager.Monitors.Count = 0) then
     HomeComm.SendGetMonitorStreams(AppGlobals.MonitorCount);
@@ -2431,10 +2431,10 @@ var
   CatNodes: TNodeArray;
   Node: PVirtualNode;
 begin
-  // Enabled und so wird hier immer nur gesetzt, wenn sich der Status ge‰ndert hat.
-  // Das hilft gut gegen flackern, wenn das Popup aufgeklappt ist, w‰hrend das hier
+  // Enabled und so wird hier immer nur gesetzt, wenn sich der Status ge√§ndert hat.
+  // Das hilft gut gegen flackern, wenn das Popup aufgeklappt ist, w√§hrend das hier
   // aufgerufen wird. Vielleicht hilft auch nur, kein Default-Item mehr zu setzen.
-  // Man weiﬂ es nicht!
+  // Man wei√ü es nicht!
 
   Clients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, True));
   AllClients := tabClients.ClientView.NodesToClients(tabClients.ClientView.GetNodes(ntClient, False));
@@ -2518,7 +2518,7 @@ begin
   actPause.Enabled := OnePlaying and Bass.DeviceAvailable;
   actPlay.Enabled := (Length(Clients) = 1) and (not (Clients[0].AutoRemove and (Clients[0].State <> csConnected))) and Bass.DeviceAvailable;
 
-  // Das hier muss man vor dem n‰chsten "Enabled"-Setzen machen. Er muss aus, sonst l‰sst sich "Checked" nach dem n‰chsten "Enabled := True" nicht mehr setzen.
+  // Das hier muss man vor dem n√§chsten "Enabled"-Setzen machen. Er muss aus, sonst l√§sst sich "Checked" nach dem n√§chsten "Enabled := True" nicht mehr setzen.
   // Der Button malt sich halt nicht passend...
   if not OneNormalRecordingWithTitle then
     actStopAfterSong.Checked := False;
@@ -2556,7 +2556,7 @@ begin
   AppGlobals.LastUpdateChecked := Trunc(Now);
 
   // Hier war mal die MsgBox mit 'A new version was found...'
-  // Das konnte aber zu Deadlocks f¸hren, weil w‰hrend allem was jetzt kam
+  // Das konnte aber zu Deadlocks f√ºhren, weil w√§hrend allem was jetzt kam
   // (z.B. ShowUpdate() mit Modaler Form) der UpdateThread nicht nil gesetzt
   // wurde. Deshalb ist hier nun ein PostMessage.
   PostMessage(Handle, WM_UPDATEFOUND, 0, 0);

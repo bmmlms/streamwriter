@@ -101,7 +101,7 @@ function TPlaylistHandler.ParsePlaylist(Data: string; PlaylistType: TPlaylistTyp
       Exit;
 
     // Wenn es eine vorherige URL gab, und die nun empfangene keine "ganze" URL ist,
-    // dann müssen wir die empfangene an den Pfad der vorherigen dranhängen.
+    // dann mÃ¼ssen wir die empfangene an den Pfad der vorherigen dranhÃ¤ngen.
     if (OriginURL <> '') and (Length(Line) > 0) and (Copy(LowerCase(Line), 1, 7) <> 'http://') and (Copy(LowerCase(Line), 1, 8) <> 'https://') then
     begin
       Res := TFunctions.ParseURL(OriginURL);

@@ -345,7 +345,7 @@ var
 begin
   if Msg is TSongSavedMsg then
   begin
-    // Der Saved-Counter ist nur f¸r Wunschlisteneintr‰ge mit Hash vorhanden, ansonsten raus hier.
+    // Der Saved-Counter ist nur f√ºr Wunschlisteneintr√§ge mit Hash vorhanden, ansonsten raus hier.
     if SongSavedMsg.ServerTitleHash = 0 then
       Exit;
 
@@ -576,7 +576,7 @@ begin
       NodeData := FTree.GetNodeData(Node);
       if NodeData.NodeType in [ntWishParent, ntIgnoreParent, ntStream] then
       begin
-        // Alle Untereintr‰ge der Kategorie exportieren
+        // Alle Untereintr√§ge der Kategorie exportieren
         Node := FTree.GetFirstChild(Node);
         while Node <> nil do
         begin
@@ -761,7 +761,7 @@ begin
               end else
                 Continue;
 
-            // Wenn es ein ganzer Pfad sein kˆnnte bearbeiten
+            // Wenn es ein ganzer Pfad sein k√∂nnte bearbeiten
             if Length(Lst[i]) > 4 then
               if (Copy(Lst[i], 2, 2) = ':\') and (Pos('\', Lst[i]) > -1) and (Pos('.', Lst[i]) > -1) then
               begin
@@ -769,7 +769,7 @@ begin
                 Lst[i] := TFunctions.RemoveFileExt(Lst[i]);
               end;
 
-            // Wenn ein K¸nstler K¸nstler-Hash hinten dran ist auswerten
+            // Wenn ein K√ºnstler K√ºnstler-Hash hinten dran ist auswerten
             ServerArtistHash := 0;
             P := RPos('|A', Lst[i]);
             if P > 0 then
@@ -787,7 +787,7 @@ begin
               Lst[i] := Copy(Lst[i], 1, P - 1);
             end;
 
-            // Das hier darf nicht sein, kˆnnte aber passieren
+            // Das hier darf nicht sein, k√∂nnte aber passieren
             if (ServerHash > 0) and (ServerArtistHash > 0) then
             begin
               ServerHash := 0;
@@ -1376,7 +1376,7 @@ begin
     end else
       List := TICEClient(FAddCombo.ItemsEx[FAddCombo.ItemIndex].Data).Entry.IgnoreList;
 
-    // Keine doppelten Auto-Eintr‰ge erlauben
+    // Keine doppelten Auto-Eintr√§ge erlauben
     if (TitleHash > 0) and (List = AppGlobals.Data.SaveList) then
       for i := 0 to List.Count - 1 do
         if (List[i].ServerHash > 0) and (List[i].ServerHash = TitleHash) then
@@ -1384,7 +1384,7 @@ begin
 
     Pattern := TFunctions.BuildPattern(Trim(Text), Hash, NumChars, False);
 
-    // Keine doppelten manuellen Eintr‰ge erlauben
+    // Keine doppelten manuellen Eintr√§ge erlauben
     if TitleHash = 0 then
       for i := 0 to List.Count - 1 do
         if (List[i].ServerHash = 0) and (List[i].Hash = Hash) then
@@ -1625,7 +1625,7 @@ begin
 
   // Kann eigentlich nicht passieren, Yo24hua hatte aber hier drunter im LowerCase() eine Exception
   // Zugriffsverletzung bei Adresse 0041E790 in Modul 'streamwriter.exe'. Lesen von Adresse FFFFFFFF.
-  // Vielleicht hilft das, auch wenn ich es mir bis jetzt noch nicht erkl‰ren kann.
+  // Vielleicht hilft das, auch wenn ich es mir bis jetzt noch nicht erkl√§ren kann.
   if Title = nil then
     Exit;
 
@@ -1641,7 +1641,7 @@ begin
   begin
     ParentData := GetNodeData(Parent);
 
-    // Parents f¸r ein neues Kind aufklappen.
+    // Parents f√ºr ein neues Kind aufklappen.
     if ((Parent = FWishNode) or (Parent = FIgnoreNode)) and (Parent.ChildCount = 1) then
       Expanded[Parent] := True;
     if (ParentData.Stream <> nil) and (Parent.ChildCount = 1) and (Parent.Parent.ChildCount = 1) then

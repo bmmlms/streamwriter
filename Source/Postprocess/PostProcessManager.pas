@@ -227,7 +227,7 @@ begin
         if Entry.Data.ReEncodedFilename <> '' then
           DeleteFile(Entry.Data.ReEncodedFilename);
 
-        // Wird hier gemacht, damit WorkingForClient() False zurückliefert. Wichtig!
+        // Wird hier gemacht, damit WorkingForClient() False zurÃ¼ckliefert. Wichtig!
         FProcessingList.Remove(Entry);
 
         TICEClient(Entry.Owner).PostProcessingFinished(Entry.Data.Filename, Entry.Data.StreamTitle, Entry.Data.Artist, Entry.Data.Title,
@@ -239,7 +239,7 @@ begin
         Exit;
       end;
 
-      // Eine externe App könnte das File gelöscht haben
+      // Eine externe App kÃ¶nnte das File gelÃ¶scht haben
       if Entry.Data.Filesize > -1 then
       begin
         if ProcessFile(Entry) then
@@ -248,7 +248,7 @@ begin
         begin
           WriteLog(Entry.Owner, _('All postprocessors done'), ltPostProcess, llDebug);
 
-          // Wird hier gemacht, damit WorkingForClient() False zurückliefert. Wichtig!
+          // Wird hier gemacht, damit WorkingForClient() False zurÃ¼ckliefert. Wichtig!
           FProcessingList.Delete(i);
 
           TICEClient(Entry.Owner).PostProcessingFinished(Entry.Data.Filename, Entry.Data.StreamTitle, Entry.Data.Artist, Entry.Data.Title,

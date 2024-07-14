@@ -118,8 +118,8 @@ begin
     atAAC, atM4A:
       if Bitrate >= 150 then
         Result := vqHigh
-      //else if Bitrate >= 128 then  // Das lˆst das Problem von "Rix". Ist vllt. nicht optimal, aber besser als nichts..
-      // Am besten w‰re es wohl, den Encoder pr‰ziser zu f¸ttern was Bitraten angeht => Enum vergrˆﬂern..
+      //else if Bitrate >= 128 then  // Das l√∂st das Problem von "Rix". Ist vllt. nicht optimal, aber besser als nichts..
+      // Am besten w√§re es wohl, den Encoder pr√§ziser zu f√ºttern was Bitraten angeht => Enum vergr√∂√üern..
       // Nicht 3 Stufen, sondern 6 oder so! Oder Bitrate durchschleifen und jeder Encoder denkt selber nach?
       //  Result := vqMedium
       else

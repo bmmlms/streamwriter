@@ -424,14 +424,14 @@ end;
 
 procedure TICEThread.DoEnded;
 begin
-  // Inherited kommt nach der 'Connection closed' Logausgabe, weil dann die Postprocessors schön an einem Stück im Log erscheinen.
-  // Wäre inherited ganz oben, würde vor dem 'Connection closed' im Log noch 'Postprocessor asdf started' stehen, was nervt.
+  // Inherited kommt nach der 'Connection closed' Logausgabe, weil dann die Postprocessors schÃ¶n an einem StÃ¼ck im Log erscheinen.
+  // WÃ¤re inherited ganz oben, wÃ¼rde vor dem 'Connection closed' im Log noch 'Postprocessor asdf started' stehen, was nervt.
   inherited;
 
   FPlaying := False;
   FPlayer.Stop;
 
-  // Noch schön ausfaden lassen
+  // Noch schÃ¶n ausfaden lassen
   while FPlayer.Playing or FPlayer.Pausing or FPlayer.Stopping do
     Sleep(20);
 

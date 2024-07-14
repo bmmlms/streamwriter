@@ -135,7 +135,7 @@ begin
   WD2 := TWaveData.Create;
   try
     try
-      // Um die Hälfte zurückgehen, damit wir dann alles einlesen können
+      // Um die HÃ¤lfte zurÃ¼ckgehen, damit wir dann alles einlesen kÃ¶nnen
       StartPos := StartPos - LenStart div 2;
       EndPos := EndPos - LenEnd div 2;
 
@@ -230,8 +230,8 @@ begin
 
       if Result.DataStart = -1 then
       begin
-        // Wenn das der erste gefundene ist, prüfen, ob es wirklich ein Header ist,
-        // indem wir schauen, ob nach der Länge wieder ein Header kommt.
+        // Wenn das der erste gefundene ist, prÃ¼fen, ob es wirklich ein Header ist,
+        // indem wir schauen, ob nach der LÃ¤nge wieder ein Header kommt.
 
         if Size < Position + FL * 2 then
           Exit;
@@ -318,8 +318,8 @@ begin
 
       if Result.DataStart = -1 then
       begin
-        // Wenn das der erste gefundene ist, prüfen, ob es wirklich ein Header ist,
-        // indem wir schauen, ob nach der Länge wieder ein Header kommt.
+        // Wenn das der erste gefundene ist, prÃ¼fen, ob es wirklich ein Header ist,
+        // indem wir schauen, ob nach der LÃ¤nge wieder ein Header kommt.
 
         if Size < Position + FL * 2 then
           Exit;
@@ -411,7 +411,7 @@ begin
   WD2 := TWaveData.Create;
   try
     try
-      // Um die Hälfte zurückgehen, damit wir dann alles einlesen können
+      // Um die HÃ¤lfte zurÃ¼ckgehen, damit wir dann alles einlesen kÃ¶nnen
       StartPos := StartPos - LenStart div 2;
       EndPos := EndPos - LenEnd div 2;
 

@@ -122,7 +122,7 @@ begin
   FResult := arFail;
 
   FC := TFileConvertor.Create;
-  if FEncoderSettings <> nil then // Bei "nach WAV" sind die über.
+  if FEncoderSettings <> nil then // Bei "nach WAV" sind die Ã¼ber.
   begin
     FC.CBRBitrate := TEncoderSettings(FEncoderSettings).CBRBitrate;
     FC.BitrateType := TEncoderSettings(FEncoderSettings).BitrateType;

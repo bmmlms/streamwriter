@@ -15,7 +15,7 @@
 {                                                                                                  }
 { Contributors:                                                                                    }
 {   Ulrich Decker, http://www.udse.de                                                              }
-{   Stefan Töngi, http://www.audiogenie.net                                                        }
+{   Stefan TÃ¶ngi, http://www.audiogenie.net                                                        }
 {                                                                                                  }
 {**************************************************************************************************}
 
@@ -273,35 +273,35 @@ type
   );
 
   TMP4FrameID = (
-     MP4_ALBUM = Longint($A9616C62),           // ©alb
-     MP4_ARTIST = Longint($A9415254),          // ©ART
-     MP4_AUTHOR = Longint($A9617574),          // ©aut
+     MP4_ALBUM = Longint($A9616C62),           // Â©alb
+     MP4_ARTIST = Longint($A9415254),          // Â©ART
+     MP4_AUTHOR = Longint($A9617574),          // Â©aut
      MP4_ALBUMARTIST = Longint($61415254),     // aART
      MP4_BEATSPERMINUTE = Longint($746D706F),  // tmpo
      MP4_CATEGORY = Longint($63617467),        // catg
      MP4_CDSETNUMBER = Longint($2064736B),     //  dsk
-     MP4_COMMENT = Longint($A9636D74),         // ©cmt
-     MP4_COMPOSER = Longint($A9777274),        // ©wrt
+     MP4_COMMENT = Longint($A9636D74),         // Â©cmt
+     MP4_COMPOSER = Longint($A9777274),        // Â©wrt
      MP4_COMPILATION = Longint($6370696C),     // cpil
-     MP4_DAY = Longint($A9646179),             // ©day
-     MP4_COPYRIGHT = Longint($A9637079),       // ©cpy
-     MP4_CREATEDATE = Longint($A9646179),      // ©day
-     MP4_DESCRIPTION = Longint($A9646573),     // ©des
-     MP4_INFORMATION = Longint($A9696E66),     // ©inf
-     MP4_DIRECTOR = Longint($A9646972),        // ©dir
-     MP4_DISCLAIMER = Longint($A9646973),      // ©dis
-     MP4_ENCODER = Longint($A9746F6F),         // ©too
-     MP4_GROUPING = Longint($A9677270),        // ©grp
+     MP4_DAY = Longint($A9646179),             // Â©day
+     MP4_COPYRIGHT = Longint($A9637079),       // Â©cpy
+     MP4_CREATEDATE = Longint($A9646179),      // Â©day
+     MP4_DESCRIPTION = Longint($A9646573),     // Â©des
+     MP4_INFORMATION = Longint($A9696E66),     // Â©inf
+     MP4_DIRECTOR = Longint($A9646972),        // Â©dir
+     MP4_DISCLAIMER = Longint($A9646973),      // Â©dis
+     MP4_ENCODER = Longint($A9746F6F),         // Â©too
+     MP4_GROUPING = Longint($A9677270),        // Â©grp
      MP4_KEYWORD = Longint($6B657977),         // keyw
-     MP4_LYRICS = Longint($A96C7972),          // ©lyr
-     MP4_TITLE = Longint($A96E616D),           // ©nam
-     MP4_NETURL = Longint($A975726C),          // ©url
-     MP4_ORIGINALARTIST = Longint($A96F7065),  // ©ope
-     MP4_ORIGINALFORMAT = Longint($A9666D74),  // ©fmt
-     MP4_ORIGINALSOURCE = Longint($A9737263),  // ©src
-     MP4_PERFORMER = Longint($A9707266),       // ©prf
-     MP4_PRODUCER = Longint($A9707264),        // ©prd
-     MP4_WARNING = Longint($A977726E),         // ©wrn
+     MP4_LYRICS = Longint($A96C7972),          // Â©lyr
+     MP4_TITLE = Longint($A96E616D),           // Â©nam
+     MP4_NETURL = Longint($A975726C),          // Â©url
+     MP4_ORIGINALARTIST = Longint($A96F7065),  // Â©ope
+     MP4_ORIGINALFORMAT = Longint($A9666D74),  // Â©fmt
+     MP4_ORIGINALSOURCE = Longint($A9737263),  // Â©src
+     MP4_PERFORMER = Longint($A9707266),       // Â©prf
+     MP4_PRODUCER = Longint($A9707264),        // Â©prd
+     MP4_WARNING = Longint($A977726E),         // Â©wrn
      MP4_RATING = Longint($72617465),          // rate
      MP4_DISCNUMBER = Longint($6469736b)       // disk
   );
@@ -532,35 +532,35 @@ const
 
 
   // MP4 frame IDs
-  MP4_ALBUM = $A9616C62;           // ©alb
-  MP4_ARTIST = $A9617274;          // ©art
-  MP4_AUTHOR = $A9617574;          // ©aut
+  MP4_ALBUM = $A9616C62;           // Â©alb
+  MP4_ARTIST = $A9617274;          // Â©art
+  MP4_AUTHOR = $A9617574;          // Â©aut
   MP4_ALBUMARTIST = $61415254;     // aART
   MP4_BEATSPERMINUTE = $746D706F;  // tmpo
   MP4_CATEGORY = $63617467;        // catg
   MP4_CDSETNUMBER = $2064736B;     //  dsk
-  MP4_COMMENT = $A9636D74;         // ©cmt
-  MP4_COMPOSER = $A9777274;        // ©wrt
+  MP4_COMMENT = $A9636D74;         // Â©cmt
+  MP4_COMPOSER = $A9777274;        // Â©wrt
   MP4_COMPILATION = $6370696C;     // cpil
-  MP4_DAY = $A9646179;             // ©day
-  MP4_COPYRIGHT = $A9637079;       // ©cpy
-  MP4_CREATEDATE = $A9646179;      // ©day
-  MP4_DESCRIPTION = $A9646573;     // ©des
-  MP4_INFORMATION = $A9696E66;     // ©inf
-  MP4_DIRECTOR = $A9646972;        // ©dir
-  MP4_DISCLAIMER = $A9646973;      // ©dis
-  MP4_ENCODER = $A9746F6F;         // ©too
-  MP4_GROUPING = $A9677270;        // ©grp
+  MP4_DAY = $A9646179;             // Â©day
+  MP4_COPYRIGHT = $A9637079;       // Â©cpy
+  MP4_CREATEDATE = $A9646179;      // Â©day
+  MP4_DESCRIPTION = $A9646573;     // Â©des
+  MP4_INFORMATION = $A9696E66;     // Â©inf
+  MP4_DIRECTOR = $A9646972;        // Â©dir
+  MP4_DISCLAIMER = $A9646973;      // Â©dis
+  MP4_ENCODER = $A9746F6F;         // Â©too
+  MP4_GROUPING = $A9677270;        // Â©grp
   MP4_KEYWORD = $6B657977;         // keyw
-  MP4_LYRICS = $A96C7972;          // ©lyr
-  MP4_TITLE = $A96E616D;           // ©nam
-  MP4_NETURL = $A975726C;          // ©url
-  MP4_ORIGINALARTIST = $A96F7065;  // ©ope
-  MP4_ORIGINALFORMAT = $A9666D74;  // ©fmt
-  MP4_ORIGINALSOURCE = $A9737263;  // ©src
-  MP4_PERFORMER = $A9707266;       // ©prf
-  MP4_PRODUCER = $A9707264;        // ©prd
-  MP4_WARNING = $A977726E;         // ©wrn
+  MP4_LYRICS = $A96C7972;          // Â©lyr
+  MP4_TITLE = $A96E616D;           // Â©nam
+  MP4_NETURL = $A975726C;          // Â©url
+  MP4_ORIGINALARTIST = $A96F7065;  // Â©ope
+  MP4_ORIGINALFORMAT = $A9666D74;  // Â©fmt
+  MP4_ORIGINALSOURCE = $A9737263;  // Â©src
+  MP4_PERFORMER = $A9707266;       // Â©prf
+  MP4_PRODUCER = $A9707264;        // Â©prd
+  MP4_WARNING = $A977726E;         // Â©wrn
 
 type
   TAudioFormatID  = Integer;

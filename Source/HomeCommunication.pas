@@ -251,7 +251,7 @@ implementation
 
 constructor THomeThread.Create;
 begin
-  // Wenn für 30 Sekunden nichts kommt ist Feierabend, das Timeout wird vom Server in HandshakeReceived überschrieben.
+  // Wenn fÃ¼r 30 Sekunden nichts kommt ist Feierabend, das Timeout wird vom Server in HandshakeReceived Ã¼berschrieben.
   FDataTimeout := 30000;
 
   {$IFDEF NOSSL}
@@ -498,7 +498,7 @@ begin
         Stream.Free;
       AppGlobals.Data.BrowserList.Clear;
 
-      // Der Liste alle Sachen wieder hinzufügen
+      // Der Liste alle Sachen wieder hinzufÃ¼gen
       try
         for Genre in Genres do
           AppGlobals.Data.GenreList.Add(Genre);

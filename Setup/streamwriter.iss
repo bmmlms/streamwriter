@@ -17,14 +17,14 @@ Name: Italian; MessagesFile: compiler:Languages\Italian.isl
 
 [CustomMessages]
 Deutsch.Launch=streamWriter starten
-Deutsch.Running=streamWriter l‰uft gerade und muss beendet werden, damit die Installation fortgesetzt werden kann.\nDie Installation wird automatisch fortgesetzt, wenn streamWriter beendet wurde.
+Deutsch.Running=streamWriter l√§uft gerade und muss beendet werden, damit die Installation fortgesetzt werden kann.\nDie Installation wird automatisch fortgesetzt, wenn streamWriter beendet wurde.
 Deutsch.Running2=streamWriter wird beendet...
-Deutsch.Running3=streamWriter l‰uft
+Deutsch.Running3=streamWriter l√§uft
 Deutsch.Running4=streamWriter muss beendet werden, damit fortgesetzt werden kann
-Deutsch.Running5=Es scheint, dass streamWriter sich nicht ordnungsgem‰ﬂ beenden kann. Bitte lade die neueste Setup-Version von streamwriter.org herunter und f¸hre das Update manuell durch.
-Deutsch.Running6=streamWriter l‰uft gerade und muss beendet werden, damit die Installation fortgesetzt werden kann.\nBitte beende streamWriter und klicke "OK", um fortzusetzen.
+Deutsch.Running5=Es scheint, dass streamWriter sich nicht ordnungsgem√§√ü beenden kann. Bitte lade die neueste Setup-Version von streamwriter.org herunter und f√ºhre das Update manuell durch.
+Deutsch.Running6=streamWriter l√§uft gerade und muss beendet werden, damit die Installation fortgesetzt werden kann.\nBitte beende streamWriter und klicke "OK", um fortzusetzen.
 Deutsch.Running7=streamWriter konnte nicht beendet werden.\nBitte beende streamWriter, um fortzusetzen.
-Deutsch.Running8=streamWriter l‰uft gerade und muss beendet werden, damit die Deinstallation fortgesetzt werden kann.\nKlicke "OK", um streamWriter zu beenden.
+Deutsch.Running8=streamWriter l√§uft gerade und muss beendet werden, damit die Deinstallation fortgesetzt werden kann.\nKlicke "OK", um streamWriter zu beenden.
 Deutsch.ExitApp=streamWriter beenden
 Deutsch.PleaseRestart=Das Update wurde abgeschlossen. Bitte starte streamWriter neu.
 
@@ -41,14 +41,14 @@ English.ExitApp=Close streamWriter
 English.PleaseRestart=The update was installed successfully. Please restart streamWriter.
 
 Italian.Launch=Avvia streamWriter
-Italian.Running=streamWriter Ë attualmente in esecuzione e per continuare la configurazione deve essere chiuso.\nLa configurazione continuer‡ automaticamente una volta chiuso streamWriter.
+Italian.Running=streamWriter √® attualmente in esecuzione e per continuare la configurazione deve essere chiuso.\nLa configurazione continuer√† automaticamente una volta chiuso streamWriter.
 Italian.Running2=Chiusrura streamWriter...
-Italian.Running3=streamWriter Ë in esecuzione
+Italian.Running3=streamWriter √® in esecuzione
 Italian.Running4=Per continuare streamWriter deve essere chiuso
-Italian.Running5=Sembra che non sia possibile chiudere streamWriter.\nScarica il file di installazione della versione pi˘ recente da streamwriter.org e aggiorna streamwriter manualmente.
-Italian.Running6=streamWriter Ë attualmente in esecuzione e deve essere chiuso per continuare l'installazione.\nChiudi streamWriter e seleziona "OK" per continuare.
+Italian.Running5=Sembra che non sia possibile chiudere streamWriter.\nScarica il file di installazione della versione pi√π recente da streamwriter.org e aggiorna streamwriter manualmente.
+Italian.Running6=streamWriter √® attualmente in esecuzione e deve essere chiuso per continuare l'installazione.\nChiudi streamWriter e seleziona "OK" per continuare.
 Italian.Running7=Impossibile chiudere streamWriter.\nPer continuare chiudi streamWriter.
-Italian.Running8=streamWriter Ë attualmente in esecuzione e per continuare la disinstallazione deve essere chiuso.\nPer chiudere streamWriter seleziona "OK".
+Italian.Running8=streamWriter √® attualmente in esecuzione e per continuare la disinstallazione deve essere chiuso.\nPer chiudere streamWriter seleziona "OK".
 Italian.ExitApp=Chiudi streamWriter
 Italian.PleaseRestart=Aggiornamento completato.\nRiavvia streamWriter.
 

@@ -951,8 +951,8 @@ begin
       try
         EditTags.ShowModal(Tracks);
 
-        // Es könnte sein, dass inzwischen Files gelöscht wurden oder so. Also nochmal Nodes
-        // holen und Änderungen aus Formular anwenden.
+        // Es kÃ¶nnte sein, dass inzwischen Files gelÃ¶scht wurden oder so. Also nochmal Nodes
+        // holen und Ã„nderungen aus Formular anwenden.
         Tracks2 := FSavedTree.GetSelected;
         for Track in EditTags.Tracks do
           for Track2 in Tracks do
@@ -2193,7 +2193,7 @@ function TSavedTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Colu
 begin
   Result := inherited;
 
-  // Wir müssen irgendeinen Index setzen, damit PaintImage() getriggert wird
+  // Wir mÃ¼ssen irgendeinen Index setzen, damit PaintImage() getriggert wird
   if (Column = 0) and ((Kind = ikNormal) or (Kind = ikSelected)) then
     Index := 0;
 end;
@@ -2402,7 +2402,7 @@ begin
       begin
         FFilesExpanded := True;
 
-        // Erstmal alles basierend auf Title-Hashes einfügen
+        // Erstmal alles basierend auf Title-Hashes einfÃ¼gen
         for i := 0 to FTrackList.Count - 1 do
           for n := 0 to High(ServerTitleHashes) do
             if FTrackList[i].ServerTitleHash = ServerTitleHashes[n] then
@@ -2412,7 +2412,7 @@ begin
               AddedTitles.Add(FTrackList[i]);
             end;
 
-        // Jetzt alles basierend auf Artist-Hashes einfügen, wenn noch nicht vorhanden
+        // Jetzt alles basierend auf Artist-Hashes einfÃ¼gen, wenn noch nicht vorhanden
         for i := 0 to FTrackList.Count - 1 do
           for n := 0 to High(ServerArtistHashes) do
             if FTrackList[i].ServerArtistHash = ServerArtistHashes[n] then
@@ -2643,8 +2643,8 @@ begin
   end else if Key = VK_DELETE then
     FPopupMenu.FItemDelete.Click
   else if ssCtrl in Shift then
-    // Die Bedingung hier für ist dreckig. In China ist das bestimmt kein 'C' und eigentlich
-    // sollte das über einen Menü-Shortcut laufen. Naja.... hauptsache funzt,
+    // Die Bedingung hier fÃ¼r ist dreckig. In China ist das bestimmt kein 'C' und eigentlich
+    // sollte das Ã¼ber einen MenÃ¼-Shortcut laufen. Naja.... hauptsache funzt,
     // dann ich geb kein Fick drauf.
     if Key = VK_C then
       CutCopy(False)

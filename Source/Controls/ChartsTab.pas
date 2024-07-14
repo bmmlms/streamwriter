@@ -773,7 +773,7 @@ function TChartsTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Col
 begin
   Result := inherited;
 
-  // Wir müssen irgendeinen Index setzen, damit PaintImage() getriggert wird
+  // Wir mÃ¼ssen irgendeinen Index setzen, damit PaintImage() getriggert wird
   if ((Column = 0) or (Column = 1)) and ((Kind = ikNormal) or (Kind = ikSelected)) then
     Index := 0;
 end;
@@ -984,7 +984,7 @@ begin
 
     csSearching:
     begin
-      // Marquee wieder zurücksetzen, dass es links anfängt...
+      // Marquee wieder zurÃ¼cksetzen, dass es links anfÃ¤ngt...
       FProgressBar.Style := pbstNormal;
       FProgressBar.Style := pbstMarquee;
 

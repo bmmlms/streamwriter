@@ -176,7 +176,7 @@ begin
   try
     while True do
     begin
-      // Niedrigsten nächsten Zeitpunkt suchen
+      // Niedrigsten nÃ¤chsten Zeitpunkt suchen
       FoundSchedules := False;
       Lowest := MaxDouble;
       FoundLowestWakeup := False;
@@ -245,7 +245,7 @@ begin
 
       ResetEvent(FReloadEvent);
 
-      // Alle Aktionen suchen, die zu dem niedrigsten Zeitpunkt ausgeführt werden müssen
+      // Alle Aktionen suchen, die zu dem niedrigsten Zeitpunkt ausgefÃ¼hrt werden mÃ¼ssen
       S.Clear;
       EnterCriticalSection(FSchedulesLock);
       try
@@ -282,7 +282,7 @@ begin
         Exit;
       end;
 
-      // Timer für Aufwachen aus Standby setzen, nur für nächstes Start-Event
+      // Timer fÃ¼r Aufwachen aus Standby setzen, nur fÃ¼r nÃ¤chstes Start-Event
       if FoundLowestWakeup then
       begin
         WakeTime := GetTimerTime(IncSecond(LowestWakeup, -30));
@@ -321,7 +321,7 @@ begin
         Exit;
       end;
 
-      // Nun Aktionen ausführen
+      // Nun Aktionen ausfÃ¼hren
       if WaitForSingleObject(Timer, 0) = WAIT_OBJECT_0 then
       begin
         StopEventsTriggered := False;
@@ -334,7 +334,7 @@ begin
 
         // Etwas Zeit geben, falls eine Aufnahme gerade stoppt und gleich wieder gestartet werden soll.
         // Das hier sollte helfen. Solange wir nur kurz schlafen (unter einer Minute) ist das okay.
-        // Keine schöne Lösung, aber sollte klappen...
+        // Keine schÃ¶ne LÃ¶sung, aber sollte klappen...
         if StopEventsTriggered then
           Sleep(2000);
 

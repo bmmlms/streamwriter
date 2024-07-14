@@ -279,7 +279,7 @@ begin
       ScrollIntoView(GetLast, True, False);
   end;
 
-  // Invalidate, weil FClient.DebugLog.Add() eventuell auch alte Eintr‰ge entfernt im Notify().
+  // Invalidate, weil FClient.DebugLog.Add() eventuell auch alte Eintr√§ge entfernt im Notify().
   // Ohne Invalidate bekommt die Ansicht das nicht mit.
   Invalidate;
 end;

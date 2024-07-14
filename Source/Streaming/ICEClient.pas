@@ -480,7 +480,7 @@ begin
   FICEThread.OnExtLog := ThreadExtLog;
   //FICEThread.OnMonitorAnalyzerAnalyzed := ThreadMonitorAnalyzerAnalyzed;
 
-  // Das muss hier so früh sein, wegen z.B. RetryDelay - das hat der Stream nämlich nicht,
+  // Das muss hier so frÃ¼h sein, wegen z.B. RetryDelay - das hat der Stream nÃ¤mlich nicht,
   // wenn z.B. beim Verbinden was daneben geht.
   ThreadNeedSettings(FICEThread);
 
@@ -686,8 +686,8 @@ begin
       begin
         WriteLog(_('Playlist parsed'){$IFDEF DEBUG}, FEntry.URLs.Text{$ENDIF}, ltGeneral, llInfo);
 
-        // ClientManager prüft, ob es in einem anderen Client schon eine der URLs gibt.
-        // Wenn ja, tötet der ClientManager den neu hinzugefügten Client.
+        // ClientManager prÃ¼ft, ob es in einem anderen Client schon eine der URLs gibt.
+        // Wenn ja, tÃ¶tet der ClientManager den neu hinzugefÃ¼gten Client.
         if Assigned(FOnURLsReceived) then
           FOnURLsReceived(Self);
       end else
@@ -814,7 +814,7 @@ begin
         Data.EncoderSettings := Entry.Settings.EncoderSettings.Find(FICEThread.RecvStream.AudioType).Copy;
         TEncoderSettings(Data.EncoderSettings).AudioType := atNone;
 
-        // Falls zwischendurch nach WAVE konvertiert wird, würde die Datei danach mit Default-Einstellungen neu enkodiert werden.
+        // Falls zwischendurch nach WAVE konvertiert wird, wÃ¼rde die Datei danach mit Default-Einstellungen neu enkodiert werden.
         // Das will man aber nicht, wenn der Stream 320kbps eigentlich hat. Deshalb das folgende.
         if Data.VBR then
           TEncoderSettings(Data.EncoderSettings).BitrateType := brVBR

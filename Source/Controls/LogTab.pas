@@ -459,7 +459,7 @@ function TLogTree.DoGetImageIndex(Node: PVirtualNode; Kind: TVTImageKind; Column
 begin
   Result := inherited;
 
-  // Wir müssen irgendeinen Index setzen, damit PaintImage() getriggert wird
+  // Wir mÃ¼ssen irgendeinen Index setzen, damit PaintImage() getriggert wird
   if (Column = 0) and ((Kind = ikNormal) or (Kind = ikSelected)) then
     Index := 0;
 end;

@@ -421,7 +421,7 @@ begin
       end;
   end;
 
-  // Wenn alle Clients weg sind können jetzt Kategorien gekickt werden.
+  // Wenn alle Clients weg sind kÃ¶nnen jetzt Kategorien gekickt werden.
   Nodes := FClientView.GetNodes(ntCategory, True);
   for Node in Nodes do
   begin
@@ -803,7 +803,7 @@ begin
   AppGlobals.Data.Received := AppGlobals.Data.Received + Received;
   Client.Entry.BytesReceived := Client.Entry.BytesReceived + Received;
 
-  // Das ist raus, weil sowieso jede Sekunde das Event für MilliSecondsReceived kommt
+  // Das ist raus, weil sowieso jede Sekunde das Event fÃ¼r MilliSecondsReceived kommt
   // FRefreshInfo := True;
 end;
 
@@ -816,9 +816,9 @@ begin
     FPlaybackTimer.Enabled := True;
   end;
 
-  // Da man "Play" auch über einen Hotkey (Play, Next track, Prev track) machen kann,
-  // rufen wir das hier auch nochmal auf. Ansonsten regeln das nämlich die Klicks
-  // in der GUI, ganz unschön... könnte man gut über das Messaging-System regeln.
+  // Da man "Play" auch Ã¼ber einen Hotkey (Play, Next track, Prev track) machen kann,
+  // rufen wir das hier auch nochmal auf. Ansonsten regeln das nÃ¤mlich die Klicks
+  // in der GUI, ganz unschÃ¶n... kÃ¶nnte man gut Ã¼ber das Messaging-System regeln.
   if Assigned(FOnPlayStarted) then
     FOnPlayStarted(Self);
 end;
@@ -981,7 +981,7 @@ begin
     FClientView.DeleteNode(RemoveNode);
   end;
 
-  // Um die Markierung für "Ist in Liste" wegzubekommen
+  // Um die Markierung fÃ¼r "Ist in Liste" wegzubekommen
   SideBar.FBrowserView.StreamTree.InvalidateVisible;
 
   if Assigned(FOnClientRemoved) then
@@ -1016,7 +1016,7 @@ var
 begin
   Client := Sender as TICEClient;
 
-  // Das hier ist NICHT cool, aber alles andere wäre Wahnsinn!
+  // Das hier ist NICHT cool, aber alles andere wÃ¤re Wahnsinn!
   if SongArtist = _('Unknown artist') then
     SongArtist := '';
   if SongTitle = _('Unknown title') then
@@ -1075,7 +1075,7 @@ end;
 procedure TClientTab.ClientManagerClientTitleChanged(Sender: TObject; Title: string);
 begin
   // Ist hier, weil wenn FFilename im Client gesetzt wird, das hier aufgerufen wird.
-  // Relativ unschön so, aber Hauptsache es tut..
+  // Relativ unschÃ¶n so, aber Hauptsache es tut..
   if Assigned(FOnUpdateButtons) then
     FOnUpdateButtons(Sender);
 
@@ -1245,7 +1245,7 @@ var
 begin
   Result := True;
 
-  // Sonderbehandlung fürs extern abspielen...
+  // Sonderbehandlung fÃ¼rs extern abspielen...
   if Action = oaPlayExternal then
   begin
     SetLength(Entries, 0);
@@ -1569,12 +1569,12 @@ begin
         CategoryEntry.IsAuto := NodeData.Category.IsAuto;
         AppGlobals.Data.CategoryList.Add(CategoryEntry);
 
-        // Weil hier nicht mit Kopien gearbeitet wird Referenz ändern
+        // Weil hier nicht mit Kopien gearbeitet wird Referenz Ã¤ndern
         NodeData.Category := CategoryEntry;
       end;
     end;
 
-    // Alte Kategorien erst hier löschen, weil ich an der Stelle
+    // Alte Kategorien erst hier lÃ¶schen, weil ich an der Stelle
     // nicht wie bei den StreamEntries mit Kopien arbeite.
     for CategoryEntry in OldCategories do
     begin

@@ -43,7 +43,7 @@ type
 
   TActResults = (arWin, arTimeout, arFail, arImpossible);
 
-  // Nicht Reihenfolge ändern. Wird im Binärstream genutzt!
+  // Nicht Reihenfolge Ã¤ndern. Wird im BinÃ¤rstream genutzt!
   TPostProcessTypes = (ptConvert, ptMP4Box, ptSetTags, ptSoX, ptExternal);
 
   TReadWrite = procedure(Name, Value: PChar);
@@ -344,7 +344,7 @@ begin
   if Trim(Replaced) <> '' then
   begin
     if LowerCase(ExtractFileExt(FExe)) = '.bat' then
-      // & ist für Batch nen Sonderzeichen. Also escapen.
+      // & ist fÃ¼r Batch nen Sonderzeichen. Also escapen.
       Replaced := StringReplace(Replaced, '&', '^&', [rfReplaceAll]);
     CmdLine := '"' + FExe + '" ' + Replaced;
   end else

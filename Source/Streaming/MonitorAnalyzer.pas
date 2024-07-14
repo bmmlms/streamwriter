@@ -138,7 +138,7 @@ begin
     Exit;
   end;
 
-  // Der Player darf erst hier erstellen. Es müssen beim erstellen Daten da sein, deshalb geht es
+  // Der Player darf erst hier erstellen. Es mÃ¼ssen beim erstellen Daten da sein, deshalb geht es
   // im Konstruktor nicht (es wird direkt BASSRead aufgerufen, wenn da nichts rauskommt ist ende!)
   if FPlayer = 0 then
   begin
@@ -167,7 +167,7 @@ begin
       // Rechts
       FWaveDataStream.Write(HIWORD(Level));
 
-      // Gleich sind wir am Ende. Also jetzt schon raus, um keine Infos über Daten unter 20ms Länge zu bekommen.
+      // Gleich sind wir am Ende. Also jetzt schon raus, um keine Infos Ã¼ber Daten unter 20ms LÃ¤nge zu bekommen.
       if BASSStreamGetFilePosition(FPlayer, 5) < 1 then
         Break;
     end;

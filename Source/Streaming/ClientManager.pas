@@ -185,7 +185,7 @@ begin
   {$ENDIF}
 
   C := TICEClient.Create(Self, ID, Bitrate, Name, StartURL);
-  // Ist hier, damit das ClientView das direkt weiﬂ und passig in die Kategorie packt
+  // Ist hier, damit das ClientView das direkt wei√ü und passig in die Kategorie packt
   if IsAuto then
     C.AutoRemove := True;
   SetupClient(C);

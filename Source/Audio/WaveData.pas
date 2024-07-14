@@ -237,12 +237,12 @@ begin
     Inc(Counter);
   end;
 
-  // Das ist wichtig - wenn man Stille hinzufügt, ändert sich oben Avg nicht, Checksum bleibt gleich..
+  // Das ist wichtig - wenn man Stille hinzufÃ¼gt, Ã¤ndert sich oben Avg nicht, Checksum bleibt gleich..
   FCheckSum := FCheckSum + Position;
 
   SetLength(FWaveArray, Counter);
 
-  // Bei weniger als 2 = Crash später
+  // Bei weniger als 2 = Crash spÃ¤ter
   if Counter < 10 then
     raise Exception.Create('WaveArray is too short');
 
