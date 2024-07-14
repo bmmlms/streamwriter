@@ -78,13 +78,13 @@ goto end
 :setup
   cd "%PROJECTDIR%\Setup"
 
-  powershell -Command "(gc '%APPNAME%.iss') -replace '^(#define AppCpu\s+)\"x86_64\"$', '$1\"%~1\"' | Out-File -encoding ASCII '%APPNAME%-%~1.iss'"
+  powershell -Command "(gc '%APPNAME%.iss') -replace '^(#define AppCpu\s+)\"x86_64\"$', '$1\"%~1\"' | Out-File -encoding UTF8 '%APPNAME%-%~1.iss'"
 
   if "%~1"=="i386" (
-    powershell -Command "(gc '%APPNAME%-%~1.iss') -replace '^ArchitecturesAllowed=x64$', '' | Out-File -encoding ASCII '%APPNAME%-%~1.iss'"
+    powershell -Command "(gc '%APPNAME%-%~1.iss') -replace '^ArchitecturesAllowed=x64$', '' | Out-File -encoding UTF8 '%APPNAME%-%~1.iss'"
     if !ERRORLEVEL! GEQ 1 exit /b !ERRORLEVEL!
 
-    powershell -Command "(gc '%APPNAME%-%~1.iss') -replace '^ArchitecturesInstallIn64BitMode=x64$', '' | Out-File -encoding ASCII '%APPNAME%-%~1.iss'"
+    powershell -Command "(gc '%APPNAME%-%~1.iss') -replace '^ArchitecturesInstallIn64BitMode=x64$', '' | Out-File -encoding UTF8 '%APPNAME%-%~1.iss'"
     if !ERRORLEVEL! GEQ 1 exit /b !ERRORLEVEL!
   )
 
