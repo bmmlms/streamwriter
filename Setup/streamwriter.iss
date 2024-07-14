@@ -1,8 +1,8 @@
 #define AppCpu       "x86_64"
-#define AppName      "streamwriter"
-#define AppVersion   GetFileVersion("..\Build\" + Appcpu + "\streamwriter.exe")
-#define CurrentYear  GetDateTimeString('yyyy','','')
-#define AppCopyright "(c) 2010-" + CurrentYear + " Alexander Nottelmann"
+#define AppName      "streamWriter"
+#define AppVersion   GetFileVersion("..\Build\" + AppCpu + "\streamwriter.exe")
+#define AppCopyright GetStringFileInfo("..\Build\" + AppCpu + "\streamwriter.exe", LEGAL_COPYRIGHT)
+
 [Files]
 Source: ..\Build\{#AppCpu}\streamwriter.exe; DestDir: {app}; Flags: ignoreversion
 Source: .\WizModernSmallImage-IS.bmp; DestDir: {tmp}; Flags: dontcopy
