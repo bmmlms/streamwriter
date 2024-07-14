@@ -23,6 +23,7 @@
       <UseVersionInfo Value="True"/>
       <MajorVersionNr Value="1"/>
       <BuildNr Value="1"/>
+      <StringTable FileDescription="streamWriter SoX Addon" LegalCopyright="Copyright (c) 2010-2024 Alexander Nottelmann et al." OriginalFilename="addon_sox.dll" ProductName="streamWriter SoX Addon" ProductVersion="1.0.0.1-nogit"/>
     </VersionInfo>
     <BuildModes Count="2">
       <Item1 Name="Debug" Default="True"/>
