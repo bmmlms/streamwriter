@@ -36,6 +36,7 @@ uses
   Generics.Defaults,
   HTTPStream,
   LanguageObjects,
+  LazUTF8,
   Logging,
   Math,
   regexpr,
@@ -1086,28 +1087,28 @@ begin
       FSettings.DeleteStreams := False;
 
     if (not FBitrateMeasured) and (((FAudioInfo.BytesPerSec = 0) and (FAudioStream.Size > 32768)) or ((FAudioInfo.BytesPerSec > 0) and (FAudioStream.Size > AUDIO_BUFFER))) then
-      try
-        if FAudioStream.InheritsFrom(TAudioStreamFile) then
-          FAudioInfo.GetAudioInfo(TAudioStreamFile(FAudioStream).FileName)
-        else
-          FAudioInfo.GetAudioInfo(TAudioStreamMemory(FAudioStream));
+    try
+      if FAudioStream.InheritsFrom(TAudioStreamFile) then
+        FAudioInfo.GetAudioInfo(TAudioStreamFile(FAudioStream).FileName)
+      else
+        FAudioInfo.GetAudioInfo(TAudioStreamMemory(FAudioStream));
 
-        if not FAudioInfo.Success then
-          raise Exception.Create('');
+      if not FAudioInfo.Success then
+        raise Exception.Create('');
 
-        if FAudioStream.Size > AUDIO_BUFFER then
-          FBitrateMeasured := True;
+      if FAudioStream.Size > AUDIO_BUFFER then
+        FBitrateMeasured := True;
 
-        if (FRecordTitle <> '') and (FAudioInfo.Bitrate < FAutoTuneInMinKbps) then
-        begin
-          WriteExtLog(_('Stream will be removed because bitrate does not match'), ltGeneral, llWarning);
-          FRemoveClient := True;
-        end;
-
-        FOnRefreshInfo(Self);
-      except
-        raise Exception.Create(_('Bytes per second could not be calculated'));
+      if (FRecordTitle <> '') and (FAudioInfo.Bitrate < FAutoTuneInMinKbps) then
+      begin
+        WriteExtLog(_('Stream will be removed because bitrate does not match'), ltGeneral, llWarning);
+        FRemoveClient := True;
       end;
+
+      FOnRefreshInfo(Self);
+    except
+      raise Exception.Create(_('Bytes per second could not be calculated'));
+    end;
 
     // Wenn der Stream im Speicher sitzt und größer als 200MB ist, dann wird der Stream hier geplättet.
     if (FAudioStream.InheritsFrom(TAudioStreamMemory)) and (FAudioStream.Size > 204800000) then
@@ -1269,38 +1270,39 @@ end;
 
 procedure TICEStream.ParseTitle(S, Pattern: string; var Artist: string; var Title: string; var Album: string);
 
-  function MyUpperCase(C: Char): Char;
-  begin
-    if CharInSet(C, ['ä', 'Ä', 'ö', 'Ö', 'ü', 'Ü']) then
-      Result := AnsiUpperCase(C)[1]
-    else
-      Result := UpperCase(C)[1];
-  end;
-
-  function MyLowerCase(C: Char): Char;
-  begin
-    if CharInSet(C, ['ä', 'Ä', 'ö', 'Ö', 'ü', 'Ü']) then
-      Result := AnsiLowerCase(C)[1]
-    else
-      Result := LowerCase(C);
-  end;
-
   function NormalizeText(Text: string): string;
+  const
+    UPPERCASE_AFTER: array[0..5] of string = (#0, ' ', '.', '-', '/', '(');
   var
-    i: Integer;
-    LastChar: Char;
+    CurrentChar, LastChar: PChar;
+    Len: Integer;
+    S, Codepoint: string;
+    PrevCodepoint: string = #0;
+    DoUpper: Boolean;
   begin
     Result := '';
-    LastChar := #0;
     Text := StringReplace(Text, '_', ' ', [rfReplaceAll]);
 
-    for i := 1 to Length(Text) do
+    CurrentChar := PChar(Text);
+    LastChar := CurrentChar + Length(Text);
+    while CurrentChar < LastChar do
     begin
-      if (LastChar = #0) or (LastChar = ' ') or (LastChar = '.') or (LastChar = '-') or (LastChar = '/') or (LastChar = '(') then
-        Result := Result + MyUpperCase(Text[i])
-      else
-        Result := Result + MyLowerCase(Text[i]);
-      LastChar := Text[i];
+      Len := UTF8CodepointSize(CurrentChar);
+      SetLength(Codepoint, Len);
+      Move(CurrentChar^, Codepoint[1], Len);
+
+      DoUpper := False;
+      for S in UPPERCASE_AFTER do
+        if S = PrevCodepoint then
+        begin
+          DoUpper := True;
+          Break;
+        end;
+
+      Result += IfThen<string>(DoUpper, UTF8UpperCase(Codepoint), UTF8LowerCase(Codepoint));
+
+      PrevCodepoint := Codepoint;
+      Inc(CurrentChar, Len);
     end;
   end;
 
@@ -1523,7 +1525,6 @@ begin
   // Using AnyFileExists() here is important since the extension of the existing file might not match parameter AudioType
   // which could lead to unexpected overwriting of existing files when converting the file after saving.
   if AnyFileExists(FilePath) then
-  begin
     if FSettings.DiscardAlways then
       FResult := crDiscard
     else if FSettings.OverwriteSmaller and TFunctions.GetFileSize(FilePath, ExistingFileSize) and (ExistingFileSize < Filesize) then
@@ -1532,7 +1533,6 @@ begin
       FResult := crDiscardExistingIsLarger
     else
       FFilename := ExtractFileName(GetAvailableFilename(FilePath));
-  end;
 
   if FSettings.OutputFormat <> atNone then
     FFilenameConverted := TFunctions.RemoveFileExt(FFilename) + FormatToFiletype(FSettings.OutputFormat)
