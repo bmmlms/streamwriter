@@ -17,40 +17,40 @@ Name: Italian; MessagesFile: compiler:Languages\Italian.isl
 
 [CustomMessages]
 Deutsch.Launch=streamWriter starten
-Deutsch.Running=streamWriter läuft gerade und muss beendet werden, damit die Installation fortgesetzt werden kann.\nDie Installation wird automatisch fortgesetzt, wenn streamWriter beendet wurde.
+Deutsch.Running=streamWriter läuft gerade und muss beendet werden, damit die Installation fortgesetzt werden kann.%nDie Installation wird automatisch fortgesetzt, wenn streamWriter beendet wurde.
 Deutsch.Running2=streamWriter wird beendet...
 Deutsch.Running3=streamWriter läuft
 Deutsch.Running4=streamWriter muss beendet werden, damit fortgesetzt werden kann
 Deutsch.Running5=Es scheint, dass streamWriter sich nicht ordnungsgemäß beenden kann. Bitte lade die neueste Setup-Version von streamwriter.org herunter und führe das Update manuell durch.
-Deutsch.Running6=streamWriter läuft gerade und muss beendet werden, damit die Installation fortgesetzt werden kann.\nBitte beende streamWriter und klicke "OK", um fortzusetzen.
-Deutsch.Running7=streamWriter konnte nicht beendet werden.\nBitte beende streamWriter, um fortzusetzen.
-Deutsch.Running8=streamWriter läuft gerade und muss beendet werden, damit die Deinstallation fortgesetzt werden kann.\nKlicke "OK", um streamWriter zu beenden.
+Deutsch.Running6=streamWriter läuft gerade und muss beendet werden, damit die Installation fortgesetzt werden kann.%nBitte beende streamWriter und klicke "OK", um fortzusetzen.
+Deutsch.Running7=streamWriter konnte nicht beendet werden.%nBitte beende streamWriter, um fortzusetzen.
+Deutsch.Running8=streamWriter läuft gerade und muss beendet werden, damit die Deinstallation fortgesetzt werden kann.%nKlicke "OK", um streamWriter zu beenden.
 Deutsch.ExitApp=streamWriter beenden
 Deutsch.PleaseRestart=Das Update wurde abgeschlossen. Bitte starte streamWriter neu.
 
 English.Launch=Launch streamWriter
-English.Running=streamWriter is currently running and needs to be closed to continue setup.\nSetup will continue automatically when streamWriter was closed.
+English.Running=streamWriter is currently running and needs to be closed to continue setup.%nSetup will continue automatically when streamWriter was closed.
 English.Running2=streamWriter is exiting...
 English.Running3=streamWriter is running
 English.Running4=streamWriter needs to be closed to continue
 English.Running5=It seems that streamWriter cannot close correctly. Please download the newest setup-file from streamwriter.org and update manually.
-English.Running6=streamWriter is currently running and needs to be closed to continue installation.\nPlease close streamWriter and click "OK" to continue.
-English.Running7=streamWriter could not be closed.\nPlease close streamWriter to continue.
-English.Running8=streamWriter is currently running and needs to be closed to continue uninstallation.\nClick "OK" to close streamWriter.
+English.Running6=streamWriter is currently running and needs to be closed to continue installation.%nPlease close streamWriter and click "OK" to continue.
+English.Running7=streamWriter could not be closed.%nPlease close streamWriter to continue.
+English.Running8=streamWriter is currently running and needs to be closed to continue uninstallation.%nClick "OK" to close streamWriter.
 English.ExitApp=Close streamWriter
 English.PleaseRestart=The update was installed successfully. Please restart streamWriter.
 
 Italian.Launch=Avvia streamWriter
-Italian.Running=streamWriter è attualmente in esecuzione e per continuare la configurazione deve essere chiuso.\nLa configurazione continuerà automaticamente una volta chiuso streamWriter.
+Italian.Running=streamWriter è attualmente in esecuzione e per continuare la configurazione deve essere chiuso.%nLa configurazione continuerà automaticamente una volta chiuso streamWriter.
 Italian.Running2=Chiusrura streamWriter...
 Italian.Running3=streamWriter è in esecuzione
 Italian.Running4=Per continuare streamWriter deve essere chiuso
-Italian.Running5=Sembra che non sia possibile chiudere streamWriter.\nScarica il file di installazione della versione più recente da streamwriter.org e aggiorna streamwriter manualmente.
-Italian.Running6=streamWriter è attualmente in esecuzione e deve essere chiuso per continuare l'installazione.\nChiudi streamWriter e seleziona "OK" per continuare.
-Italian.Running7=Impossibile chiudere streamWriter.\nPer continuare chiudi streamWriter.
-Italian.Running8=streamWriter è attualmente in esecuzione e per continuare la disinstallazione deve essere chiuso.\nPer chiudere streamWriter seleziona "OK".
+Italian.Running5=Sembra che non sia possibile chiudere streamWriter.%nScarica il file di installazione della versione più recente da streamwriter.org e aggiorna streamwriter manualmente.
+Italian.Running6=streamWriter è attualmente in esecuzione e deve essere chiuso per continuare l'installazione.%nChiudi streamWriter e seleziona "OK" per continuare.
+Italian.Running7=Impossibile chiudere streamWriter.%nPer continuare chiudi streamWriter.
+Italian.Running8=streamWriter è attualmente in esecuzione e per continuare la disinstallazione deve essere chiuso.%nPer chiudere streamWriter seleziona "OK".
 Italian.ExitApp=Chiudi streamWriter
-Italian.PleaseRestart=Aggiornamento completato.\nRiavvia streamWriter.
+Italian.PleaseRestart=Aggiornamento completato.%nRiavvia streamWriter.
 
 [Setup]
 AppName=streamWriter
@@ -171,17 +171,6 @@ begin
     Result := False;
 end;
 
-function TranslateNewline(Text: String): String;
-begin
-  Result := Text;
-  StringChangeEx(Result, '\n', #13#10, True);
-end;
-
-function PosEx(Needle, Haystack: String; Index: Integer): Integer;
-begin
-  Result := Pos(Needle, AnsiLowerCase(Copy(Haystack, Index + 1, Length(Haystack))));
-end;
-
 procedure AppCheckExitTimer(hWnd: LongWord; uMsg: LongWord; idEvent: LongWord; dwTime: LongWord);
 begin
   KillTimer(0, TimerAppCheckExit);
@@ -192,7 +181,7 @@ begin
   if AppRunning then
   begin
     AppCloseError := True;
-    LabelState.Caption := TranslateNewline(ExpandConstant('{cm:Running7}'));
+    LabelState.Caption := ExpandConstant('{cm:Running7}');
   end;
 end;
 
@@ -200,7 +189,7 @@ procedure CloseApp;
 begin
   if AppRunning and (not AppShuttingDown) and (GetWindowHandle > 0) then
   begin
-    LabelState.Caption := TranslateNewline(ExpandConstant('{cm:Running2}'));
+    LabelState.Caption := ExpandConstant('{cm:Running2}');
     ButtonCloseApp.Enabled := False;
     PostMessage(GetWindowHandle, 5432, 6345, 555);
 
@@ -238,7 +227,7 @@ begin
   LabelState.Height := TextHeight * 5;
   LabelState.Parent := Owner;
 
-  LabelState.Caption := TranslateNewline(ExpandConstant('{cm:Running}'))
+  LabelState.Caption := ExpandConstant('{cm:Running}')
 
   ButtonCloseApp := TNewButton.Create(Owner);
   ButtonCloseApp.Top := LabelState.Top + LabelState.Height;
@@ -262,7 +251,7 @@ begin
   begin                                 
     ButtonCloseApp.Enabled := False;
     if not AppCloseError then
-      LabelState.Caption := TranslateNewline(ExpandConstant('{cm:Running2}'));
+      LabelState.Caption := ExpandConstant('{cm:Running2}');
   end else if (not AppRunning) then
   begin
     WizardForm.NextButton.Enabled := True;
@@ -331,7 +320,7 @@ begin
   
   if (CurPageID = AppRunningPage.ID) and AppRunning then
   begin
-    LabelState.Caption := TranslateNewline(ExpandConstant('{cm:Running}'));
+    LabelState.Caption := ExpandConstant('{cm:Running}');
     ButtonCloseApp.Enabled := True;
 
     UpdateControls;
@@ -349,7 +338,7 @@ begin
   if (CurStep = ssInstall) and (not VersionSupportsCloseFromSetup) then
   begin
     while AppRunning do
-      if MsgBox(TranslateNewline(ExpandConstant('{cm:Running6}')), mbInformation, MB_OKCANCEL) = IDCANCEL then
+      if MsgBox(ExpandConstant('{cm:Running6}'), mbInformation, MB_OKCANCEL) = IDCANCEL then
         Abort;
   end;
 
@@ -361,7 +350,7 @@ begin
       if Pos('/run', AnsiLowerCase(s)) > 0 then
         Exec(ExpandConstant('{app}') + '\streamwriter.exe', '/updated', ExpandConstant('{app}'), 1, ewNoWait, r)
       else
-        MsgBox(TranslateNewline(ExpandConstant('{cm:PleaseRestart}')), mbInformation, MB_OK);
+        MsgBox(ExpandConstant('{cm:PleaseRestart}'), mbInformation, MB_OK);
     end;
   end;
 end;
@@ -372,7 +361,7 @@ var
 begin
   if (CurUninstallStep = usUninstall) and AppRunning then  
   begin
-    r := MsgBox(TranslateNewline(ExpandConstant('{cm:Running8}')), mbInformation, MB_OKCANCEL);
+    r := MsgBox(ExpandConstant('{cm:Running8}'), mbInformation, MB_OKCANCEL);
     if r = IDOK then
     begin
       if GetWindowHandle > 0 then
@@ -387,7 +376,7 @@ begin
       end;
 
       while AppRunning do
-        if MsgBox(TranslateNewline(ExpandConstant('{cm:Running7}')), mbInformation, MB_OKCANCEL) = IDCANCEL then
+        if MsgBox(ExpandConstant('{cm:Running7}'), mbInformation, MB_OKCANCEL) = IDCANCEL then
           Abort;
     end else
       Abort;
