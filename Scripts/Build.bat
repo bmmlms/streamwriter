@@ -35,21 +35,27 @@ goto end
 :build
   cd "%SOURCEDIR%"
 
-  instantfpc "%SCRIPTSDIR%\SetGitVersion.pas" "streamwriter.lpi" "streamwriter-%~1.lpi"
+  instantfpc "%SCRIPTSDIR%\SetGitVersion.pas" "streamwriter.lpi" "streamwriter-git.lpi" "AddBuildNr"
   if !ERRORLEVEL! GEQ 1 exit /b !ERRORLEVEL!
 
   REM Build executables
-  lazbuild --build-all --cpu=%~1 --build-mode=Release --quiet --quiet "streamwriter-%~1.lpi"
+  lazbuild --build-all --cpu=%~1 --build-mode=Release --quiet --quiet "streamwriter-git.lpi"
   if !ERRORLEVEL! GEQ 1 exit /b !ERRORLEVEL!
 
-  del "streamwriter-%~1.lpi"
+  del "streamwriter-git.lpi"
   if !ERRORLEVEL! GEQ 1 exit /b !ERRORLEVEL!
 
   REM Build addons
   for /R "..\Addons" %%f in (*.lpi) do (
     cd "%%~dpf"
 
-    lazbuild --build-all --cpu=%~1 --build-mode=Release --quiet --quiet "%%~nxf"
+    instantfpc "%SCRIPTSDIR%\SetGitVersion.pas" "%%~nxf" "%%~nf-git.lpi"
+    if !ERRORLEVEL! GEQ 1 exit /b !ERRORLEVEL!
+
+    lazbuild --build-all --cpu=%~1 --build-mode=Release --quiet --quiet "%%~nf-git.lpi"
+    if !ERRORLEVEL! GEQ 1 exit /b !ERRORLEVEL!
+
+    del "%%~nf-git.lpi"
     if !ERRORLEVEL! GEQ 1 exit /b !ERRORLEVEL!
   )
 

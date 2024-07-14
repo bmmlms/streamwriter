@@ -56,15 +56,18 @@ begin
 
     VersionInfoNode := TDOMElement(Doc.DocumentElement.FindNode('ProjectOptions').FindNode('VersionInfo'));
 
-    RevisionNode := Doc.CreateElement('BuildNr');
-    RevisionNode.SetAttribute('Value', GetGitCommitCount);
-    VersionInfoNode.AppendChild(RevisionNode);
+    if (ParamCount = 3) and (ParamStr(3) = 'AddBuildNr') then
+    begin
+      RevisionNode := Doc.CreateElement('BuildNr');
+      RevisionNode.SetAttribute('Value', GetGitCommitCount);
+      VersionInfoNode.AppendChild(RevisionNode);
+    end;
 
     ProductVersion := '%s.%s.%s.%s-%s'.Format([
       GetVersionAttribute(VersionInfoNode, 'MajorVersionNr'),
       GetVersionAttribute(VersionInfoNode, 'MinorVersionNr'),
       GetVersionAttribute(VersionInfoNode, 'RevisionNr'),
-      GetGitCommitCount,
+      GetVersionAttribute(VersionInfoNode, 'BuildNr'),
       GetGitSHA]);
 
     TDOMElement(VersionInfoNode.FindNode('StringTable')).SetAttribute('ProductVersion', ProductVersion);
