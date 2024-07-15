@@ -105,9 +105,10 @@ const
 type
   TWMHotKey = packed record
     Msg: Cardinal;
-    HotKey: Longint;
-    Unused: Longint;
-    Result: Longint;
+    MsgFiller: TDWordFiller;
+    HotKey: WPARAM;
+    Unused: LPARAM;
+    Result: LRESULT;
   end;
 
   { TfrmStreamWriterMain }
