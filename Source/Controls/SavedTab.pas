@@ -24,6 +24,7 @@ unit SavedTab;
 interface
 
 uses
+  ActiveX,
   AppData,
   AppMessages,
   AudioFunctions,
@@ -37,6 +38,7 @@ uses
   DirectoryWatcher,
   DragDrop,
   DragDropFile,
+  DropSource,
   DynBASS,
   ExtCtrls,
   FileTagger,
@@ -295,6 +297,15 @@ type
     property OnRemoveTitleFromIgnorelist: TAddTitleEvent read FOnRemoveTitleFromIgnorelist write FOnRemoveTitleFromIgnorelist;
   end;
 
+  { TSavedDropFileSource }
+
+  TSavedDropFileSource = class(TDropFileSource)
+  public
+    function CopyToClipboard: Boolean; override;
+    function CutToClipboard: Boolean; override;
+    function Execute(Asynchronous: Boolean = False): TDragResult; override;
+  end;
+
   { TSavedTree }
 
   TSavedTree = class(TMSWVirtualTree)
@@ -302,7 +313,7 @@ type
     FPlayer: TPlayer;
     FPlayerList: TStringList;
     FPlayerIndex: Integer;
-    FDragSource: TDropFileSource;
+    FDragSource: TSavedDropFileSource;
     FTab: TSavedTab;
     FTrackList: TTrackList;
     FFileWatcher, FFileWatcherAuto: TDirectoryWatcher;
@@ -1337,6 +1348,30 @@ begin
   end;
 end;
 
+function TSavedDropFileSource.CopyToClipboard: Boolean;
+begin
+  // Doing this is required since TDropFileSource/TCustomDropMultiSource do not override SetPreferredDropEffect().
+  // This results in CopyToClipboard()/CutToClipboard() calling TCustomDropSource.SetPreferredDropEffect() which says:
+  // "Not implemented in base class"
+  SetPreferredDropEffect(DROPEFFECT_COPY);
+
+  Result := inherited CopyToClipboard;
+end;
+
+function TSavedDropFileSource.CutToClipboard: Boolean;
+begin
+  SetPreferredDropEffect(DROPEFFECT_MOVE);
+
+  Result := inherited CutToClipboard;
+end;
+
+function TSavedDropFileSource.Execute(Asynchronous: Boolean): TDragResult;
+begin
+  SetPreferredDropEffect(DROPEFFECT_NONE);
+
+  Result := inherited Execute(Asynchronous);
+end;
+
 { TSavedTree }
 
 constructor TSavedTree.Create(AOwner: TComponent);
@@ -1365,7 +1400,7 @@ begin
   Header.AutoSizeIndex := 1;
   DragMode := dmAutomatic;
 
-  FDragSource := TDropFileSource.Create(Self);
+  FDragSource := TSavedDropFileSource.Create(Self);
   FDragSource.DragTypes := [dtCopy, dtMove];
 
   FPopupMenu := TSavedTracksPopup.Create(Self);
