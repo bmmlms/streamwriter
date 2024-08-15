@@ -336,12 +336,11 @@ type
     function CustomWndProc(hwnd: HWND; uMsg: UINT; wParam: WPARAM; lParam: LPARAM): LRESULT; stdcall;
 
     procedure AfterShown(var Msg: TMessage); message WM_AFTERSHOWN;
-    procedure QueryEndSession(var Msg: TMessage); message WM_QUERYENDSESSION;
-    procedure EndSession(var Msg: TWMEndSession); message WM_ENDSESSION;
     procedure SysCommand(var Msg: TWMSysCommand); message WM_SYSCOMMAND;
     procedure Hotkey(var Msg: TWMHotKey); message WM_HOTKEY;
     procedure UpdateFound(var Msg: TMessage); message WM_UPDATEFOUND;
     procedure SetupExitMessage(var Msg: TMessage); message 5432;
+    procedure EndSession(Sender: TObject);
     function CanExitApp: Boolean;
     procedure ExitApp(Shutdown: Boolean; ImportFilename: string = '');
     procedure ShowSettings(SettingsType: TSettingsTypes; BrowseDir: Boolean);
@@ -634,6 +633,8 @@ begin
   for i := pagMain.PageCount - 1 downto 0 do
     if pagMain.Pages[i].ClassType = TCutTab then
       pagMain.Pages[i].Free;
+
+  TFunctions.ShutdownBlockReasonDestroy(Handle);
 
   Application.Terminate;
 end;
@@ -1057,6 +1058,8 @@ begin
       FUpdater.Start(uaVersion, True);
 
   FClientManager.RefreshScheduler;
+
+  Application.OnEndSession := EndSession;
 end;
 
 procedure TfrmStreamWriterMain.FormDestroy(Sender: TObject);
@@ -1092,6 +1095,8 @@ begin
     for i := 0 to ParamCount do
       if (ParamStr(i) = '-minimize') then
         WindowState := wsMinimized;
+
+  TFunctions.ShutdownBlockReasonCreate(Handle, _('Stopping recordings and saving settings...'));
 
   FWasShown := True;
 
@@ -1622,21 +1627,9 @@ begin
   end;
 end;
 
-procedure TfrmStreamWriterMain.QueryEndSession(var Msg: TMessage);
+procedure TfrmStreamWriterMain.EndSession(Sender: TObject);
 begin
-  Msg.Result := 1;
-
-  TFunctions.ShutdownBlockReasonCreate(Handle, _('Stopping recordings and saving settings...'));
-end;
-
-procedure TfrmStreamWriterMain.EndSession(var Msg: TWMEndSession);
-begin
-  if Msg.EndSession then
-  begin
-    Msg.Result := 0;
-    ExitApp(True);
-  end else
-    TFunctions.ShutdownBlockReasonDestroy(Handle);
+  ExitApp(True);
 end;
 
 procedure TfrmStreamWriterMain.SetCaptionAndTrayHint;
