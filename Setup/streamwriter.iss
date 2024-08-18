@@ -1,6 +1,6 @@
 #define AppCpu       "x86_64"
 #define AppName      "streamWriter"
-#define AppVersion   GetFileVersion("..\Build\" + AppCpu + "\streamwriter.exe")
+#define AppVersion   GetVersionNumbersString("..\Build\" + AppCpu + "\streamwriter.exe")
 #define AppCopyright GetStringFileInfo("..\Build\" + AppCpu + "\streamwriter.exe", LEGAL_COPYRIGHT)
 
 [Files]
