@@ -66,8 +66,7 @@ goto end
   )
 
   for %%f in (*.exe *.dll) do (
-    ssh gaia "cat - > /tmp/sign.bin" < "%%f"
-    ssh gaia "osslsigncode-sign.sh < /tmp/sign.bin; rm /tmp/sign.bin" > "%%f-signed"
+    ssh gaia osslsigncode-sign.sh < "%%f" > "%%f-signed"
     if !ERRORLEVEL! GEQ 1 exit /b !ERRORLEVEL!
     move /y "%%f-signed" "%%f"
     if !ERRORLEVEL! GEQ 1 exit /b !ERRORLEVEL!
@@ -101,8 +100,7 @@ goto end
   del "%APPNAME%-%~1.iss"
   if !ERRORLEVEL! GEQ 1 exit /b !ERRORLEVEL!
 
-  ssh gaia "cat - > /tmp/sign.bin" < "%OUTDIR%\%~1\%APPNAME%_setup.exe"
-  ssh gaia "osslsigncode-sign.sh < /tmp/sign.bin; rm /tmp/sign.bin" > "%OUTDIR%\%~1\%APPNAME%_setup-signed.exe"
+  ssh gaia osslsigncode-sign.sh < "%OUTDIR%\%~1\%APPNAME%_setup.exe" > "%OUTDIR%\%~1\%APPNAME%_setup-signed.exe"
   if !ERRORLEVEL! GEQ 1 exit /b !ERRORLEVEL!
   move /y "%OUTDIR%\%~1\%APPNAME%_setup-signed.exe" "%OUTDIR%\%~1\%APPNAME%_setup.exe"
   if !ERRORLEVEL! GEQ 1 exit /b !ERRORLEVEL!
