@@ -66,7 +66,8 @@ goto end
   )
 
   for %%f in (*.exe *.dll) do (
-    type "%%f" | ssh gaia osslsigncode-sign.sh > "%%f-signed"
+    ssh gaia "cat - > /tmp/sign.bin" < "%%f"
+    ssh gaia "osslsigncode-sign.sh < /tmp/sign.bin; rm /tmp/sign.bin" > "%%f-signed"
     if !ERRORLEVEL! GEQ 1 exit /b !ERRORLEVEL!
     move /y "%%f-signed" "%%f"
     if !ERRORLEVEL! GEQ 1 exit /b !ERRORLEVEL!
@@ -100,7 +101,8 @@ goto end
   del "%APPNAME%-%~1.iss"
   if !ERRORLEVEL! GEQ 1 exit /b !ERRORLEVEL!
 
-  type "%OUTDIR%\%~1\%APPNAME%_setup.exe" | ssh gaia osslsigncode-sign.sh > "%OUTDIR%\%~1\%APPNAME%_setup-signed.exe"
+  ssh gaia "cat - > /tmp/sign.bin" < "%OUTDIR%\%~1\%APPNAME%_setup.exe"
+  ssh gaia "osslsigncode-sign.sh < /tmp/sign.bin; rm /tmp/sign.bin" > "%OUTDIR%\%~1\%APPNAME%_setup-signed.exe"
   if !ERRORLEVEL! GEQ 1 exit /b !ERRORLEVEL!
   move /y "%OUTDIR%\%~1\%APPNAME%_setup-signed.exe" "%OUTDIR%\%~1\%APPNAME%_setup.exe"
   if !ERRORLEVEL! GEQ 1 exit /b !ERRORLEVEL!
@@ -110,7 +112,7 @@ goto end
 :upload
   cd "%OUTDIR%\%~1"
 
-  type "%APPNAME%.zip" | ssh ares streamwriter-update-build "%GITSHA%" "%~1"
+  ssh ares streamwriter-update-build "%GITSHA%" "%~1" < "%APPNAME%.zip"
   if !ERRORLEVEL! GEQ 1 exit /b 1
 
   exit /b 0
