@@ -1369,7 +1369,7 @@ inherited frmSettings: TfrmSettings
           Top = 0
           Width = 80
           Align = alLeft
-          MaxValue = 30000
+          MaxValue = 90000
           OnChange = txtAdjustTrackOffsetChange
           TabOrder = 0
         end
