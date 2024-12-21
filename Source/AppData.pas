@@ -34,7 +34,6 @@ uses
   Classes,
   CommandLine,
   DataManager,
-  FileInfo,
   Forms,
   Functions,
   Graphics,
@@ -371,20 +370,10 @@ var
   i: Integer;
   OnlyOne: Boolean;
   CommandLine: TCommandLine;
-  FileVerInfo: TFileVersionInfo;
 begin
   // Create an instance for global stream-settings
   // (these are used for new streams that do not have user-specified settings)
   FData := TDataLists.Create;
-
-  // Git SHA of the current build
-  FileVerInfo := TFileVersionInfo.Create(nil);
-  try
-    FileVerInfo.ReadFileInfo;
-    FGitSHA := FileVerInfo.VersionStrings.Values['ProductVersion'].Split(['-'])[1];
-  finally
-    FileVerInfo.Free;
-  end;
 
   FCodename := 'Vivere';
 

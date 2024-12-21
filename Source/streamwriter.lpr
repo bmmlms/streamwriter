@@ -108,7 +108,7 @@ begin
 
     if (AppGlobals.ShowSplashScreen) and (AppGlobals.FirstStartShown) and (AppGlobals.WasSetup) and (not TFunctions.IsVersionNewer(AppGlobals.LastUsedVersion, AppGlobals.AppVersion, False)) and
       (not HideMain) and (not AppGlobals.InstallUpdateOnStart) then
-      TSplashThread.Create('Window', 'SPLASH', AppGlobals.Codename, AppGlobals.AppVersion.AsString, AppGlobals.GitSHA,
+      TSplashThread.Create('Window', 'SPLASH', AppGlobals.Codename, AppGlobals.ProductVersion,
         AppGlobals.MainLeft, AppGlobals.MainTop, AppGlobals.MainWidth, AppGlobals.MainHeight);
 
     // Now load everything from datafiles

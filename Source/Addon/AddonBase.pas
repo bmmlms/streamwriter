@@ -98,7 +98,7 @@ end;
 
 constructor TAddonBase.Create(DownloadName: string; Filenames: TStringArray; ModuleFilename: string; RequiredVersion: string = '1.0.0.0');
 const
-  Arch: string = {$IF defined(CPU64)}'x86_64'{$ELSEIF defined(CPU32)}'i386'{$ELSE}Unknown Architecture{$ENDIF};
+  Arch: string = {$IF defined(CPU64)}'x86_64'{$ELSEIF defined(CPU32)}'i386'{$ELSE}{$ERROR Unknown architecture}{$ENDIF};
 begin
   FDownloadName := DownloadName;
   FDownloadPackage := '%s-%s.dll'.Format([FDownloadName, Arch]);
