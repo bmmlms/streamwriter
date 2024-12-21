@@ -62,7 +62,7 @@ goto end
   cd "%OUTDIR%\%~1"
 
   if exist "%APPNAME%.dbg" (
-    move "%APPNAME%.dbg" "%APPNAME%-%GITSHA%.dbg"
+    move "%APPNAME%.dbg" "%APPNAME%-%GITSHA%-%~1.dbg"
   )
 
   for %%f in (*.exe *.dll) do (
