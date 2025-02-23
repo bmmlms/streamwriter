@@ -1035,12 +1035,12 @@ begin
 
   if Track = nil then
   begin
-    Track := TTrackInfo.Create(Now, Filename, Client.Entry.CustomName, Title, SongArtist, SongTitle, ServerTitleHash, ServerArtistHash);
+    Track := TTrackInfo.Create(Now, Filename, Client.Entry.DisplayName, Title, SongArtist, SongTitle, ServerTitleHash, ServerArtistHash);
     AppGlobals.Data.TrackList.Add(Track);
     Added := True;
   end;
 
-  Track.Streamname := Client.Entry.CustomName;
+  Track.Streamname := Client.Entry.DisplayName;
   Track.Filesize := Filesize;
   Track.Length := Length;
   Track.WasCut := WasCut;

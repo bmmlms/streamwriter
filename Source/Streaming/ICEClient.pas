@@ -245,7 +245,7 @@ uses
   ClientManager,
   PostProcess;
 
-{ TICEClient }
+  { TICEClient }
 
 constructor TICEClient.Create(Manager: TObject; StartURL: string);
 begin
@@ -263,7 +263,6 @@ begin
   FEntry.Bitrate := Bitrate;
   FEntry.StartURL := Trim(StartURL);
   FEntry.Name := Trim(Name);
-  FEntry.CustomName := Trim(Name);
 end;
 
 constructor TICEClient.Create(Manager: TObject; Entry: TStreamEntry);
@@ -325,7 +324,7 @@ begin
     if Assigned(FOnPlay) then
       FOnPlay(Self);
 
-    MsgBus.SendMessage(TPlayingObjectChangedMsg.Create(Self, '', FTitle, FEntry.Name, ''));
+    MsgBus.SendMessage(TPlayingObjectChangedMsg.Create(Self));
   end;
 end;
 
@@ -342,9 +341,9 @@ begin
       FOnPause(Self);
 
     if FICEThread.PlayingPaused then
-      MsgBus.SendMessage(TPlayingObjectStopped.Create(Self))
+      MsgBus.SendMessage(TPlayingObjectStoppedMsg.Create(Self))
     else
-      MsgBus.SendMessage(TPlayingObjectChangedMsg.Create(Self, '', FTitle, FEntry.Name, ''));
+      MsgBus.SendMessage(TPlayingObjectChangedMsg.Create(Self));
   end;
 end;
 
@@ -379,7 +378,7 @@ begin
 
     FICEThread.StopPlay;
 
-    MsgBus.SendMessage(TPlayingObjectStopped.Create(Self));
+    MsgBus.SendMessage(TPlayingObjectStoppedMsg.Create(Self));
 
     if Assigned(FOnStop) then
       FOnStop(Self);
@@ -519,7 +518,7 @@ begin
   FICEThread.StopPlay;
 
   // Weil das Signal nicht mehr durchkommt, machen wir das hier per Hand.
-  MsgBus.SendMessage(TPlayingObjectStopped.Create(Self));
+  MsgBus.SendMessage(TPlayingObjectStoppedMsg.Create(Self));
 
   FICEThread.Terminate;
   if Assigned(FOnRefresh) then
@@ -740,21 +739,8 @@ begin
 end;
 
 procedure TICEClient.ThreadRefreshInfo(Sender: TSocketThread);
-var
-  KeepCustom: Boolean;
 begin
-  KeepCustom := FEntry.Name <> FEntry.CustomName;
-
-  FEntry.Name := FICEThread.RecvStream.StreamName;
-  if not KeepCustom then
-    FEntry.CustomName := FEntry.Name;
-  if FEntry.Name = '' then
-  begin
-    FEntry.Name := FEntry.StartURL;
-    if not KeepCustom then
-      FEntry.CustomName := FEntry.Name;
-  end;
-
+  FEntry.Name := IfThen<string>(FICEThread.RecvStream.StreamName <> '', FICEThread.RecvStream.StreamName, FEntry.StartURL);
   FEntry.StreamURL := FICEThread.RecvStream.StreamURL;
 
   FContentType := FICEThread.RecvStream.ContentType;
@@ -792,7 +778,7 @@ begin
       Data.Filename := FICEThread.RecvStream.SavedFilename;
       Data.FilenameConverted := FICEThread.RecvStream.SavedFilenameConverted;
       Data.WorkFilename := '';
-      Data.Station := FEntry.Name;
+      Data.Station := FEntry.DisplayName;
       Data.Artist := FICEThread.RecvStream.SavedArtist;
       Data.Title := FICEThread.RecvStream.SavedTitle;
       Data.Album := FICEThread.RecvStream.SavedAlbum;
@@ -897,9 +883,9 @@ begin
   if (FDisplayTitle <> '') and Playing and (not Paused) then
   begin
     if AppGlobals.DisplayPlayNotifications then
-      TfrmNotification.Display(FDisplayTitle, FEntry.CustomName);
+      TfrmNotification.Display(FDisplayTitle, FEntry.DisplayName);
 
-    MsgBus.SendMessage(TPlayingObjectChangedMsg.Create(Self, '', FICEThread.RecvStream.DisplayTitle, FEntry.CustomName, ''));
+    MsgBus.SendMessage(TPlayingObjectChangedMsg.Create(Self));
   end;
 
   if Assigned(FOnTitleChanged) then
@@ -1031,7 +1017,7 @@ begin
   if FAutoRemove then
     LS := lsAutomatic;
 
-  MsgBus.SendMessage(TLogMsg.Create(Self, LS, T, Level, FEntry.CustomName, Text));
+  MsgBus.SendMessage(TLogMsg.Create(Self, LS, T, Level, FEntry.DisplayName, Text));
 
   FDebugLog.Add(TLogEntry.Create(Text, Data, T, Level));
   if Assigned(FOnLog) then

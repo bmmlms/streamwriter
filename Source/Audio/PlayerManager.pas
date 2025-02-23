@@ -318,7 +318,7 @@ begin
       IP := TICEClient(FPlayers[i]);
       if IP.Playing and (not IP.Paused or IP.PlayingStarted) and (not IP.PlayingPaused) then
       begin
-        Stream := IP.Entry.Name;
+        Stream := IP.Entry.DisplayName;
         Title := IP.DisplayTitle;
         Exit;
       end;

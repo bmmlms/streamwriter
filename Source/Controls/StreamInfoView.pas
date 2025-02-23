@@ -145,10 +145,7 @@ begin
     begin
       EntriesNew.Add(Entry);
 
-      if Entry.CustomName <> '' then
-        NextTitle := Entry.CustomName
-      else
-        NextTitle := Entry.StartURL;
+      NextTitle := Entry.DisplayName;
       if Title <> '' then
         Title := Title + ' / ';
       Title := Title + NextTitle;
@@ -180,7 +177,7 @@ begin
     Info := '';
     if Entries.Count = 1 then
     begin
-      if Entries[0].Name <> Entries[0].CustomName then
+      if (not Entries[0].Name.IsEmpty) and (Entries[0].Name <> Entries[0].DisplayName) then
         Info := Info + Entries[0].Name + #13#10;
       if Entries[0].StreamURL <> '' then
         Info := Info + Entries[0].StreamURL + #13#10;

@@ -1369,7 +1369,7 @@ procedure TfrmStreamWriterMain.MessageReceived(Msg: TMessageBase);
 var
   SelectSavedSongsMsg: TSelectSavedSongsMsg absolute Msg;
 begin
-  if (Msg is TPlayingObjectChangedMsg) or (Msg is TPlayingObjectStopped) then
+  if (Msg is TPlayingObjectChangedMsg) or (Msg is TPlayingObjectStoppedMsg) then
   begin
     if not AppGlobals.DisplayPlayedSong then
       Exit;
