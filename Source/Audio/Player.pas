@@ -397,7 +397,7 @@ begin
     if Assigned(FOnPause) then
       FOnPause(Self);
 
-    MsgBus.SendMessage(TPlayingObjectStopped.Create(Self));
+    MsgBus.SendMessage(TPlayingObjectStoppedMsg.Create(Self));
   end;
 end;
 
@@ -414,10 +414,7 @@ begin
   BASSChannelSetAttribute(FPlayer, 2, FVolume / 100);
   BASSChannelPlay(FPlayer, False);
 
-  if FTag <> nil then
-    MsgBus.SendMessage(TPlayingObjectChangedMsg.Create(Self, FTag.Artist, FTag.Title, '', FFilename))
-  else
-    MsgBus.SendMessage(TPlayingObjectChangedMsg.Create(Self, '', '', '', FFilename));
+  MsgBus.SendMessage(TPlayingObjectChangedMsg.Create(Self));
 
   if Assigned(FOnPlay) then
     FOnPlay(Self);
@@ -487,7 +484,7 @@ begin
     if Assigned(FOnStop) then
       FOnStop(Self);
 
-    MsgBus.SendMessage(TPlayingObjectStopped.Create(Self));
+    MsgBus.SendMessage(TPlayingObjectStoppedMsg.Create(Self));
   end;
 end;
 
