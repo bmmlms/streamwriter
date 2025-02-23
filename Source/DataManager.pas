@@ -539,6 +539,9 @@ type
 
   { An entry about a stream that is/was in the stream-list.
     This class contains an instance of TStreamSettings and other data. }
+
+  { TStreamEntry }
+
   TStreamEntry = class(TObject)
   private
     // Defines stream-specific settings
@@ -587,9 +590,7 @@ type
     FIgnoreList: TSaveIgnoreList;
     FIgnoreListIndex: Cardinal;
 
-    procedure FSetName(Value: string);
-
-    procedure FSetGenre(Value: string);
+    function FGetDisplayName: string;
   public
     constructor Create;
     destructor Destroy; override;
@@ -603,15 +604,16 @@ type
 
     property Parent: TStreamList read FParent write FParent;
     property ID: Cardinal read FID write FID;
-    property Name: string read FName write FSetName;
+    property Name: string read FName write FName;
     property CustomName: string read FCustomName write FCustomName;
+    property DisplayName: string read FGetDisplayName;
     property StreamURL: string read FStreamURL write FStreamURL;
     property StartURL: string read FStartURL write FStartURL;
     property URLs: TStringList read FURLs;
     property Bitrate: Cardinal read FBitrate write FBitrate;
     property VBR: Boolean read FVBR write FVBR;
     property AudioType: TAudioTypes read FAudioType write FAudioType;
-    property Genre: string read FGenre write FSetGenre;
+    property Genre: string read FGenre write FGenre;
     property Index: Integer read FIndex write FIndex;
     property CategoryIndex: Integer read FCategoryIndex write FCategoryIndex;
     property WasRecording: Boolean read FWasRecording write FWasRecording;
@@ -1001,6 +1003,18 @@ begin
   Result.Assign(Self);
 end;
 
+function TStreamEntry.FGetDisplayName: string;
+begin
+  Result := '';
+
+  if FCustomName <> '' then
+    Exit(FCustomName)
+  else if FName <> '' then
+    Exit(FName)
+  else if FStartURL <> '' then
+    Exit(FStartURL);
+end;
+
 constructor TStreamEntry.Create;
 begin
   FSettings := TStreamSettings.Create;
@@ -1036,11 +1050,6 @@ begin
   inherited;
 end;
 
-procedure TStreamEntry.FSetName(Value: string);
-begin
-  FName := Value;
-end;
-
 class function TStreamEntry.Load(Data: TDataLists; Stream: TStream; Version: Integer): TStreamEntry;
 var
   BTmp: Boolean;
@@ -1065,9 +1074,7 @@ begin
   Stream.Read(Result.FName, IfThen<Boolean>(Version > 68, True, False));
 
   if Version >= 38 then
-    Stream.Read(Result.FCustomName, IfThen<Boolean>(Version > 68, True, False))
-  else
-    Result.FCustomName := Result.FName;
+    Stream.Read(Result.FCustomName, IfThen<Boolean>(Version > 68, True, False));
 
   if Version >= 8 then
     Stream.Read(Result.FStreamURL, IfThen<Boolean>(Version > 68, True, False));
@@ -1190,11 +1197,6 @@ begin
     FIgnoreList[i].Save(Stream);
 
   Stream.Write(FIgnoreListIndex, True);
-end;
-
-procedure TStreamEntry.FSetGenre(Value: string);
-begin
-  FGenre := Value;
 end;
 
 { TStreamDataList }
