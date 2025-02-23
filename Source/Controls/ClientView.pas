@@ -214,7 +214,6 @@ begin
 end;
 
 constructor TMClientView.Create(AOwner: TComponent; PopupMenu: TPopupMenu; Browser: TMStreamTree);
-
 var
   i: Integer;
 begin
@@ -339,13 +338,10 @@ begin
   begin
     case Column of
       0:
-        if NodeData.Client.Entry.CustomName = '' then
-          if NodeData.Client.Entry.StartURL = '' then
-            Text := _('Unknown')
-          else
-            Text := NodeData.Client.Entry.StartURL
+        if NodeData.Client.Entry.DisplayName <> '' then
+          Text := NodeData.Client.Entry.DisplayName
         else
-          Text := NodeData.Client.Entry.CustomName;
+          Text := _('Unknown');
       1:
         if NodeData.Client.DisplayTitle = '' then
           if (NodeData.Client.State = csConnected) or (NodeData.Client.State = csConnecting) then
@@ -448,18 +444,17 @@ end;
 procedure TMClientView.DoNewText(Node: PVirtualNode; Column: TColumnIndex; const Text: string);
 var
   NodeData: PClientNodeData;
+  NewText: string;
 begin
   inherited;
 
-  if Trim(Text) <> '' then
-  begin
-    NodeData := GetNodeData(Node);
+  NewText := Text.Trim;
+  NodeData := GetNodeData(Node);
 
-    if NodeData.Category <> nil then
-      NodeData.Category.Name := Text
-    else if NodeData.Client <> nil then
-      NodeData.Client.Entry.CustomName := Text;
-  end;
+  if Assigned(NodeData.Category) and (not NewText.IsEmpty) and (NodeData.Category.Name <> NewText) then
+    NodeData.Category.Name := NewText
+  else if Assigned(NodeData.Client) and (NodeData.Client.Entry.CustomName <> NewText) then
+    NodeData.Client.Entry.CustomName := NewText;
 end;
 
 procedure TMClientView.DoTextDrawing(var PaintInfo: TVTPaintInfo; const Text: string; CellRect: TRect; DrawFormat: Cardinal);
@@ -551,7 +546,7 @@ begin
     Edit := (EditLink as TStringEditLink).Edit;
 
     if NodeData.Client <> nil then
-      Edit.Text := NodeData.Client.Entry.CustomName
+      Edit.Text := NodeData.Client.Entry.DisplayName
     else
       Edit.Text := NodeData.Category.Name;
 
@@ -912,7 +907,9 @@ begin
   NodeData := GetNodeData(Node);
 
   // Den Check auf NodeData wegen Bugreport von "Klaus <knatterton_nick@gmx.net>" eingebaut...
-  Allowed := (NodeData <> nil) and (((NodeData.Client <> nil) and (not NodeData.Client.AutoRemove) and (NodeData.Client.Entry.CustomName <> '')) or ((NodeData.Category <> nil) and (not NodeData.Category.IsAuto)));
+  Allowed := Assigned(NodeData) and (
+    (Assigned(NodeData.Client) and (not NodeData.Client.AutoRemove)) or
+    (Assigned(NodeData.Category) and (not NodeData.Category.IsAuto)));
 end;
 
 function TMClientView.DoCompare(Node1, Node2: PVirtualNode; Column: TColumnIndex): Integer;
@@ -943,7 +940,7 @@ begin
 
   if (Data1.Client <> nil) and (Data2.Client <> nil) then
     case Column of
-      0: Result := CompareText(Data1.Client.Entry.CustomName, Data2.Client.Entry.CustomName);
+      0: Result := CompareText(Data1.Client.Entry.DisplayName, Data2.Client.Entry.DisplayName);
       1: Result := CompareText(Data1.Client.Title, Data2.Client.Title);
       2: Result := TFunctions.CmpUInt64(Data1.Client.Entry.BytesReceived, Data2.Client.Entry.BytesReceived);
       3: Result := TFunctions.CmpInt(Data1.Client.Entry.SongsSaved, Data2.Client.Entry.SongsSaved);
@@ -1087,10 +1084,8 @@ begin
   for Client in Clients do
   begin
     Add := True;
-    if Client.Entry.Name = '' then
-      Name := Client.Entry.StartURL
-    else
-      Name := Client.Entry.Name;
+
+    Name := IfThen<string>(Client.Entry.Name <> '', Client.Entry.Name, Client.Entry.StartURL);
 
     if (T = etFile) and (Client.Filename = '') then
       Add := False;
