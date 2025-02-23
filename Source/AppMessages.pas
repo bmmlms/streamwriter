@@ -53,18 +53,12 @@ type
   TPlayingObjectChangedMsg = class(TMessageBase)
   private
     FSender: TObject;
-    FArtist, FTitle, FStream, FFilename: string;
   public
-    constructor Create(Sender: TObject; Artist, Title, Stream, Filename: string);
-
+    constructor Create(Sender: TObject);
     property Sender: TObject read FSender;
-    property Artist: string read FArtist;
-    property Title: string read FTitle;
-    property Stream: string read FStream;
-    property Filename: string read FFilename;
   end;
 
-  TPlayingObjectStopped = class(TMessageBase)
+  TPlayingObjectStoppedMsg = class(TMessageBase)
   private
     FSender: TObject;
   public
@@ -141,20 +135,16 @@ end;
 
 { TPlayingObjectChangedMsg }
 
-constructor TPlayingObjectChangedMsg.Create(Sender: TObject; Artist, Title, Stream, Filename: string);
+constructor TPlayingObjectChangedMsg.Create(Sender: TObject);
 begin
   inherited Create;
 
   FSender := Sender;
-  FArtist := Artist;
-  FTitle := Title;
-  FStream := Stream;
-  FFilename := Filename;
 end;
 
-{ TPlayingObjectStopped }
+{ TPlayingObjectStoppedMsg }
 
-constructor TPlayingObjectStopped.Create(Sender: TObject);
+constructor TPlayingObjectStoppedMsg.Create(Sender: TObject);
 begin
   inherited Create;
 
