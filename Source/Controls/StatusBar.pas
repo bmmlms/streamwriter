@@ -29,6 +29,7 @@ uses
   ComCtrls,
   CommCtrl,
   Controls,
+  DDetours,
   ExtCtrls,
   Forms,
   Functions,
@@ -36,9 +37,17 @@ uses
   GraphType,
   Images,
   LanguageObjects,
+  LCLType,
+  LMessages,
   MStringFunctions,
   SharedData,
   SysUtils,
+  Themes,
+  UxTheme,
+  Win32Int,
+  Win32Proc,
+  Win32Themes,
+  Win32WSComCtrls,
   Windows;
 
 type
@@ -75,6 +84,7 @@ type
     procedure FSetCurrentReceived(Value: UInt64);
     procedure FSetOverallReceived(Value: UInt64);
   protected
+    procedure CreateHandle; override;
     procedure DrawPanel(Panel: TStatusPanel; const R: TRect); override;
     procedure Resize; override;
     procedure InvalidatePanel(PanelIndex: Integer); overload;
@@ -93,6 +103,115 @@ type
   end;
 
 implementation
+
+var
+  SetWindowSubclassOld: function(hWnd: HWND; pfnSubclass: SUBCLASSPROC; uIdSubclass: UINT_PTR; dwRefData: DWORD_PTR): BOOL; stdcall;
+
+// Copied from uWin32WidgetSetDark with added handling of psOwnerDraw.
+function StatusBarWndProc(Window: HWND; Msg: UINT; wParam: Windows.WPARAM; lParam: Windows.LPARAM; uISubClass: UINT_PTR; dwRefData: DWORD_PTR): LRESULT; stdcall;
+var
+  DC: HDC;
+  X: Integer;
+  Index: Integer;
+  PS: TPaintStruct;
+  LCanvas: TCanvas;
+  APanel: TStatusPanel;
+  StatusBar: TStatusBar;
+  Info: PWin32WindowInfo;
+  Detail: TThemedElementDetails;
+  Rect, PanelRect: trect;
+  gripSize: TSize;
+  DrawItemStruct: LCLType.TDrawItemStruct;
+  DrawItemsMsg: TLMDrawItems;
+begin
+  Info := GetWin32WindowInfo(Window);
+  if (Info = nil) or (Info^.WinControl = nil) then
+  begin
+    Result := CallDefaultWindowProc(Window, Msg, WParam, LParam);
+    Exit;
+  end;
+
+  if Msg = WM_ERASEBKGND then
+  begin
+    StatusBar := TStatusBar(Info^.WinControl);
+    TWin32WSStatusBar.DoUpdate(StatusBar);
+  end;
+
+  if ((Msg = WM_PAINT) or (Msg = WM_ERASEBKGND)) then
+  begin
+    StatusBar := TStatusBar(Info^.WinControl);
+
+    TWin32WSStatusBar.DoUpdate(StatusBar);
+
+    DC := BeginPaint(Window, @ps);
+
+    LCanvas := TCanvas.Create;
+    try
+      LCanvas.Handle := DC;
+      LCanvas.Brush.Color := GetSysColor(COLOR_MENUHILIGHT);
+      LCanvas.FillRect(ps.rcPaint);
+
+      X := 1;
+      LCanvas.Font.Color := GetSysColor(COLOR_BTNTEXT);
+      LCanvas.Pen.Color := GetSysColor(COLOR_GRAYTEXT);
+      if StatusBar.SimplePanel then
+        LCanvas.TextOut(X + 3, (StatusBar.Height - LCanvas.TextHeight('Ag')) div 2, StatusBar.SimpleText)
+      else
+        for Index := 0 to StatusBar.Panels.Count - 1 do
+        begin
+          APanel := StatusBar.Panels[Index];
+          if APanel.Width > 0 then
+          begin
+            if APanel.Style = psText then
+              LCanvas.TextOut(X + 1, (StatusBar.Height - LCanvas.TextHeight('Ag')) div 2, APanel.Text)
+            else
+            begin
+              FillChar(DrawItemStruct, SizeOf(DrawItemStruct), #0);
+              DrawItemStruct.rcItem.Left := X + 1;
+              DrawItemStruct.rcItem.Top := 0;
+              DrawItemStruct.rcItem.Width := APanel.Width;
+              DrawItemStruct.rcItem.Height := StatusBar.Height;
+              DrawItemStruct.itemID := Index;
+              DrawItemStruct._hDC := LCanvas.Handle;
+
+              DrawItemsMsg.Msg := LM_DRAWITEM;
+              DrawItemsMsg.Ctl := 0;
+              DrawItemsMsg.DrawItemStruct := @DrawItemStruct;
+
+              StatusBar.Dispatch(DrawItemsMsg);
+            end;
+
+            if Index <> (StatusBar.Panels.Count - 1) then
+            begin
+              X += APanel.Width;
+              LCanvas.Line(x - 2, {ps.rcPaint.Top +} 3, x - 2, {ps.rcPaint.Bottom} StatusBar.Height - 3);
+            end;
+          end;
+        end;
+      if StatusBar.SizeGrip then
+      begin
+        Rect := StatusBar.ClientRect;
+        Detail := ThemeServices.GetElementDetails(tsGripper);
+        GetThemePartSize(TWin32ThemeServices(ThemeServices).Theme[teStatus],
+          LCanvas.Handle, SP_GRIPPER, 0, @Rect, TS_DRAW, gripSize);
+        Rect.Left := Rect.Right - gripSize.cx;
+        Rect.Top := Rect.Bottom - gripSize.cy;
+        ThemeServices.DrawElement(LCanvas.Handle, Detail, Rect);
+      end;
+    finally
+      LCanvas.Handle := 0;
+      LCanvas.Free;
+    end;
+    EndPaint(Window, @ps);
+    Result := 0;
+  end else
+    Result := DefSubclassProc(Window, Msg, WParam, LParam);
+end;
+
+function SetWindowSubclassNew(hWnd: HWND; pfnSubclass: SUBCLASSPROC; uIdSubclass: UINT_PTR; dwRefData: DWORD_PTR): BOOL; stdcall;
+begin
+  Result := SetWindowSubclassOld(hWnd, @StatusBarWndProc, uIdSubclass, dwRefData);
+end;
 
 { TSWStatusBar }
 
@@ -232,18 +351,16 @@ begin
   inherited;
 
   PanelRect := R;
+  PanelRect.Left += Scale96ToFont(MARGIN);
 
   ImageTop := PanelRect.Top + PanelRect.Height div 2 - 16 div 2;
   TextTop := PanelRect.Top + PanelRect.Height div 2 - Canvas.TextHeight(MeasureTextHeightString) div 2;
 
-  Canvas.Brush.Color := clBtnFace;
-  Canvas.FillRect(PanelRect);
+  Canvas.Brush.Style := bsClear;
 
   case Panel.Index of
     0:
     begin
-      PanelRect.Left += Trunc((ClientHeight - 16) / 2);
-
       if FConnectionState = cshDisconnected then
         FTimer.Enabled := True
       else
@@ -291,7 +408,7 @@ begin
         Canvas.FillRect(PanelRect);
     2:
     begin
-      Canvas.TextOut(PanelRect.Left + Scale96ToFont(MARGIN), PanelRect.Top + ((PanelRect.Bottom - PanelRect.Top) div 2) - Canvas.TextHeight(TFunctions.MakeSize(FSpeed) + '/s') div 2, TFunctions.MakeSize(FSpeed) + '/s');
+      Canvas.TextOut(PanelRect.Left, PanelRect.Top + ((PanelRect.Bottom - PanelRect.Top) div 2) - Canvas.TextHeight(TFunctions.MakeSize(FSpeed) + '/s') div 2, TFunctions.MakeSize(FSpeed) + '/s');
       if AppGlobals.LimitSpeed and (AppGlobals.MaxSpeed > 0) then
       begin
         Panels[2].Width := Scale96ToFont(MARGIN + SPEEDBMP_WIDTH) + Canvas.TextWidth(_('000.00/KBs')) + FSpace;
@@ -301,9 +418,9 @@ begin
         Panels[2].Width := Scale96ToFont(MARGIN) + Canvas.TextWidth(_('000.00/KBs')) + FSpace;
     end;
     3:
-      Canvas.TextOut(PanelRect.Left + Scale96ToFont(MARGIN), TextTop, _('%s/%s received').Format([TFunctions.MakeSize(FCurrentReceived), TFunctions.MakeSize(FOverallReceived)]));
+      Canvas.TextOut(PanelRect.Left, TextTop, _('%s/%s received').Format([TFunctions.MakeSize(FCurrentReceived), TFunctions.MakeSize(FOverallReceived)]));
     4:
-      Canvas.TextOut(PanelRect.Left + Scale96ToFont(MARGIN), TextTop, _('%d/%d songs saved').Format([FSongsSaved, FOverallSongsSaved]));
+      Canvas.TextOut(PanelRect.Left, TextTop, _('%d/%d songs saved').Format([FSongsSaved, FOverallSongsSaved]));
   end;
 end;
 
@@ -327,6 +444,18 @@ begin
 
   if C then
     InvalidatePanel(3);
+end;
+
+procedure TSWStatusBar.CreateHandle;
+begin
+  // MetaDarkStyle uses SetWindowSubclass() for setting a custom WndProc which does not handle owner drawn panels.
+  // By intercepting SetWindowSubclass() another WndProc can be set.
+  @SetWindowSubclassOld := InterceptCreate(@SetWindowSubclass, @SetWindowSubclassNew);
+  try
+    inherited CreateHandle;
+  finally
+    InterceptRemove(@SetWindowSubclassOld);
+  end;
 end;
 
 procedure TSWStatusBar.FSetSpeed(Value: Cardinal);
