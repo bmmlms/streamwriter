@@ -2415,7 +2415,6 @@ end;
 
 procedure TfrmStreamWriterMain.UpdateButtons;
 var
-  i: Integer;
   OneNormalRecordingWithTitle, AllNormalStopsAfterSong: Boolean;
   B, OnlyAutomatedSelected, OnlyAutomatedCatsSelected, OnlyAutomaticRecording: Boolean;
   URLFound, OneRecording, OneNotRecording, OnePlaying, OnePaused: Boolean;

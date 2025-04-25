@@ -2012,7 +2012,6 @@ procedure TTitleTree.DoDragDrop(Source: TObject; DataObject: IDataObject; Format
 var
   n: Integer;
   Found: Boolean;
-  HI: THitInfo;
   Node: PVirtualNode;
   NodeData, ParentNodeData: PTitleNodeData;
   Title: TTitleInfo;

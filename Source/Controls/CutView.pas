@@ -1001,10 +1001,7 @@ begin
 end;
 
 procedure TCutView.ProcessThreadError(Sender: TObject);
-var
-  Msg: string;
 begin
-  Msg := FProcessThread.ProcessOutput;
   FProcessThread := nil;
   TFunctions.MsgBox(_('An error occured while processing the file.'), _('Error'), MB_ICONERROR);
 

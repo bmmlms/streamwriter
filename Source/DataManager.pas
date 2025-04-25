@@ -1203,7 +1203,6 @@ end;
 
 function TDataLists.GetMissingAddons: TAddonArray;
 var
-  AddonClass: TClass;
   Stream: TStreamEntry;
   PostProcessor: TPostProcessBase;
 begin

@@ -47,7 +47,6 @@ type
     FFilename: string;
     FVolume: Integer;
     FPosToReach: Cardinal;
-    FEndPos: Cardinal;
     FShowTitle: Boolean;
     FMessageHWnd: HWND;
 

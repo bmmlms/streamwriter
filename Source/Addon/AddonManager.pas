@@ -124,14 +124,10 @@ function TAddonManager.EnableAddon(Owner: TCustomForm; Addon: TAddonBase; ShowEr
 var
   RequiredAddonClass: TClass;
   RequiredAddon: TAddonBase;
-  Res: Integer;
-  MsgShown: Boolean;
   DA: TfrmDownloadAddons;
 begin
   if not Addon.DependenciesMet then
   begin
-    MsgShown := False;
-
     for RequiredAddonClass in Addon.RequiredAddons do
     begin
       RequiredAddon := Find(RequiredAddonClass);

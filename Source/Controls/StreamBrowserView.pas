@@ -624,7 +624,6 @@ end;
 
 function TMStreamTree.GetNodes(SelectedOnly: Boolean): TNodeArray;
 var
-  i: Integer;
   Node: PVirtualNode;
   Nodes: TNodeArray;
 begin
@@ -1040,7 +1039,6 @@ var
   P: string;
   Hash: Cardinal;
   Chars: Integer;
-  r: TRegExpr;
 begin
   Result := False;
   P := TFunctions.BuildPattern(Search, Hash, Chars, False);
