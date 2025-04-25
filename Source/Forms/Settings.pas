@@ -37,8 +37,6 @@ uses
   Controls,
   DataManager,
   Dialogs,
-  uMetaDarkStyle,
-  uDarkStyleSchemes,
   DynBASS,
   EditBtn,
   ExtCtrls,
@@ -58,7 +56,6 @@ uses
   Menus,
   MHotkeyEdit,
   MLabeledEdit,
-  uDarkStyleParams,
   MsgDlg,
   MSpeedButton,
   PostProcess,
@@ -71,6 +68,7 @@ uses
   SWFunctions,
   SysUtils,
   TypeDefs,
+  uDarkStyle,
   Variants,
   VirtualTrees,
   Windows;
@@ -1094,9 +1092,8 @@ procedure TfrmSettings.lstHotkeysChange(Sender: TObject; Item: TListItem; Change
 begin
   txtHotkey.Enabled := lstHotkeys.Selected <> nil;
   if txtHotkey.Enabled then
-  begin
-    txtHotkey.Control.HotKey := TShortCut(lstHotkeys.Selected.Data);
-  end else
+    txtHotkey.Control.HotKey := TShortCut(lstHotkeys.Selected.Data)
+  else
     txtHotkey.Control.HotKey := 0;
 end;
 
@@ -2933,9 +2930,10 @@ begin
         Break;
       end;
   end else
-    lstSoundDevice.Control.Enabled := False;
+    lstSoundDevice.Enabled := False;
 
   lstColorMode.Control.ItemIndex := Integer(AppGlobals.ColorMode);
+  lstColorMode.Enabled := g_darkModeSupported;
 
   if AppGlobals.TreeColorsLoaded then
   begin
