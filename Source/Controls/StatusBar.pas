@@ -119,7 +119,7 @@ var
   StatusBar: TStatusBar;
   Info: PWin32WindowInfo;
   Detail: TThemedElementDetails;
-  Rect, PanelRect: trect;
+  Rect: TRect;
   gripSize: TSize;
   DrawItemStruct: LCLType.TDrawItemStruct;
   DrawItemsMsg: TLMDrawItems;
@@ -169,7 +169,7 @@ begin
               FillChar(DrawItemStruct, SizeOf(DrawItemStruct), #0);
               DrawItemStruct.rcItem.Left := X + 1;
               DrawItemStruct.rcItem.Top := 0;
-              DrawItemStruct.rcItem.Width := APanel.Width;
+              DrawItemStruct.rcItem.Width := APanel.Width - 3;
               DrawItemStruct.rcItem.Height := StatusBar.Height;
               DrawItemStruct.itemID := Index;
               DrawItemStruct._hDC := LCanvas.Handle;
@@ -192,7 +192,7 @@ begin
       begin
         Rect := StatusBar.ClientRect;
         Detail := ThemeServices.GetElementDetails(tsGripper);
-        GetThemePartSize(TWin32ThemeServices(ThemeServices).Theme[teStatus],
+        GetThemePartSize(TWin32ThemeServices(ThemeServices).ThemeForPPI[teStatus, 0],
           LCanvas.Handle, SP_GRIPPER, 0, @Rect, TS_DRAW, gripSize);
         Rect.Left := Rect.Right - gripSize.cx;
         Rect.Top := Rect.Bottom - gripSize.cy;
@@ -272,12 +272,14 @@ var
   NewBmp: Graphics.TBitmap;
 begin
   NewBmp := Graphics.TBitmap.Create;
+  NewBmp.Transparent := True;
+  NewBmp.TransparentColor := clFuchsia;
   NewBmp.Width := Scale96ToFont(SPEEDBMP_WIDTH);
   NewBmp.Height := ClientHeight - Scale96ToFont(MARGIN * 2);
   NewBmp.Canvas.Pen.Width := 1;
-  NewBmp.Canvas.Brush.Color := clBtnFace;
-  NewBmp.Canvas.Pen.Color := clBlack;
-  NewBmp.Canvas.FillRect(Classes.Rect(0, 0, NewBmp.Width, NewBmp.Height));
+  NewBmp.Canvas.Pen.Color := clGray;
+  NewBmp.Canvas.Brush.Color := NewBmp.TransparentColor;
+  NewBmp.Canvas.FillRect(0, 0, NewBmp.Width, NewBmp.Height);
 
   if (FSpeedBmp <> nil) and (FSpeedBmp.Height = NewBmp.Height) then
     NewBmp.Canvas.Draw(-1, 0, FSpeedBmp);
@@ -413,7 +415,7 @@ begin
       begin
         Panels[2].Width := Scale96ToFont(MARGIN + SPEEDBMP_WIDTH) + Canvas.TextWidth(_('000.00/KBs')) + FSpace;
         if FSpeedBmp <> nil then
-          Canvas.Draw(PanelRect.Right - FSpeedBmp.Width - Scale96ToFont(MARGIN), PanelRect.Bottom - FSpeedBmp.Height, FSpeedBmp);
+          Canvas.Draw(PanelRect.Right - FSpeedBmp.Width - Scale96ToFont(MARGIN), PanelRect.Top + PanelRect.Height div 2 - FSpeedBmp.Height div 2, FSpeedBmp);
       end else
         Panels[2].Width := Scale96ToFont(MARGIN) + Canvas.TextWidth(_('000.00/KBs')) + FSpace;
     end;
