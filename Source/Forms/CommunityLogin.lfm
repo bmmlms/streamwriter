@@ -14,11 +14,11 @@ object frmCommunityLogin: TfrmCommunityLogin
   Constraints.MinHeight = 250
   Constraints.MinWidth = 350
   KeyPreview = True
+  Position = poOwnerFormCenter
+  ShowHint = True
   OnCreate = FormCreate
   OnKeyDown = FormKeyDown
   OnShow = FormShow
-  Position = poOwnerFormCenter
-  ShowHint = True
   object pnlNav: TPanel
     Left = 4
     Height = 34
@@ -30,6 +30,7 @@ object frmCommunityLogin: TfrmCommunityLogin
     BevelOuter = bvNone
     ClientHeight = 34
     ClientWidth = 342
+    ParentBackground = False
     TabOrder = 0
     object Bevel2: TBevel
       Left = 0
@@ -49,9 +50,8 @@ object frmCommunityLogin: TfrmCommunityLogin
       Caption = '&OK'
       Constraints.MinHeight = 30
       Constraints.MinWidth = 100
-      Default = True
-      OnClick = btnOKClick
       TabOrder = 1
+      OnClick = btnOKClick
     end
     object btnCancel: TBitBtn
       Left = 0
@@ -63,8 +63,8 @@ object frmCommunityLogin: TfrmCommunityLogin
       Caption = '&Cancel'
       Constraints.MinHeight = 30
       Constraints.MinWidth = 100
-      OnClick = btnCancelClick
       TabOrder = 0
+      OnClick = btnCancelClick
     end
   end
   object pnlConnecting: TPanel
@@ -74,6 +74,7 @@ object frmCommunityLogin: TfrmCommunityLogin
     Width = 160
     ClientHeight = 140
     ClientWidth = 160
+    ParentBackground = False
     TabOrder = 1
     object lblConnecting: TLabel
       AnchorSideLeft.Control = pnlConnecting
@@ -120,6 +121,7 @@ object frmCommunityLogin: TfrmCommunityLogin
     ChildSizing.VerticalSpacing = 4
     ClientHeight = 112
     ClientWidth = 82
+    ParentBackground = False
     TabOrder = 2
     object lblSignup: TLabel
       Cursor = crHandPoint
@@ -130,7 +132,7 @@ object frmCommunityLogin: TfrmCommunityLogin
       Align = alBottom
       Alignment = taRightJustify
       Caption = 'Signup'
-      Font.Color = clBlue
+      Font.Color = 16351260
       Font.Style = [fsUnderline]
       ParentColor = False
       ParentFont = False
