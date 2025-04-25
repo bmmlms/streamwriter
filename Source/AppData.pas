@@ -51,6 +51,8 @@ type
   // Actions that can be executed in the stream-view.
   TClientActions = (caStartStop, caStreamIntegrated, caStream);
 
+  TColorMode = (cmDefault, cmLight, cmDark);
+
   // Application-specific settings
   TAppData = class(TAppDataBase)
   private
@@ -133,6 +135,7 @@ type
     FLogHeaderPosition: TIntArray;
     FLogCols: Integer;
 
+    FColorMode: TColorMode;
     FTreeColorsLoaded: Boolean;
     FTreeNodeFontColor: TColor;
     FTreeSelectionTextColor: TColor;
@@ -298,6 +301,7 @@ type
     property LogHeaderPosition: TIntArray read FLogHeaderPosition write FLogHeaderPosition;
     property LogCols: Integer read FLogCols write FLogCols;
 
+    property ColorMode: TColorMode read FColorMode write FColorMode;
     property TreeColorsLoaded: Boolean read FTreeColorsLoaded write FTreeColorsLoaded;
     property TreeBackgroundColor: TColor read FTreeBackgroundColor write FTreeBackgroundColor;
     property TreeNodeFontColor: TColor read FTreeNodeFontColor write FTreeNodeFontColor;
@@ -559,7 +563,7 @@ end;
 // Loads everything streamWriter needs to know for startup
 procedure TAppData.Load;
 var
-  i, DefaultActionTmp, DefaultActionNewStream: Integer;
+  i, ReadIntTmp: Integer;
   TmpStr: string;
   GUID: TGUID;
 begin
@@ -624,8 +628,19 @@ begin
 
   FStorage.Read('MinDiskSpace', FMinDiskSpace, 5);
   FStorage.Read('LogFile', FLogFile, '');
-  FStorage.Read('DefaultAction', DefaultActionTmp, Integer(caStartStop));
-  FStorage.Read('DefaultActionNewStream', DefaultActionNewStream, Integer(oaStart));
+
+  FStorage.Read('DefaultAction', ReadIntTmp, Integer(caStartStop));
+  if (ReadIntTmp > Ord(High(TClientActions))) or (ReadIntTmp < Ord(Low(TClientActions))) then
+    FDefaultAction := caStartStop
+  else
+    FDefaultAction := TClientActions(ReadIntTmp);
+
+  FStorage.Read('DefaultActionNewStream', ReadIntTmp, Integer(oaStart));
+  if TStreamOpenActions(ReadIntTmp) in [oaStart, oaPlay, oaAdd] then
+    FDefaultActionNewStream := TStreamOpenActions(ReadIntTmp)
+  else
+    FDefaultActionNewStream := oaStart;
+
   FStorage.Read('PlayerVolume', FPlayerVolume, 50);
   FStorage.Read('PlayerVolumeBeforeMute', FPlayerVolumeBeforeMute, 50);
   FStorage.Read('PlayerShuffle', FPlayerShuffle, False);
@@ -759,6 +774,12 @@ begin
   FLogCols := FLogCols or (1 shl 0);
   FLogCols := FLogCols or (1 shl 3);
 
+  FStorage.Read('ColorMode', ReadIntTmp, Integer(cmDefault), 'Appearance');
+  if (ReadIntTmp > Ord(High(TColorMode))) or (ReadIntTmp < Ord(Low(TColorMode))) then
+    FColorMode := cmDefault
+  else
+    FColorMode := TColorMode(ReadIntTmp);
+
   FStorage.Read('TreeNodeFontColor', Integer(FTreeNodeFontColor), $7F000000, 'Appearance');
   FStorage.Read('TreeSelectionTextColor', Integer(FTreeSelectionTextColor), $7F000000, 'Appearance');
   FStorage.Read('TreeFocusedSelectionColor', Integer(FTreeFocusedSelectionColor), $7F000000, 'Appearance');
@@ -773,16 +794,6 @@ begin
   FStorage.Read('BrowserSearchGenre', FBrowserSearchGenre, 0, 'Streambrowser');
   FStorage.Read('BrowserSearchAudioType', FBrowserSearchAudioType, 0, 'Streambrowser');
   FStorage.Read('BrowserSearchBitrate', FBrowserSearchBitrate, 0, 'Streambrowser');
-
-  if (DefaultActionTmp > Ord(High(TClientActions))) or (DefaultActionTmp < Ord(Low(TClientActions))) then
-    FDefaultAction := caStartStop
-  else
-    FDefaultAction := TClientActions(DefaultActionTmp);
-
-  if TStreamOpenActions(DefaultActionNewStream) in [oaStart, oaPlay, oaAdd] then
-    FDefaultActionNewStream := TStreamOpenActions(DefaultActionNewStream)
-  else
-    FDefaultActionNewStream := oaStart;
 
   FStorage.Read('EQEnabled', FEQEnabled, False, 'Equalizer');
   for i := 0 to High(FEQGain) do
@@ -942,6 +953,7 @@ begin
     FStorage.Write('LogHeaderPosition' + IntToStr(i), FLogHeaderPosition[i], 'Cols');
   FStorage.Write('LogCols', FLogCols, 'Cols');
 
+  FStorage.Write('ColorMode', Byte(FColorMode), 'Appearance');
   FStorage.Write('TreeBackgroundColor', Integer(FTreeBackgroundColor), 'Appearance');
   FStorage.Write('TreeNodeFontColor', Integer(FTreeNodeFontColor), 'Appearance');
   FStorage.Write('TreeSelectionTextColor', Integer(FTreeSelectionTextColor), 'Appearance');

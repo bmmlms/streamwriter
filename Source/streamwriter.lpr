@@ -42,6 +42,9 @@ uses
   Sockets,
   SplashThread,
   SysUtils,
+  uDarkStyleParams,
+  uDarkStyleSchemes,
+  uMetaDarkStyle,
   Windows,
   WinSock2,
   Wizard;
@@ -92,6 +95,13 @@ begin
         Exit;
     end;
     MsgBus := TSWMessageBus.Create;
+
+    case AppGlobals.ColorMode of
+      cmDefault: PreferredAppMode := pamAllowDark;
+      cmLight: PreferredAppMode := pamForceLight;
+      cmDark: PreferredAppMode := pamForceDark;
+    end;
+    ApplyMetaDarkStyle(DefaultDark);
 
     Application.Title := AppGlobals.AppName;
     Application.CaptureExceptions := False;

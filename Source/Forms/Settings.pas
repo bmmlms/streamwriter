@@ -37,6 +37,8 @@ uses
   Controls,
   DataManager,
   Dialogs,
+  uMetaDarkStyle,
+  uDarkStyleSchemes,
   DynBASS,
   EditBtn,
   ExtCtrls,
@@ -56,6 +58,7 @@ uses
   Menus,
   MHotkeyEdit,
   MLabeledEdit,
+  uDarkStyleParams,
   MsgDlg,
   MSpeedButton,
   PostProcess,
@@ -119,6 +122,7 @@ type
 
   TfrmSettings = class(TfrmSettingsBase, IPreTranslatable)
     Bevel1: TBevel;
+    Bevel3: TBevel;
     btnAdd: TMDropdownButton;
     btnAddIgnoreTitlePattern: TButton;
     btnAddRegEx: TButton;
@@ -206,6 +210,7 @@ type
     lstSoundDevice: TMLabeledComboBoxEx;
     MenuItem1: TMenuItem;
     MenuItem2: TMenuItem;
+    lstColorMode: TMLabeledComboBoxEx;
     optAdjustBackward: TRadioButton;
     optAdjustForward: TRadioButton;
     optClose: TRadioButton;
@@ -771,6 +776,8 @@ begin
       AppGlobals.ShortcutVolUp := LongWord(lstHotkeys.Items[5].Data);
       AppGlobals.ShortcutVolDown := LongWord(lstHotkeys.Items[6].Data);
       AppGlobals.ShortcutMute := LongWord(lstHotkeys.Items[7].Data);
+
+      AppGlobals.ColorMode := TColorMode(lstColorMode.Control.ItemIndex);
 
       Colors := TVTColors.Create(nil);
       try
@@ -2927,6 +2934,8 @@ begin
       end;
   end else
     lstSoundDevice.Control.Enabled := False;
+
+  lstColorMode.Control.ItemIndex := Integer(AppGlobals.ColorMode);
 
   if AppGlobals.TreeColorsLoaded then
   begin

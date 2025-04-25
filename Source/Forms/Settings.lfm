@@ -1554,7 +1554,7 @@ inherited frmSettings: TfrmSettings
       object Label29: TLabel
         Left = 1
         Height = 15
-        Top = 1
+        Top = 60
         Width = 226
         Align = alTop
         Caption = 'Colors of list views:'
@@ -1563,7 +1563,7 @@ inherited frmSettings: TfrmSettings
       object Panel2: TPanel
         Left = 1
         Height = 24
-        Top = 52
+        Top = 111
         Width = 226
         Align = alTop
         AutoSize = True
@@ -1599,7 +1599,7 @@ inherited frmSettings: TfrmSettings
       object Panel5: TPanel
         Left = 1
         Height = 24
-        Top = 20
+        Top = 79
         Width = 226
         Align = alTop
         AutoSize = True
@@ -1635,7 +1635,7 @@ inherited frmSettings: TfrmSettings
       object Panel6: TPanel
         Left = 1
         Height = 24
-        Top = 116
+        Top = 175
         Width = 226
         Align = alTop
         AutoSize = True
@@ -1671,7 +1671,7 @@ inherited frmSettings: TfrmSettings
       object Panel7: TPanel
         Left = 1
         Height = 24
-        Top = 84
+        Top = 143
         Width = 226
         Align = alTop
         AutoSize = True
@@ -1707,7 +1707,7 @@ inherited frmSettings: TfrmSettings
       object Panel8: TPanel
         Left = 1
         Height = 25
-        Top = 144
+        Top = 182
         Width = 226
         Align = alTop
         AutoSize = True
@@ -1726,6 +1726,41 @@ inherited frmSettings: TfrmSettings
           OnClick = btnResetColorClick
           TabOrder = 0
         end
+      end
+      object lstColorMode: TMLabeledComboBoxEx
+        Left = 1
+        Height = 41
+        Top = 1
+        Width = 226
+        Align = alTop
+        Caption = 'Color mode:'
+        Control.Left = 0
+        Control.Height = 23
+        Control.Top = 18
+        Control.Width = 226
+        Control.Align = alClient
+        Control.ItemHeight = 17
+        Control.ItemsEx = <        
+          item
+            Caption = 'System default'
+          end        
+          item
+            Caption = 'Light'
+          end        
+          item
+            Caption = 'Dark'
+          end>
+        Control.TabOrder = 0
+      end
+      object Bevel3: TBevel
+        Left = 1
+        Height = 2
+        Top = 50
+        Width = 226
+        Align = alTop
+        BorderSpacing.Top = 8
+        BorderSpacing.Bottom = 8
+        Shape = bsTopLine
       end
     end
     object pnlHotkeys: TPanel[9]
