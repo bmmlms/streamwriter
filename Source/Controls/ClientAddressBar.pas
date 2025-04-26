@@ -40,6 +40,7 @@ type
     procedure DropTargetDrop(Sender: TObject; ShiftState: TShiftState; APoint: TPoint; var Effect: Integer);
   protected
     procedure CreateHandle; override;
+    function DoAlignChildControls(TheAlign: TAlign; AControl: TControl; AControlList: TFPList; var ARect: TRect): Boolean; override;
   public
     constructor Create(AOwner: TComponent); override;
 
@@ -127,6 +128,13 @@ begin
   inherited CreateHandle;
 
   SetWindowLong(Handle, GWL_EXSTYLE, GetWindowLong(Handle, GWL_EXSTYLE) or WS_EX_COMPOSITED);
+end;
+
+function TClientAddressBar.DoAlignChildControls(TheAlign: TAlign; AControl: TControl; AControlList: TFPList; var ARect: TRect): Boolean;
+begin
+  Result := inherited DoAlignChildControls(TheAlign, AControl, AControlList, ARect);
+
+  FStart.Constraints.MaxHeight := FStations.Height;
 end;
 
 procedure TClientAddressBar.FStationsChange(Sender: TObject);
