@@ -33,12 +33,15 @@ uses
   ExtCtrls,
   Forms,
   Functions,
+  Generics.Collections,
   Graphics,
   GraphType,
+  GraphUtil,
   Images,
   LanguageObjects,
   LCLType,
   LMessages,
+  Math,
   MStringFunctions,
   SharedData,
   SysUtils,
@@ -71,13 +74,13 @@ type
     FOverallSongsSaved: Cardinal;
     FCurrentReceived: UInt64;
     FOverallReceived: UInt64;
-    FLastPos: Integer;
     FSpace: Integer;
     FDots: string;
-    FSpeedColors: array[0..4] of TColor;
+    FSpeedColor, FSpeedGradientColor: TColor;
 
     FTimer: TTimer;
     FSpeedBmp: Graphics.TBitmap;
+    FSpeeds: TList<Cardinal>;
 
     procedure TimerTimer(Sender: TObject);
     procedure FSetSpeed(Value: Cardinal);
@@ -217,22 +220,24 @@ end;
 
 constructor TSWStatusBar.Create(AOwner: TComponent);
 var
+  i: Integer;
   P: TStatusPanel;
 begin
   inherited;
 
-  SimplePanel := False;
-
-  Height := TMStringFunctions.GetTextSize(MeasureTextHeightString, Font).cy + 4;
-
-  ShowHint := False;
+  FSpeeds := TList<Cardinal>.Create;
 
   FTimer := TTimer.Create(Self);
   FTimer.OnTimer := TimerTimer;
   FTimer.Interval := 1000;
   FTimer.Enabled := True;
 
+  FSpeedColor := TFunctions.HTML2Color('294c8c');
+  FSpeedGradientColor := TFunctions.HTML2Color('d0e1ff');
   FSpace := TMStringFunctions.GetTextSize('WW', Font).Width;
+
+  SimplePanel := False;
+  ShowHint := False;
 
   P := Panels.Add;
   P.Width := Scale96ToFont(MARGIN * 2 + (ICON_SIZE + MARGIN) * 3) + Max(TMStringFunctions.GetTextSize(_('Connecting...'), Font).Width, TMStringFunctions.GetTextSize(_('Connected'), Font).Width) + FSpace;
@@ -251,93 +256,73 @@ begin
 
   P := Panels.Add;
   P.Style := psOwnerDraw;
-
-  FSpeedColors[0] := TFunctions.HTML2Color('4b1616');
-  FSpeedColors[1] := TFunctions.HTML2Color('722222');
-  FSpeedColors[2] := TFunctions.HTML2Color('9d2626');
-  FSpeedColors[3] := TFunctions.HTML2Color('c42c2c');
-  FSpeedColors[4] := TFunctions.HTML2Color('d71717');
 end;
 
 destructor TSWStatusBar.Destroy;
 begin
   FSpeedBmp.Free;
+  FSpeeds.Free;
 
   inherited;
 end;
 
 procedure TSWStatusBar.BuildSpeedBmp;
+
+  function GetGradientColor(const FromColor, ToColor: TColor; const Step: Double; const Steps: Integer): TColor;
+  var
+    FromRGB, ToRGB: Integer;
+    R, G, B: Byte;
+  begin
+    FromRGB := ColorToRGB(FromColor);
+    ToRGB := ColorToRGB(ToColor);
+
+    R := Red(FromRGB) + Trunc((Step / Steps) * (Red(ToRGB) - Red(FromRGB)));
+    G := Green(FromRGB) + Trunc((Step / Steps) * (Green(ToRGB) - Green(FromRGB)));
+    B := Blue(FromRGB) + Trunc((Step / Steps) * (Blue(ToRGB) - Blue(FromRGB)));
+
+    Result := RGBToColor(R, G, B);
+  end;
+
 var
-  P: Integer;
-  NewBmp: Graphics.TBitmap;
+  i, k, P: Integer;
+  R: TRect;
 begin
-  NewBmp := Graphics.TBitmap.Create;
-  NewBmp.Transparent := True;
-  NewBmp.TransparentColor := clFuchsia;
-  NewBmp.Width := Scale96ToFont(SPEEDBMP_WIDTH);
-  NewBmp.Height := ClientHeight - Scale96ToFont(MARGIN * 2);
-  NewBmp.Canvas.Pen.Width := 1;
-  NewBmp.Canvas.Pen.Color := clGray;
-  NewBmp.Canvas.Brush.Color := NewBmp.TransparentColor;
-  NewBmp.Canvas.FillRect(0, 0, NewBmp.Width, NewBmp.Height);
+  FreeAndNil(FSpeedBmp);
 
-  if (FSpeedBmp <> nil) and (FSpeedBmp.Height = NewBmp.Height) then
-    NewBmp.Canvas.Draw(-1, 0, FSpeedBmp);
-  FSpeedBmp.Free;
-  FSpeedBmp := NewBmp;
+  if (not AppGlobals.LimitSpeed) or (AppGlobals.MaxSpeed <= 0) then
+    Exit;
 
-  P := 0;
-  if AppGlobals.MaxSpeed > 0 then
+  R := TRect.Create(0, 0, Scale96ToFont(SPEEDBMP_WIDTH), ClientHeight - Scale96ToFont(MARGIN * 3));
+
+  FSpeedBmp := Graphics.TBitmap.Create;
+  FSpeedBmp.Width := R.Width;
+  FSpeedBmp.Height := R.Height;
+
+  FSpeedBmp.Canvas.Brush.Color := clWindow;
+  FSpeedBmp.Canvas.FillRect(R);
+
+  FSpeedBmp.Canvas.Pen.Width := 1;
+  FSpeedBmp.Canvas.Pen.Color := ColorAdjustLuma(clWindowFrame, 100, False);
+  FSpeedBmp.Canvas.Rectangle(R);
+
+  R.Inflate(-2, -2);
+
+  FSpeedBmp.Canvas.Pen.Color := FSpeedColor;
+
+  i := 0;
+  while (i < R.Width) and (i < FSpeeds.Count) do
   begin
-    P := Trunc(((FSpeed / 1024) / AppGlobals.MaxSpeed) * NewBmp.Height - 1);
-    if P > NewBmp.Height - 1 then
-      P := NewBmp.Height - 1;
-    if P < 1 then
-      P := 1;
+    P := Trunc(((FSpeeds[i] / 1024) / AppGlobals.MaxSpeed) * R.Height);
+    if P > R.Height then
+      P := R.Height;
+
+    FSpeedBmp.Canvas.Line(R.Right - 1 - i, R.Bottom - 1, R.Right - 1 - i, R.Bottom - 1 - P);
+
+    for k := 1 to P - R.Height div 2 - 1 do
+      FSpeedBmp.Canvas.Pixels[R.Right - 1 - i, R.Bottom - 1 - R.Height div 2 - k] := GetGradientColor(FSpeedColor, FSpeedGradientColor, k, Ceil(R.Height / 2));
+
+    Inc(i);
   end;
-
-  FSpeedBmp.Canvas.MoveTo(0, FSpeedBmp.Height - 1);
-  FSpeedBmp.Canvas.LineTo(FSpeedBmp.Width - 1, FSpeedBmp.Height - 1);
-
-  FSpeedBmp.Canvas.MoveTo(FSpeedBmp.Width - 1, FSpeedBmp.Height - P);
-  FSpeedBmp.Canvas.LineTo(FSpeedBmp.Width - 1, FSpeedBmp.Height);
-
-  if MulDiv(P, 100, FSpeedBmp.Height) >= 65 then
-  begin
-    FSpeedBmp.Canvas.Brush.Color := FSpeedColors[0];
-    FSpeedBmp.Canvas.Pen.Color := FSpeedColors[0];
-    FSpeedBmp.Canvas.FillRect(Classes.Rect(FSpeedBmp.Width - 1, FSpeedBmp.Height - MulDiv(75, FSpeedBmp.Height, 100), FSpeedBmp.Width, FSpeedBmp.Height - MulDiv(65, FSpeedBmp.Height, 100)));
-  end;
-
-  if MulDiv(P, 100, FSpeedBmp.Height) >= 75 then
-  begin
-    FSpeedBmp.Canvas.Brush.Color := FSpeedColors[1];
-    FSpeedBmp.Canvas.Pen.Color := FSpeedColors[1];
-    FSpeedBmp.Canvas.FillRect(Classes.Rect(FSpeedBmp.Width - 1, FSpeedBmp.Height - MulDiv(85, FSpeedBmp.Height, 100), FSpeedBmp.Width, FSpeedBmp.Height - MulDiv(75, FSpeedBmp.Height, 100)));
-  end;
-
-  if MulDiv(P, 100, FSpeedBmp.Height) >= 85 then
-  begin
-    FSpeedBmp.Canvas.Brush.Color := FSpeedColors[2];
-    FSpeedBmp.Canvas.Pen.Color := FSpeedColors[2];
-    FSpeedBmp.Canvas.FillRect(Classes.Rect(FSpeedBmp.Width - 1, FSpeedBmp.Height - MulDiv(90, FSpeedBmp.Height, 100), FSpeedBmp.Width, FSpeedBmp.Height - MulDiv(85, FSpeedBmp.Height, 100)));
-  end;
-
-  if MulDiv(P, 100, FSpeedBmp.Height) >= 90 then
-  begin
-    FSpeedBmp.Canvas.Brush.Color := FSpeedColors[3];
-    FSpeedBmp.Canvas.Pen.Color := FSpeedColors[3];
-    FSpeedBmp.Canvas.FillRect(Classes.Rect(FSpeedBmp.Width - 1, FSpeedBmp.Height - MulDiv(95, FSpeedBmp.Height, 100), FSpeedBmp.Width, FSpeedBmp.Height - MulDiv(90, FSpeedBmp.Height, 100)));
-  end;
-
-  if MulDiv(P, 100, FSpeedBmp.Height) >= 95 then
-  begin
-    FSpeedBmp.Canvas.Brush.Color := FSpeedColors[4];
-    FSpeedBmp.Canvas.Pen.Color := FSpeedColors[4];
-    FSpeedBmp.Canvas.FillRect(Classes.Rect(FSpeedBmp.Width - 1, FSpeedBmp.Height - MulDiv(100, FSpeedBmp.Height, 100), FSpeedBmp.Width, FSpeedBmp.Height - MulDiv(95, FSpeedBmp.Height, 100)));
-  end;
-
-  FLastPos := P;
 end;
 
 procedure TSWStatusBar.PostTranslate;
@@ -411,11 +396,12 @@ begin
     2:
     begin
       Canvas.TextOut(PanelRect.Left, PanelRect.Top + ((PanelRect.Bottom - PanelRect.Top) div 2) - Canvas.TextHeight(TFunctions.MakeSize(FSpeed) + '/s') div 2, TFunctions.MakeSize(FSpeed) + '/s');
+
       if AppGlobals.LimitSpeed and (AppGlobals.MaxSpeed > 0) then
       begin
         Panels[2].Width := Scale96ToFont(MARGIN + SPEEDBMP_WIDTH) + Canvas.TextWidth(_('000.00/KBs')) + FSpace;
-        if FSpeedBmp <> nil then
-          Canvas.Draw(PanelRect.Right - FSpeedBmp.Width - Scale96ToFont(MARGIN), PanelRect.Top + PanelRect.Height div 2 - FSpeedBmp.Height div 2, FSpeedBmp);
+        if Assigned(FSpeedBmp) then
+          Canvas.Draw(PanelRect.Right - FSpeedBmp.Width - Scale96ToFont(MARGIN), PanelRect.Top + Floor(PanelRect.Height / 2 - FSpeedBmp.Height / 2), FSpeedBmp);
       end else
         Panels[2].Width := Scale96ToFont(MARGIN) + Canvas.TextWidth(_('000.00/KBs')) + FSpace;
     end;
@@ -463,6 +449,9 @@ end;
 procedure TSWStatusBar.FSetSpeed(Value: Cardinal);
 begin
   FSpeed := Value;
+  FSpeeds.Insert(0, Value);
+  while FSpeeds.Count > SPEEDBMP_WIDTH * 10 do
+    FSpeeds.Delete(FSpeeds.Count - 1);
   BuildSpeedBmp;
   InvalidatePanel(2);
 end;
