@@ -400,6 +400,8 @@ begin
       if AppGlobals.LimitSpeed and (AppGlobals.MaxSpeed > 0) then
       begin
         Panels[2].Width := Scale96ToFont(MARGIN + SPEEDBMP_WIDTH) + Canvas.TextWidth(_('000.00/KBs')) + FSpace;
+        if not Assigned(FSpeedBmp) then
+          BuildSpeedBmp;
         if Assigned(FSpeedBmp) then
           Canvas.Draw(PanelRect.Right - FSpeedBmp.Width - Scale96ToFont(MARGIN), PanelRect.Top + Floor(PanelRect.Height / 2 - FSpeedBmp.Height / 2), FSpeedBmp);
       end else
