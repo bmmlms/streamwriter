@@ -6,10 +6,10 @@ inherited frmSettings: TfrmSettings
   ClientHeight = 881
   ClientWidth = 1576
   KeyPreview = True
+  Position = poOwnerFormCenter
   OnActivate = FormActivate
   OnCreate = FormCreate
   OnShow = FormShow
-  Position = poOwnerFormCenter
   inherited FlowPanelPages: TFlowPanel
     Height = 831
     Width = 1467
@@ -167,6 +167,7 @@ inherited frmSettings: TfrmSettings
         Control.Top = 18
         Control.Width = 50
         Control.Align = alLeft
+        Control.MaxValue = 2147483647
         Control.TabOrder = 0
         object Label7: TLabel
           Left = 54
@@ -245,8 +246,8 @@ inherited frmSettings: TfrmSettings
         Width = 289
         Align = alTop
         Caption = 'Move to notification area...'
-        OnClick = chkTrayClick
         TabOrder = 9
+        OnClick = chkTrayClick
       end
       object optClose: TRadioButton
         Left = 19
@@ -288,8 +289,8 @@ inherited frmSettings: TfrmSettings
         Align = alTop
         BorderSpacing.Left = 18
         Caption = 'Delete stream files when recording stops'
-        OnClick = chkDeleteStreamsClick
         TabOrder = 3
+        OnClick = chkDeleteStreamsClick
       end
       object chkAddSavedToIgnore: TCheckBox
         Left = 1
@@ -298,8 +299,8 @@ inherited frmSettings: TfrmSettings
         Width = 291
         Align = alTop
         Caption = 'Add saved titles to global ignorelist'
-        OnClick = chkAddSavedToIgnoreClick
         TabOrder = 4
+        OnClick = chkAddSavedToIgnoreClick
       end
       object chkSeparateTracks: TCheckBox
         Left = 1
@@ -308,8 +309,8 @@ inherited frmSettings: TfrmSettings
         Width = 291
         Align = alTop
         Caption = 'Save separated tracks'
-        OnClick = chkSeparateTracksClick
         TabOrder = 1
+        OnClick = chkSeparateTracksClick
       end
       object chkSaveStreamsToDisk: TCheckBox
         Left = 1
@@ -318,8 +319,8 @@ inherited frmSettings: TfrmSettings
         Width = 291
         Align = alTop
         Caption = 'Save stream files to hard disk drive'
-        OnClick = chkSaveStreamsToDiskClick
         TabOrder = 0
+        OnClick = chkSaveStreamsToDiskClick
       end
       object chkOnlySaveFull: TCheckBox
         Left = 19
@@ -329,8 +330,8 @@ inherited frmSettings: TfrmSettings
         Align = alTop
         BorderSpacing.Left = 18
         Caption = 'Only save whole songs'
-        OnClick = chkOnlySaveFullClick
         TabOrder = 2
+        OnClick = chkOnlySaveFullClick
       end
       object chkOverwriteSmaller: TCheckBox
         Left = 1
@@ -339,8 +340,8 @@ inherited frmSettings: TfrmSettings
         Width = 291
         Align = alTop
         Caption = 'Overwrite existing file if newer file is larger'
-        OnClick = chkOverwriteSmallerClick
         TabOrder = 8
+        OnClick = chkOverwriteSmallerClick
       end
       object chkDiscardSmaller: TCheckBox
         Left = 1
@@ -349,8 +350,8 @@ inherited frmSettings: TfrmSettings
         Width = 291
         Align = alTop
         Caption = 'Discard new file if existing one is larger'
-        OnClick = chkDiscardSmallerClick
         TabOrder = 9
+        OnClick = chkDiscardSmallerClick
       end
       object chkAddSavedToStreamIgnore: TCheckBox
         Left = 1
@@ -359,8 +360,8 @@ inherited frmSettings: TfrmSettings
         Width = 291
         Align = alTop
         Caption = 'Add saved titles to stream ignorelist'
-        OnClick = chkAddSavedToStreamIgnoreClick
         TabOrder = 5
+        OnClick = chkAddSavedToStreamIgnoreClick
       end
       object chkRemoveSavedFromWishlist: TCheckBox
         Left = 1
@@ -369,8 +370,8 @@ inherited frmSettings: TfrmSettings
         Width = 291
         Align = alTop
         Caption = 'Remove saved titles from wishlist'
-        OnClick = chkRemoveSavedFromWishlistClick
         TabOrder = 6
+        OnClick = chkRemoveSavedFromWishlistClick
       end
       object chkDiscardAlways: TCheckBox
         Left = 1
@@ -379,8 +380,8 @@ inherited frmSettings: TfrmSettings
         Width = 291
         Align = alTop
         Caption = 'Discard new file if it already exists'
-        OnClick = chkDiscardAlwaysClick
         TabOrder = 7
+        OnClick = chkDiscardAlwaysClick
       end
       object chkSkipShort: TCheckBox
         Left = 19
@@ -390,24 +391,27 @@ inherited frmSettings: TfrmSettings
         Align = alTop
         BorderSpacing.Left = 18
         Caption = 'Skip ads (short songs)'
-        OnClick = chkSkipShortClick
         TabOrder = 10
+        OnClick = chkSkipShortClick
       end
       object txtShortLengthSeconds: TMLabeledSpinEdit
-        Left = 19
+        Left = 37
         Height = 41
         Top = 116
-        Width = 273
+        Width = 255
         Align = alTop
-        BorderSpacing.Left = 18
+        BorderSpacing.Left = 36
         Caption = 'Ads to skip are shorter than:'
         Control.Left = 0
         Control.Height = 23
         Control.Top = 18
         Control.Width = 50
         Control.Align = alLeft
-        Control.OnChange = txtShortLengthSecondsChange
+        Control.MaxValue = 300
+        Control.MinValue = 1
         Control.TabOrder = 0
+        Control.Value = 1
+        Control.OnChange = txtShortLengthSecondsChange
         object Label4: TLabel
           Left = 54
           Height = 23
@@ -459,8 +463,8 @@ inherited frmSettings: TfrmSettings
             Caption = 'Use all lists'
             ImageIndex = 98
           end>
-        Control.OnChange = lstDefaultFilterChange
         Control.TabOrder = 0
+        Control.OnChange = lstDefaultFilterChange
       end
     end
     object pnlPostProcess: TPanel[2]
@@ -499,8 +503,8 @@ inherited frmSettings: TfrmSettings
         Control.Top = 18
         Control.Width = 292
         Control.Align = alClient
-        Control.OnChange = txtAppParamsChange
         Control.TabOrder = 0
+        Control.OnChange = txtAppParamsChange
       end
       object chkOnlyIfCut: TCheckBox
         Left = 1
@@ -509,12 +513,12 @@ inherited frmSettings: TfrmSettings
         Width = 292
         Align = alBottom
         Caption = 'Use only if file was cut successfully'
-        OnClick = chkOnlyIfCutClick
         TabOrder = 0
+        OnClick = chkOnlyIfCutClick
       end
       object lstOutputFormat: TMLabeledComboBoxEx
         Left = 1
-        Height = 41
+        Height = 44
         Top = 1
         Width = 292
         Align = alTop
@@ -541,11 +545,11 @@ inherited frmSettings: TfrmSettings
             Caption = 'OGG'
             ImageIndex = 13
           end>
-        Control.OnSelect = lstOutputFormatSelect
         Control.TabOrder = 0
+        Control.OnSelect = lstOutputFormatSelect
         object btnConfigureEncoder: TMSpeedButton
           Left = 264
-          Height = 23
+          Height = 26
           Hint = 'Configure encoder...'
           Top = 18
           Width = 28
@@ -560,17 +564,17 @@ inherited frmSettings: TfrmSettings
       end
       object Panel3: TPanel
         Left = 1
-        Height = 95
-        Top = 46
+        Height = 92
+        Top = 49
         Width = 292
         Align = alClient
         BevelOuter = bvNone
-        ClientHeight = 95
+        ClientHeight = 92
         ClientWidth = 292
         TabOrder = 3
         object FlowPanel3: TFlowPanel
           Left = 261
-          Height = 95
+          Height = 92
           Top = 0
           Width = 31
           Align = alRight
@@ -637,10 +641,11 @@ inherited frmSettings: TfrmSettings
         end
         object lstPostProcess: TListView
           Left = 0
-          Height = 95
+          Height = 92
           Top = 0
           Width = 261
           Align = alClient
+          BorderStyle = bsNone
           Checkboxes = True
           Columns = <          
             item
@@ -698,8 +703,8 @@ inherited frmSettings: TfrmSettings
             AutoSize = True
             Caption = '&Remove'
             Enabled = False
-            OnClick = btnRemoveClick
             TabOrder = 0
+            OnClick = btnRemoveClick
           end
           object btnAdd: TMDropdownButton
             Left = 70
@@ -739,8 +744,8 @@ inherited frmSettings: TfrmSettings
             Anchors = [akLeft, akBottom]
             AutoSize = True
             Caption = '&Configure...'
-            OnClick = btnConfigureClick
             TabOrder = 0
+            OnClick = btnConfigureClick
           end
         end
       end
@@ -765,9 +770,9 @@ inherited frmSettings: TfrmSettings
         Control.ImageIndex = 38
         Control.MaxLength = 0
         Control.NumGlyphs = 1
-        Control.OnButtonClick = btnBrowseAppClick
         Control.PasswordChar = #0
         Control.TabOrder = 0
+        Control.OnButtonClick = btnBrowseAppClick
       end
     end
     object pnlStreamsAdvanced: TPanel[3]
@@ -824,10 +829,10 @@ inherited frmSettings: TfrmSettings
         Control.ImageIndex = 2
         Control.MaxLength = 0
         Control.NumGlyphs = 1
-        Control.OnButtonClick = btnResetTitlePatternClick
-        Control.OnChange = txtRegExChange
         Control.PasswordChar = #0
         Control.TabOrder = 0
+        Control.OnButtonClick = btnResetTitlePatternClick
+        Control.OnChange = txtRegExChange
       end
       object lstIgnoreTitles: TListView
         Left = 1
@@ -836,6 +841,7 @@ inherited frmSettings: TfrmSettings
         Width = 291
         Align = alClient
         BorderSpacing.Bottom = 4
+        BorderStyle = bsNone
         Columns = <        
           item
           end>
@@ -862,8 +868,8 @@ inherited frmSettings: TfrmSettings
         Control.Top = 18
         Control.Width = 291
         Control.Align = alClient
-        Control.OnChange = txtIgnoreTitlePatternChange
         Control.TabOrder = 0
+        Control.OnChange = txtIgnoreTitlePatternChange
       end
       object lstRegExes: TListView
         Left = 1
@@ -872,6 +878,7 @@ inherited frmSettings: TfrmSettings
         Width = 291
         Align = alTop
         BorderSpacing.Bottom = 4
+        BorderStyle = bsNone
         Columns = <        
           item
           end>
@@ -917,8 +924,8 @@ inherited frmSettings: TfrmSettings
           AutoSize = True
           Caption = '&Add'
           Enabled = False
-          OnClick = btnAddRegExClick
           TabOrder = 0
+          OnClick = btnAddRegExClick
         end
         object btnRemoveRegEx: TButton
           Left = 222
@@ -929,8 +936,8 @@ inherited frmSettings: TfrmSettings
           AutoSize = True
           Caption = '&Remove'
           Enabled = False
-          OnClick = btnRemoveRegExClick
           TabOrder = 1
+          OnClick = btnRemoveRegExClick
         end
       end
       object FlowPanel2: TFlowPanel
@@ -965,8 +972,8 @@ inherited frmSettings: TfrmSettings
           AutoSize = True
           Caption = 'R&emove'
           Enabled = False
-          OnClick = btnRemoveIgnoreTitlePatternClick
           TabOrder = 0
+          OnClick = btnRemoveIgnoreTitlePatternClick
         end
         object btnAddIgnoreTitlePattern: TButton
           Left = 174
@@ -977,8 +984,8 @@ inherited frmSettings: TfrmSettings
           AutoSize = True
           Caption = 'A&dd'
           Enabled = False
-          OnClick = btnAddIgnoreTitlePatternClick
           TabOrder = 1
+          OnClick = btnAddIgnoreTitlePatternClick
         end
       end
     end
@@ -1035,9 +1042,9 @@ inherited frmSettings: TfrmSettings
         Control.ImageIndex = 38
         Control.MaxLength = 0
         Control.NumGlyphs = 1
-        Control.OnButtonClick = btnBrowseClick
         Control.PasswordChar = #0
         Control.TabOrder = 0
+        Control.OnButtonClick = btnBrowseClick
       end
       object txtFilePattern: TMLabeledEditButton
         Left = 1
@@ -1059,11 +1066,11 @@ inherited frmSettings: TfrmSettings
         Control.ImageIndex = 2
         Control.MaxLength = 0
         Control.NumGlyphs = 1
+        Control.PasswordChar = #0
+        Control.TabOrder = 0
         Control.OnButtonClick = btnResetFilePatternClick
         Control.OnChange = txtFilePatternChange
         Control.OnEnter = txtFilePatternEnter
-        Control.PasswordChar = #0
-        Control.TabOrder = 0
       end
       object txtIncompleteFilePattern: TMLabeledEditButton
         Left = 1
@@ -1084,11 +1091,11 @@ inherited frmSettings: TfrmSettings
         Control.ImageIndex = 2
         Control.MaxLength = 0
         Control.NumGlyphs = 1
+        Control.PasswordChar = #0
+        Control.TabOrder = 0
         Control.OnButtonClick = btnResetFilePatternClick
         Control.OnChange = txtFilePatternChange
         Control.OnEnter = txtFilePatternEnter
-        Control.PasswordChar = #0
-        Control.TabOrder = 0
       end
       object txtAutomaticFilePattern: TMLabeledEditButton
         Left = 1
@@ -1109,11 +1116,11 @@ inherited frmSettings: TfrmSettings
         Control.ImageIndex = 2
         Control.MaxLength = 0
         Control.NumGlyphs = 1
+        Control.PasswordChar = #0
+        Control.TabOrder = 0
         Control.OnButtonClick = btnResetFilePatternClick
         Control.OnChange = txtFilePatternChange
         Control.OnEnter = txtFilePatternEnter
-        Control.PasswordChar = #0
-        Control.TabOrder = 0
       end
       object txtStreamFilePattern: TMLabeledEditButton
         Left = 1
@@ -1134,11 +1141,11 @@ inherited frmSettings: TfrmSettings
         Control.ImageIndex = 2
         Control.MaxLength = 0
         Control.NumGlyphs = 1
+        Control.PasswordChar = #0
+        Control.TabOrder = 0
         Control.OnButtonClick = btnResetFilePatternClick
         Control.OnChange = txtFilePatternChange
         Control.OnEnter = txtFilePatternEnter
-        Control.PasswordChar = #0
-        Control.TabOrder = 0
       end
       object txtPreview: TMLabeledEdit
         Left = 1
@@ -1181,8 +1188,9 @@ inherited frmSettings: TfrmSettings
         Control.Top = 18
         Control.Width = 80
         Control.Align = alLeft
-        Control.OnChange = txtSongBufferChange
+        Control.MaxValue = 2147483647
         Control.TabOrder = 0
+        Control.OnChange = txtSongBufferChange
         object Label5: TLabel
           Left = 84
           Height = 23
@@ -1202,8 +1210,8 @@ inherited frmSettings: TfrmSettings
         Width = 288
         Align = alTop
         Caption = 'Search for silence before saving tracks'
-        OnClick = chkSearchSilenceClick
         TabOrder = 0
+        OnClick = chkSearchSilenceClick
       end
       object chkAdjustTrackOffset: TCheckBox
         Left = 1
@@ -1212,8 +1220,8 @@ inherited frmSettings: TfrmSettings
         Width = 288
         Align = alTop
         Caption = 'Adjust offset of detected track changes'
-        OnClick = chkAdjustTrackOffsetClick
         TabOrder = 3
+        OnClick = chkAdjustTrackOffsetClick
       end
       object optAdjustBackward: TRadioButton
         Left = 19
@@ -1224,9 +1232,9 @@ inherited frmSettings: TfrmSettings
         BorderSpacing.Left = 18
         Caption = 'Before detected change'
         Checked = True
-        OnClick = optAdjustClick
         TabOrder = 4
         TabStop = True
+        OnClick = optAdjustClick
       end
       object optAdjustForward: TRadioButton
         Left = 19
@@ -1236,8 +1244,8 @@ inherited frmSettings: TfrmSettings
         Align = alTop
         BorderSpacing.Left = 18
         Caption = 'After detected change'
-        OnClick = optAdjustClick
         TabOrder = 5
+        OnClick = optAdjustClick
       end
       object chkManualSilenceLevel: TCheckBox
         Left = 19
@@ -1247,8 +1255,8 @@ inherited frmSettings: TfrmSettings
         Align = alTop
         BorderSpacing.Left = 18
         Caption = 'Use manual silence detection settings:'
-        OnClick = chkManualSilenceLevelClick
         TabOrder = 1
+        OnClick = chkManualSilenceLevelClick
       end
       object Panel1: TPanel
         Left = 19
@@ -1292,18 +1300,18 @@ inherited frmSettings: TfrmSettings
           BorderSpacing.Left = 4
           MaxValue = 30
           MinValue = 1
-          OnChange = txtSilenceBufferSecondsChange
           TabOrder = 0
           Value = 1
+          OnChange = txtSilenceBufferSecondsChange
         end
       end
       object txtSilenceLevel: TMLabeledSpinEdit
-        Left = 19
+        Left = 37
         Height = 41
         Top = 74
-        Width = 270
+        Width = 252
         Align = alTop
-        BorderSpacing.Left = 18
+        BorderSpacing.Left = 36
         Caption = 'Silence is defined by volume lower than:'
         Control.Left = 0
         Control.Height = 23
@@ -1312,9 +1320,9 @@ inherited frmSettings: TfrmSettings
         Control.Align = alLeft
         Control.MaxValue = 100
         Control.MinValue = 1
-        Control.OnChange = txtSilenceLevelChange
         Control.TabOrder = 0
         Control.Value = 1
+        Control.OnChange = txtSilenceLevelChange
         object Label12: TLabel
           Left = 54
           Height = 23
@@ -1346,9 +1354,9 @@ inherited frmSettings: TfrmSettings
           BorderSpacing.Left = 4
           MaxValue = 5000
           MinValue = 20
-          OnChange = txtSilenceLengthChange
           TabOrder = 1
           Value = 20
+          OnChange = txtSilenceLengthChange
         end
       end
       object pnlAdjustTrackOffset: TPanel
@@ -1370,8 +1378,10 @@ inherited frmSettings: TfrmSettings
           Width = 80
           Align = alLeft
           MaxValue = 90000
-          OnChange = txtAdjustTrackOffsetChange
+          MinValue = 1
           TabOrder = 0
+          Value = 1
+          OnChange = txtAdjustTrackOffsetChange
         end
         object Label9: TLabel
           Left = 84
@@ -1410,8 +1420,8 @@ inherited frmSettings: TfrmSettings
         Control.Width = 50
         Control.Align = alLeft
         Control.MaxValue = 999
-        Control.OnChange = txtMaxRetriesChange
         Control.TabOrder = 0
+        Control.OnChange = txtMaxRetriesChange
       end
       object txtRetryDelay: TMLabeledSpinEdit
         Left = 1
@@ -1426,8 +1436,8 @@ inherited frmSettings: TfrmSettings
         Control.Width = 50
         Control.Align = alLeft
         Control.MaxValue = 999
-        Control.OnChange = txtRetryDelayChange
         Control.TabOrder = 0
+        Control.OnChange = txtRetryDelayChange
         object Label1: TLabel
           Left = 54
           Height = 23
@@ -1476,9 +1486,9 @@ inherited frmSettings: TfrmSettings
         Control.ImageIndex = 38
         Control.MaxLength = 0
         Control.NumGlyphs = 1
-        Control.OnButtonClick = btnBrowseLogFileClick
         Control.PasswordChar = #0
         Control.TabOrder = 0
+        Control.OnButtonClick = btnBrowseLogFileClick
       end
     end
     object pnlBandwidth: TPanel[7]
@@ -1516,7 +1526,9 @@ inherited frmSettings: TfrmSettings
         Control.Top = 18
         Control.Width = 50
         Control.Align = alLeft
+        Control.MinValue = 1
         Control.TabOrder = 0
+        Control.Value = 1
         object Label10: TLabel
           Left = 54
           Height = 23
@@ -1536,8 +1548,8 @@ inherited frmSettings: TfrmSettings
         Width = 290
         Align = alTop
         Caption = 'Limit bandwidth for recordings'
-        OnClick = chkLimitClick
         TabOrder = 0
+        OnClick = chkLimitClick
       end
     end
     object pnlAppearance: TPanel[8]
@@ -1723,8 +1735,8 @@ inherited frmSettings: TfrmSettings
           Align = alRight
           AutoSize = True
           Caption = '&Reset'
-          OnClick = btnResetColorClick
           TabOrder = 0
+          OnClick = btnResetColorClick
         end
       end
       object lstColorMode: TMLabeledComboBoxEx
@@ -1780,6 +1792,7 @@ inherited frmSettings: TfrmSettings
         Top = 1
         Width = 291
         Align = alClient
+        BorderStyle = bsNone
         Columns = <        
           item
             Caption = 'Action'
@@ -1869,20 +1882,20 @@ inherited frmSettings: TfrmSettings
           AutoSize = True
           Caption = '&Remove'
           Enabled = False
-          OnClick = btnBlacklistRemoveClick
           TabOrder = 0
+          OnClick = btnBlacklistRemoveClick
         end
       end
     end
     object pnlFilenamesExt: TPanel[11]
       Left = 592
-      Height = 103
+      Height = 111
       Top = 621
       Width = 261
       Anchors = []
       AutoSize = True
       ChildSizing.VerticalSpacing = 4
-      ClientHeight = 103
+      ClientHeight = 111
       ClientWidth = 261
       TabOrder = 12
       object chkNormalizeVariables: TCheckBox
@@ -1892,8 +1905,8 @@ inherited frmSettings: TfrmSettings
         Width = 259
         Align = alTop
         Caption = 'Adjust upper-/lowercase of artist/title/album'
-        OnClick = chkNormalizeVariablesClick
         TabOrder = 0
+        OnClick = chkNormalizeVariablesClick
       end
       object txtFilePatternDecimals: TMLabeledSpinEdit
         Left = 1
@@ -1907,8 +1920,11 @@ inherited frmSettings: TfrmSettings
         Control.Top = 18
         Control.Width = 50
         Control.Align = alLeft
-        Control.OnChange = txtFilePatternDecimalsChange
+        Control.MaxValue = 10
+        Control.MinValue = 1
         Control.TabOrder = 0
+        Control.Value = 1
+        Control.OnChange = txtFilePatternDecimalsChange
       end
       object txtRemoveChars: TMLabeledEditButton
         Left = 1
@@ -1929,10 +1945,10 @@ inherited frmSettings: TfrmSettings
         Control.ImageIndex = 2
         Control.MaxLength = 0
         Control.NumGlyphs = 1
-        Control.OnButtonClick = btnResetRemoveCharsClick
-        Control.OnChange = txtRemoveCharsChange
         Control.PasswordChar = #0
         Control.TabOrder = 0
+        Control.OnButtonClick = btnResetRemoveCharsClick
+        Control.OnChange = txtRemoveCharsChange
       end
     end
     object pnlAutoRecord: TPanel[12]
@@ -1953,8 +1969,8 @@ inherited frmSettings: TfrmSettings
         Width = 291
         Align = alTop
         Caption = 'Tune into stations when a wishlist''s song is playing'
-        OnClick = chkAutoTuneInClick
         TabOrder = 0
+        OnClick = chkAutoTuneInClick
       end
       object chkAutoTuneInConsiderIgnore: TCheckBox
         Left = 19
@@ -1964,8 +1980,8 @@ inherited frmSettings: TfrmSettings
         Align = alTop
         BorderSpacing.Left = 18
         Caption = 'Do not tune in if song is on global ignorelist'
-        OnClick = chkAutoTuneInClick
         TabOrder = 1
+        OnClick = chkAutoTuneInClick
       end
       object chkAutoTuneInAddToIgnore: TCheckBox
         Left = 19
@@ -2105,8 +2121,8 @@ inherited frmSettings: TfrmSettings
         Width = 291
         Align = alTop
         Caption = 'Submit statistics/track changes to the server'
-        OnClick = chkSubmitStatsClick
         TabOrder = 1
+        OnClick = chkSubmitStatsClick
       end
       object chkMonitorMode: TCheckBox
         Left = 1
@@ -2115,8 +2131,8 @@ inherited frmSettings: TfrmSettings
         Width = 291
         Align = alTop
         Caption = 'Enable monitor mode'
-        OnClick = chkMonitorModeClick
         TabOrder = 2
+        OnClick = chkMonitorModeClick
       end
       object txtMonitorCount: TMLabeledSpinEdit
         Left = 19
@@ -2133,7 +2149,9 @@ inherited frmSettings: TfrmSettings
         Control.Width = 50
         Control.Align = alLeft
         Control.MaxValue = 99
+        Control.MinValue = 1
         Control.TabOrder = 0
+        Control.Value = 1
       end
     end
     object pnlCutDisabled: TPanel[14]
@@ -2214,6 +2232,7 @@ inherited frmSettings: TfrmSettings
     Width = 293
     ClientHeight = 40
     ClientWidth = 293
+    ParentBackground = False
     TabOrder = 0
     Visible = False
     object lstAddons: TListView
@@ -2222,6 +2241,7 @@ inherited frmSettings: TfrmSettings
       Top = 1
       Width = 291
       Align = alClient
+      BorderStyle = bsNone
       Checkboxes = True
       Columns = <      
         item

@@ -30,6 +30,7 @@ inherited frmWizard: TfrmWizard
     BevelOuter = bvNone
     ClientHeight = 197
     ClientWidth = 413
+    ParentBackground = False
     TabOrder = 1
     object chkLimit: TCheckBox
       Left = 0
@@ -39,8 +40,8 @@ inherited frmWizard: TfrmWizard
       Align = alTop
       BorderSpacing.Bottom = 4
       Caption = 'Limit bandwidth for recordings'
-      OnClick = chkLimitClick
       TabOrder = 0
+      OnClick = chkLimitClick
     end
     object txtMaxSpeed: TMLabeledSpinEdit
       Left = 18
@@ -56,7 +57,9 @@ inherited frmWizard: TfrmWizard
       Control.Top = 18
       Control.Width = 50
       Control.Align = alLeft
+      Control.MinValue = 1
       Control.TabOrder = 0
+      Control.Value = 1
       object Label4: TLabel
         Left = 54
         Height = 23
@@ -107,8 +110,8 @@ inherited frmWizard: TfrmWizard
       Align = alTop
       BorderSpacing.Top = 4
       Caption = 'Enable monitor mode'
-      OnClick = chkMonitorModeClick
       TabOrder = 3
+      OnClick = chkMonitorModeClick
     end
   end
   object pnlSelectMode: TPanel[7]
@@ -118,6 +121,7 @@ inherited frmWizard: TfrmWizard
     Width = 161
     ClientHeight = 93
     ClientWidth = 161
+    ParentBackground = False
     TabOrder = 2
     Visible = False
     object optModeEasy: TRadioButton
@@ -148,6 +152,7 @@ inherited frmWizard: TfrmWizard
     Width = 217
     ClientHeight = 77
     ClientWidth = 217
+    ParentBackground = False
     TabOrder = 0
     object txtDir: TMLabeledEditButton
       Left = 1
@@ -168,9 +173,9 @@ inherited frmWizard: TfrmWizard
       Control.ImageIndex = 38
       Control.MaxLength = 0
       Control.NumGlyphs = 1
-      Control.OnButtonClick = cmdBrowseClick
       Control.PasswordChar = #0
       Control.TabOrder = 0
+      Control.OnButtonClick = cmdBrowseClick
     end
   end
 end

@@ -64,6 +64,7 @@ object frmConfigureSoX: TfrmConfigureSoX
     BevelOuter = bvNone
     ClientHeight = 34
     ClientWidth = 344
+    ParentBackground = False
     TabOrder = 0
     object Bevel2: TBevel
       Left = 0
@@ -82,8 +83,8 @@ object frmConfigureSoX: TfrmConfigureSoX
       Caption = '&OK'
       Constraints.MinHeight = 30
       Constraints.MinWidth = 100
-      OnClick = btnOKClick
       TabOrder = 0
+      OnClick = btnOKClick
     end
   end
   object GroupBox3: TGroupBox
@@ -99,6 +100,7 @@ object frmConfigureSoX: TfrmConfigureSoX
     ChildSizing.TopBottomSpacing = 4
     ClientHeight = 27
     ClientWidth = 340
+    ParentBackground = False
     TabOrder = 1
     object chkNormalize: TCheckBox
       Left = 4
@@ -107,8 +109,8 @@ object frmConfigureSoX: TfrmConfigureSoX
       Width = 332
       Align = alClient
       Caption = 'Normalize'
-      OnClick = chkChange
       TabOrder = 0
+      OnClick = chkChange
     end
   end
   object Panel1: TPanel
@@ -121,6 +123,7 @@ object frmConfigureSoX: TfrmConfigureSoX
     BevelOuter = bvNone
     ClientHeight = 124
     ClientWidth = 344
+    ParentBackground = False
     TabOrder = 2
     object GroupBox1: TGroupBox
       Left = 0
@@ -136,6 +139,7 @@ object frmConfigureSoX: TfrmConfigureSoX
       ClientHeight = 104
       ClientWidth = 166
       Constraints.MinWidth = 170
+      ParentBackground = False
       TabOrder = 0
       object txtFadeinStart: TMLabeledSpinEdit
         Left = 4
@@ -150,7 +154,9 @@ object frmConfigureSoX: TfrmConfigureSoX
         Control.Width = 50
         Control.Align = alLeft
         Control.MaxValue = 100
+        Control.MinValue = 1
         Control.TabOrder = 0
+        Control.Value = 1
         object Label1: TLabel
           Left = 54
           Height = 23
@@ -175,7 +181,9 @@ object frmConfigureSoX: TfrmConfigureSoX
         Control.Width = 50
         Control.Align = alLeft
         Control.MaxValue = 100
+        Control.MinValue = 1
         Control.TabOrder = 0
+        Control.Value = 1
         object Label2: TLabel
           Left = 54
           Height = 23
@@ -195,8 +203,8 @@ object frmConfigureSoX: TfrmConfigureSoX
         Width = 158
         Align = alTop
         Caption = 'Add fadein at beginning:'
-        OnChange = chkChange
         TabOrder = 2
+        OnChange = chkChange
       end
       object chkFadeoutEnd: TCheckBox
         Left = 4
@@ -205,8 +213,8 @@ object frmConfigureSoX: TfrmConfigureSoX
         Width = 158
         Align = alTop
         Caption = 'Add fadeout at end:'
-        OnChange = chkChange
         TabOrder = 3
+        OnChange = chkChange
       end
     end
     object GroupBox2: TGroupBox
@@ -224,6 +232,7 @@ object frmConfigureSoX: TfrmConfigureSoX
       ClientHeight = 104
       ClientWidth = 166
       Constraints.MinWidth = 170
+      ParentBackground = False
       TabOrder = 1
       object txtSilenceStart: TMLabeledSpinEdit
         Left = 4
@@ -238,7 +247,9 @@ object frmConfigureSoX: TfrmConfigureSoX
         Control.Width = 50
         Control.Align = alLeft
         Control.MaxValue = 100
+        Control.MinValue = 1
         Control.TabOrder = 0
+        Control.Value = 1
         object Label3: TLabel
           Left = 54
           Height = 23
@@ -263,7 +274,9 @@ object frmConfigureSoX: TfrmConfigureSoX
         Control.Width = 50
         Control.Align = alLeft
         Control.MaxValue = 100
+        Control.MinValue = 1
         Control.TabOrder = 0
+        Control.Value = 1
         object Label4: TLabel
           Left = 54
           Height = 23
@@ -283,8 +296,8 @@ object frmConfigureSoX: TfrmConfigureSoX
         Width = 158
         Align = alTop
         Caption = 'Add silence at beginning:'
-        OnChange = chkChange
         TabOrder = 2
+        OnChange = chkChange
       end
       object chkSilenceEnd: TCheckBox
         Left = 4
@@ -293,8 +306,8 @@ object frmConfigureSoX: TfrmConfigureSoX
         Width = 158
         Align = alTop
         Caption = 'Add silence at end:'
-        OnChange = chkChange
         TabOrder = 3
+        OnChange = chkChange
       end
     end
   end
