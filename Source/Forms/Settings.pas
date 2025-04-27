@@ -726,6 +726,10 @@ begin
 
   if FSettingsType = stApp then
   begin
+    if Integer(AppGlobals.ColorMode) <> lstColorMode.Control.ItemIndex then
+      TfrmMsgDlg.ShowMsg(GetParentForm(Self), _('In order to apply the selected color mode %s needs to be restarted.').Format(['streamWriter']),
+        mtInformation, [mbOK], mbOK, 18);
+
     AppGlobals.Lock;
     try
       if lstSoundDevice.Control.ItemIndex > -1 then
@@ -1466,7 +1470,7 @@ begin
     Exit;
 
   if TControl(C) is TCustomEdit then
-    TEdit(C).Color := clWindow
+    TCustomEdit(C).Color := clWindow
   else if TControl(C) is TEditButton then
     TEditButton(C).Color := clWindow
   else if TControl(C) is TCheckBox then
