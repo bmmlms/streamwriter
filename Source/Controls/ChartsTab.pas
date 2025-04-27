@@ -96,6 +96,7 @@ type
     FButtonAddStream: TToolButton;
   protected
     procedure CreateHandle; override;
+    function DoAlignChildControls(TheAlign: TAlign; AControl: TControl; AControlList: TFPList; var ARect: TRect): Boolean; override;
   public
     constructor Create(AOwner: TComponent); reintroduce;
 
@@ -1297,6 +1298,13 @@ begin
   SetWindowLong(Handle, GWL_EXSTYLE, GetWindowLong(Handle, GWL_EXSTYLE) or WS_EX_COMPOSITED);
 
   FSearch.ItemIndex := 0;
+end;
+
+function TSearchPanel.DoAlignChildControls(TheAlign: TAlign; AControl: TControl; AControlList: TFPList; var ARect: TRect): Boolean;
+begin
+  Result := inherited;
+
+  FSearchButton.Constraints.MaxHeight := FSearch.Height;
 end;
 
 constructor TSearchPanel.Create(AOwner: TComponent);

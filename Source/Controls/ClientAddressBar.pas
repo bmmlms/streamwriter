@@ -132,7 +132,7 @@ end;
 
 function TClientAddressBar.DoAlignChildControls(TheAlign: TAlign; AControl: TControl; AControlList: TFPList; var ARect: TRect): Boolean;
 begin
-  Result := inherited DoAlignChildControls(TheAlign, AControl, AControlList, ARect);
+  Result := inherited;
 
   FStart.Constraints.MaxHeight := FStations.Height;
 end;
