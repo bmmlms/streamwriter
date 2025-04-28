@@ -220,7 +220,6 @@ end;
 
 constructor TSWStatusBar.Create(AOwner: TComponent);
 var
-  i: Integer;
   P: TStatusPanel;
 begin
   inherited;
@@ -299,8 +298,6 @@ begin
   FSpeedBmp.Height := R.Height;
 
   FSpeedBmp.Canvas.Brush.Color := clWindow;
-  FSpeedBmp.Canvas.FillRect(R);
-
   FSpeedBmp.Canvas.Pen.Width := 1;
   FSpeedBmp.Canvas.Pen.Color := ColorAdjustLuma(clWindowFrame, 100, False);
   FSpeedBmp.Canvas.Rectangle(R);
