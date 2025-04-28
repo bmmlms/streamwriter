@@ -667,6 +667,7 @@ begin
   FActionShowSideBar.OnExecute := ActionShowSideBarExecute;
   FActionStopAfterSong.OnExecute := ActionStopAfterSongExecute;
 
+  GetAction('actNewCategory').Enabled := True;
   GetAction('actNewCategory').OnExecute := ActionNewCategoryExecute;
   GetAction('actStart').OnExecute := ActionStartExecute;
   GetAction('actStop').OnExecute := ActionStopExecute;
