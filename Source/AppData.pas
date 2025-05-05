@@ -141,6 +141,7 @@ type
     FTreeSelectionTextColor: TColor;
     FTreeFocusedSelectionColor: TColor;
     FTreeBackgroundColor: TColor;
+    FAccentColor: TColor;
 
     FBrowserSortType: Cardinal;
     FBrowserSortDir: Cardinal;
@@ -307,6 +308,7 @@ type
     property TreeNodeFontColor: TColor read FTreeNodeFontColor write FTreeNodeFontColor;
     property TreeSelectionTextColor: TColor read FTreeSelectionTextColor write FTreeSelectionTextColor;
     property TreeFocusedSelectionColor: TColor read FTreeFocusedSelectionColor write FTreeFocusedSelectionColor;
+    property AccentColor: TColor read FAccentColor;
 
     property BrowserSortType: Cardinal read FBrowserSortType write FBrowserSortType;
     property BrowserSortDir: Cardinal read FBrowserSortDir write FBrowserSortDir;
@@ -443,6 +445,8 @@ begin
 
   FProjectForumLink := 'https://streamwriter.org/forum';
   FProjectDonateLink := 'https://streamwriter.org/inhalt/spenden';
+
+  FAccentColor := TColor(9194537);
 
   // Should multiple instances be allowed?
   CommandLine := TCommandLine.Create(GetCommandLine);
