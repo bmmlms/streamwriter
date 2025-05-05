@@ -47,6 +47,7 @@ uses
   Functions,
   Generics.Collections,
   Graphics,
+  GraphUtil,
   LanguageObjects,
   LazUTF8,
   Logging,
@@ -58,6 +59,7 @@ uses
   PostProcess,
   PostProcessConvert,
   PostProcessSoX,
+  SWFunctions,
   SysUtils,
   WaveData,
   Windows;
@@ -169,7 +171,7 @@ type
     FPlayingIndex: Cardinal;
     FPlayerPaused: Boolean;
 
-    FPeakColor, FPeakEndColor, FStartColor, FEndColor, FPlayColor, FZoomOuterColor, FZoomInnerColor: TColor;
+    FBackgroundColor, FPeakColor, FPeakEndColor, FStartColor, FEndColor, FPlayColor: TColor;
     FStartLine, FEndLine, FPlayLine, FZoomStartLine, FZoomEndLine, FEffectStartLine, FEffectEndLine: Integer;
     FDoZoom: Boolean;
 
@@ -1334,57 +1336,57 @@ end;
 
 procedure TCutPaintBox.BuildBuffer;
 
-  procedure DrawTransparentBox(StartIdx: Integer; EndIdx: Integer; LineColor: TColor; FillColor: TColor);
+  procedure DrawTransparentBox(StartIdx: Integer; EndIdx: Integer; BrushColor: TColor; PenColor: TColor = clNone);
   var
     RectStart, RectEnd: Integer;
     OriginalMode: TPenMode;
   begin
+    if PenColor = clNone then
+      PenColor := BrushColor;
+
     RectStart := Trunc(((StartIdx - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FWaveBuf.Width);
     RectEnd := Trunc(((EndIdx - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FWaveBuf.Width);
 
     with FWaveBuf.Canvas do
     begin
-      Pen.Color := LineColor;
-      originalMode := Pen.Mode;
-      Pen.Mode := TPenMode.pmNotXor;
-      Brush.Color := FillColor;
+      Pen.Color := PenColor;
+      OriginalMode := Pen.Mode;
+      Pen.Mode := TPenMode.pmXor;
+      Brush.Color := BrushColor;
       Rectangle(RectStart, 0, RectEnd, FWaveBuf.Height - FScrollbarHeight - FEdge);
-      Pen.Mode := originalMode;
+      Pen.Mode := OriginalMode;
     end;
   end;
 
   procedure DrawScrollBar(Color: TColor);
   var
     StartX, StartY, EndX: Integer;
-    Y: Integer;
   begin
     with FWaveBuf.Canvas do
     begin
-      //Draw Outline
+      // Draw Outline
       Pen.Color := Color;
-      StartY := Height - 2 - FScrollbarHeight;
+      StartY := ClientHeight - 2 - FScrollbarHeight;
       MoveTo(1, StartY);
       LineTo(Width - 2, StartY);
-      LineTo(Width - 2, Height - 2);
-      LineTo(1, Height - 2);
+      LineTo(Width - 2, ClientHeight - 2);
+      LineTo(1, ClientHeight - 2);
       LineTo(1, StartY);
 
-      //Draw Bar
+      // Draw Bar
       StartX := Trunc((FCutView.FWaveData.ZoomStart * (FWaveBuf.Width - 6)) / High(FCutView.FWaveData.WaveArray)) + 3;
       EndX := Trunc((FCutView.FWaveData.ZoomEnd * (FWaveBuf.Width - 6)) / High(FCutView.FWaveData.WaveArray)) + 3;
       if StartX = EndX then
         EndX := StartX + 1;
-      for Y := 0 to FScrollbarHeight - 4 do
-      begin
-        MoveTo(StartX, StartY + Y + 2);
-        LineTo(EndX, StartY + Y + 2);
-      end;
+
+      Brush.Color := Color;
+      FillRect(StartX, StartY + 2, EndX, StartY + FScrollbarHeight - 1);
     end;
   end;
 
 var
-  i, v, vnext: Integer;
-  v2: Double;
+  i, V, VNext: Integer;
+  V2: Double;
   Last: Integer;
   LBuf, RBuf: Cardinal;
   Added: Cardinal;
@@ -1394,7 +1396,7 @@ var
   CS, CE: Integer;
   TextWrite: string = '';
 begin
-  FWaveBuf.Canvas.Brush.Color := clBlack;
+  FWaveBuf.Canvas.Brush.Color := FBackgroundColor;
   FWaveBuf.Canvas.FillRect(Classes.Rect(0, 0, FWaveBuf.Width, FWaveBuf.Height));
 
   if (ClientHeight < 2) or (ClientWidth < 2) then
@@ -1431,7 +1433,7 @@ begin
   if Length(FCutView.FWaveData.WaveArray) = 0 then
     Exit;
 
-  ht := (FWaveBuf.Height div 2) - FScrollbarHeight - 1;
+  HT := (FWaveBuf.Height div 2) - FScrollbarHeight - 1;
 
   LBuf := 0;
   RBuf := 0;
@@ -1466,21 +1468,21 @@ begin
       Inc(L2);
 
     FWaveBuf.Canvas.Brush.Color := clGray;
-    FWaveBuf.Canvas.FillRect(Classes.Rect(L1, 0, L2, ht - 1));
-    FWaveBuf.Canvas.FillRect(Classes.Rect(L1, ht + 1, L2, FWaveBuf.Height - FScrollbarHeight - FEdge));
+    FWaveBuf.Canvas.FillRect(Classes.Rect(L1, 0, L2, HT - 1));
+    FWaveBuf.Canvas.FillRect(Classes.Rect(L1, HT + 1, L2, FWaveBuf.Height - FScrollbarHeight - FEdge));
   end;
 
   ArrayFrom := FCutView.FWaveData.ZoomStart;
   ArrayTo := FCutView.FWaveData.ZoomEnd;
 
-  v2 := (1 / 1) * FWaveBuf.Width;
+  V2 := (1 / 1) * FWaveBuf.Width;
 
   for i := ArrayFrom to ArrayTo do
   begin
-    v := Integer(Trunc(((i - ArrayFrom) / (ArrayTo - ArrayFrom)) * v2));
-    vnext := Integer(Trunc(((i - ArrayFrom + 1) / (ArrayTo - ArrayFrom)) * v2));
+    V := Integer(Trunc(((i - ArrayFrom) / (ArrayTo - ArrayFrom)) * V2));
+    VNext := Integer(Trunc(((i - ArrayFrom + 1) / (ArrayTo - ArrayFrom)) * V2));
 
-    if v = Last then
+    if V = Last then
     begin
       LBuf := LBuf + FCutView.FWaveData.WaveArray[i].L;
       RBuf := RBuf + FCutView.FWaveData.WaveArray[i].R;
@@ -1498,36 +1500,34 @@ begin
 
     FWaveBuf.Canvas.Pen.Color := FPeakColor;
     FWaveBuf.Canvas.Brush.Color := FPeakColor;
-    if abs(vnext - v) <= 2 then
+    if abs(VNext - V) <= 2 then
     begin
-      FWaveBuf.Canvas.MoveTo(v, ht - 1);
-      FWaveBuf.Canvas.LineTo(v, ht - 1 - Trunc((LBuf / 33000) * ht));
-      FWaveBuf.Canvas.Pixels[v, ht - 1 - Trunc((LBuf / 33000) * ht)] := FPeakEndColor;
-      FWaveBuf.Canvas.MoveTo(v, ht + 1);
-      FWaveBuf.Canvas.LineTo(v, ht + 1 + Trunc((RBuf / 33000) * ht));
-      FWaveBuf.Canvas.Pixels[v, ht + 1 + Trunc((RBuf / 33000) * ht)] := FPeakEndColor;
+      FWaveBuf.Canvas.MoveTo(V, HT - 1);
+      FWaveBuf.Canvas.LineTo(V, HT - 1 - Trunc((LBuf / 33000) * HT));
+      FWaveBuf.Canvas.Pixels[V, HT - 1 - Trunc((LBuf / 33000) * HT)] := FPeakEndColor;
+      FWaveBuf.Canvas.MoveTo(V, HT + 1);
+      FWaveBuf.Canvas.LineTo(V, HT + 1 + Trunc((RBuf / 33000) * HT));
+      FWaveBuf.Canvas.Pixels[V, HT + 1 + Trunc((RBuf / 33000) * HT)] := FPeakEndColor;
     end else
     begin
-      FWaveBuf.Canvas.FillRect(Classes.Rect(v, ht, vnext - 1, ht - Trunc((LBuf / 33000) * ht)));
-      FWaveBuf.Canvas.FillRect(Classes.Rect(v, ht + 1, vnext - 1, ht + 1 + Trunc((LBuf / 33000) * ht)));
+      FWaveBuf.Canvas.FillRect(Classes.Rect(V, HT, VNext - 1, HT - Trunc((LBuf / 33000) * HT)));
+      FWaveBuf.Canvas.FillRect(Classes.Rect(V, HT + 1, VNext - 1, HT + 1 + Trunc((LBuf / 33000) * HT)));
     end;
 
     RBuf := 0;
     LBuf := 0;
     Added := 0;
 
-    Last := v;
+    Last := V;
   end;
 
-  FWaveBuf.Canvas.Pen.Color := FZoomOuterColor;
-  FWaveBuf.Canvas.MoveTo(0, ht);
-  FWaveBuf.Canvas.LineTo(FWaveBuf.Width, ht);
+  FWaveBuf.Canvas.Pen.Color := ColorAdjustLuma(FPeakColor, -20, False);
+  FWaveBuf.Canvas.MoveTo(0, HT);
+  FWaveBuf.Canvas.LineTo(FWaveBuf.Width, HT);
 
-  DrawTransparentBox(FZoomStartLine, FZoomEndLine, FZoomOuterColor, FZoomInnerColor);
+  DrawTransparentBox(FEffectStartLine, FEffectEndLine, ColorAdjustLuma(FBackgroundColor, -200, False));
 
-  DrawTransparentBox(FEffectStartLine, FEffectEndLine, clRed, clRed);
-
-  DrawScrollBar(FZoomOuterColor);
+  DrawScrollBar(FPeakColor);
 end;
 
 procedure TCutPaintBox.BuildDrawBuffer;
@@ -1585,13 +1585,12 @@ constructor TCutPaintBox.Create(AOwner: TComponent);
 begin
   inherited;
 
-  FPeakColor := TFunctions.HTML2Color('3b477e');
-  FPeakEndColor := TFunctions.HTML2Color('424e83');
+  FBackgroundColor := clBlack;
+  FPeakColor := AppGlobals.AccentColor;
+  FPeakEndColor := GetGradientColor(FPeakColor, FBackgroundColor, 0.5);
   FStartColor := TFunctions.HTML2Color('ece52b');
   FEndColor := TFunctions.HTML2Color('218030');
   FPlayColor := TFunctions.HTML2Color('c33131');
-  FZoomOuterColor := TFunctions.HTML2Color('748cf7');
-  FZoomInnerColor := TFunctions.HTML2Color('4d5ea5');
 
   FControlMode := cmNone;
   TabStop := True;

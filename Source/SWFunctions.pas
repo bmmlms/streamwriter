@@ -30,6 +30,7 @@ uses
   Functions,
   Generics.Collections,
   Generics.Defaults,
+  Graphics,
   LanguageObjects,
   regexpr,
   SysUtils,
@@ -41,6 +42,7 @@ function SecureSWURLToInsecure(URL: string): string;
 function ConvertPattern(OldPattern: string): string;
 function GetBestRegEx(Title: string; RegExps: TStringList): string;
 function CheckRegExp(var RegExp: string; List: TListView; Item: TListItem): Boolean;
+function GetGradientColor(const FromColor, ToColor: TColor; const Factor: Double): TColor;
 
 implementation
 
@@ -289,6 +291,21 @@ begin
   end;
 
   Result := True;
+end;
+
+function GetGradientColor(const FromColor, ToColor: TColor; const Factor: Double): TColor;
+var
+  FromRGB, ToRGB: Integer;
+  R, G, B: Byte;
+begin
+  FromRGB := ColorToRGB(FromColor);
+  ToRGB := ColorToRGB(ToColor);
+
+  R := Red(FromRGB) + Trunc(Factor * (Red(ToRGB) - Red(FromRGB)));
+  G := Green(FromRGB) + Trunc(Factor * (Green(ToRGB) - Green(FromRGB)));
+  B := Blue(FromRGB) + Trunc(Factor * (Blue(ToRGB) - Blue(FromRGB)));
+
+  Result := RGBToColor(R, G, B);
 end;
 
 end.

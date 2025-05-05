@@ -44,6 +44,7 @@ uses
   Math,
   MStringFunctions,
   SharedData,
+  SWFunctions,
   SysUtils,
   Themes,
   UxTheme,
@@ -231,8 +232,8 @@ begin
   FTimer.Interval := 1000;
   FTimer.Enabled := True;
 
-  FSpeedColor := TFunctions.HTML2Color('294c8c');
-  FSpeedGradientColor := TFunctions.HTML2Color('d0e1ff');
+  FSpeedColor := AppGlobals.AccentColor;
+  FSpeedGradientColor := ColorAdjustLuma(FSpeedColor, 100, False);
   FSpace := TMStringFunctions.GetTextSize('WW', Font).Width;
 
   SimplePanel := False;
@@ -266,22 +267,6 @@ begin
 end;
 
 procedure TSWStatusBar.BuildSpeedBmp;
-
-  function GetGradientColor(const FromColor, ToColor: TColor; const Step: Double; const Steps: Integer): TColor;
-  var
-    FromRGB, ToRGB: Integer;
-    R, G, B: Byte;
-  begin
-    FromRGB := ColorToRGB(FromColor);
-    ToRGB := ColorToRGB(ToColor);
-
-    R := Red(FromRGB) + Trunc((Step / Steps) * (Red(ToRGB) - Red(FromRGB)));
-    G := Green(FromRGB) + Trunc((Step / Steps) * (Green(ToRGB) - Green(FromRGB)));
-    B := Blue(FromRGB) + Trunc((Step / Steps) * (Blue(ToRGB) - Blue(FromRGB)));
-
-    Result := RGBToColor(R, G, B);
-  end;
-
 var
   i, k, P: Integer;
   R: TRect;
@@ -316,7 +301,7 @@ begin
     FSpeedBmp.Canvas.Line(R.Right - 1 - i, R.Bottom - 1, R.Right - 1 - i, R.Bottom - 1 - P);
 
     for k := 1 to P - R.Height div 2 - 1 do
-      FSpeedBmp.Canvas.Pixels[R.Right - 1 - i, R.Bottom - 1 - R.Height div 2 - k] := GetGradientColor(FSpeedColor, FSpeedGradientColor, k, Ceil(R.Height / 2));
+      FSpeedBmp.Canvas.Pixels[R.Right - 1 - i, R.Bottom - 1 - R.Height div 2 - k] := GetGradientColor(FSpeedColor, FSpeedGradientColor, k / Ceil(R.Height / 2));
 
     Inc(i);
   end;
