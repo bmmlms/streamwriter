@@ -371,21 +371,21 @@ end;
 
 procedure TICEClient.StopPlay;
 begin
-  if FICEThread <> nil then
-  begin
-    if Assigned(FOnStateChange) then
-      FOnStateChange(Self);
+  if not Assigned(FICEThread) then
+    Exit;
 
-    FICEThread.StopPlay;
+  if Assigned(FOnStateChange) then
+    FOnStateChange(Self);
 
-    MsgBus.SendMessage(TPlayingObjectStoppedMsg.Create(Self));
+  FICEThread.StopPlay;
 
-    if Assigned(FOnStop) then
-      FOnStop(Self);
+  MsgBus.SendMessage(TPlayingObjectStoppedMsg.Create(Self));
 
-    if (not FICEThread.Recording) and (not FICEThread.Playing) and (not FICEThread.Paused) then
-      Disconnect;
-  end;
+  if Assigned(FOnStop) then
+    FOnStop(Self);
+
+  if (not FICEThread.Recording) and (not FICEThread.Playing) and (not FICEThread.Paused) then
+    Disconnect;
 end;
 
 class function TICEClient.MayConnect(PlayOnly: Boolean; UsedBandwidth: Integer; IsAuto: Boolean): TMayConnectResults;
