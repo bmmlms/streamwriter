@@ -97,28 +97,25 @@
     <RunParams>
       <FormatVersion Value="2"/>
     </RunParams>
-    <RequiredPackages Count="7">
+    <RequiredPackages Count="6">
       <Item1>
-        <PackageName Value="indylaz"/>
+        <PackageName Value="mcontrols"/>
       </Item1>
       <Item2>
-        <PackageName Value="mcontrols"/>
+        <PackageName Value="virtualtreeview_package"/>
       </Item2>
       <Item3>
-        <PackageName Value="virtualtreeview_package"/>
+        <PackageName Value="DateTimeCtrls"/>
       </Item3>
       <Item4>
-        <PackageName Value="DateTimeCtrls"/>
+        <PackageName Value="DragDropLazarus"/>
       </Item4>
       <Item5>
-        <PackageName Value="DragDropLazarus"/>
+        <PackageName Value="MetaDarkStyle"/>
       </Item5>
       <Item6>
-        <PackageName Value="MetaDarkStyle"/>
-      </Item6>
-      <Item7>
         <PackageName Value="LCL"/>
-      </Item7>
+      </Item6>
     </RequiredPackages>
     <Units Count="112">
       <Unit0>
