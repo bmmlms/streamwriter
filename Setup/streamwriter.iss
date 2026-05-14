@@ -88,8 +88,8 @@ LicenseFile=license.txt
 CloseApplications=no
 PrivilegesRequiredOverridesAllowed=commandline dialog
 MinVersion=10.0.10240
-ArchitecturesAllowed=x64
-ArchitecturesInstallIn64BitMode=x64
+ArchitecturesAllowed=x64compatible
+ArchitecturesInstallIn64BitMode=x64compatible
 
 [Run]
 Filename: {app}\streamwriter.exe; WorkingDir: {app}; Flags: waituntilidle postinstall skipifsilent; Description: "{cm:Launch}"
