@@ -50,11 +50,9 @@ type
 
     property Active: Boolean read FActive;
 
-    property WaveDataStream: TExtendedStream read FWaveDataStream write FWaveDataStream;
+    property WaveDataStream: TExtendedStream read FWaveDataStream;
     property OnAnalyzed: TNotifyEvent read FOnAnalyzed write FOnAnalyzed;
   end;
-
-//procedure Test;
 
 implementation
 
@@ -195,32 +193,5 @@ begin
       FOnAnalyzed(Self);
   end;
 end;
-
-{
-procedure Test;
-var
-  MA: TMonitorAnalyzer;
-  S: TExtendedStream;
-begin
-
-  MA := TMonitorAnalyzer.Create;
-  S := TExtendedStream.Create;
-  S.LoadFromFile('z:\x.mp3');
-  S.Position := 0;
-
-  while S.Position < S.Size do
-  begin
-    if S.Size - S.Position >= 1000 then
-      MA.Append(S, 1000)
-    else
-    begin
-      MA.Append(S, S.Size - S.Position);
-      Break;
-    end;
-  end;
-
-  MA.Free;
-end;
-}
 
 end.
