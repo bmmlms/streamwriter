@@ -1438,7 +1438,7 @@ begin
   LBuf := 0;
   RBuf := 0;
   Added := 0;
-  Last := 0;
+  Last := -1;
 
   if FDoZoom then
   begin
@@ -1519,6 +1519,22 @@ begin
     Added := 0;
 
     Last := V;
+  end;
+
+  if Added > 0 then
+  begin
+    LBuf := LBuf div Added;
+    RBuf := RBuf div Added;
+
+    FWaveBuf.Canvas.Pen.Color := FPeakColor;
+    FWaveBuf.Canvas.Brush.Color := FPeakColor;
+
+    FWaveBuf.Canvas.MoveTo(Last, HT - 1);
+    FWaveBuf.Canvas.LineTo(Last, HT - 1 - Trunc((LBuf / 33000) * HT));
+    FWaveBuf.Canvas.Pixels[Last, HT - 1 - Trunc((LBuf / 33000) * HT)] := FPeakEndColor;
+    FWaveBuf.Canvas.MoveTo(Last, HT + 1);
+    FWaveBuf.Canvas.LineTo(Last, HT + 1 + Trunc((RBuf / 33000) * HT));
+    FWaveBuf.Canvas.Pixels[Last, HT + 1 + Trunc((RBuf / 33000) * HT)] := FPeakEndColor;
   end;
 
   FWaveBuf.Canvas.Pen.Color := ColorAdjustLuma(FPeakColor, -20, False);
