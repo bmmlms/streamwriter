@@ -266,6 +266,7 @@ begin
     FClients.Remove(Client);
     Client.Free;
   end;
+  RefreshScheduler;
 end;
 
 procedure TClientManager.RemoveMonitorClient(Client: TICEClient);
@@ -551,9 +552,6 @@ var
   i, n: Integer;
   Client: TICEClient;
 begin
-  for i := 0 to FMonitorClients.Count - 1 do
-    RemoveClient(FMonitorClients[i]);
-
   StopMonitors;
 
   AppGlobals.Lock;
@@ -616,15 +614,18 @@ begin
   if Res <> crOk then
   begin
     MsgBus.SendMessage(TLogMsg.Create(Self, lsGeneral, ltGeneral, llWarning, _('Automatic recording'), GetErrorText(Res, ParsedTitle, True, False, True)));
-    if (Res = crDirDoesNotExist) and (not FDirDoesNotExistErrorShown) then
+    if Assigned(FOnShowErrorMessage) then
     begin
-      OnShowErrorMessage(Self, GetErrorText(Res, ParsedTitle, True, False, False));
-      FDirDoesNotExistErrorShown := True;
-    end;
-    if (Res = crNoFreeSpace) and (not FNoFreeSpaceErrorShown) then
-    begin
-      OnShowErrorMessage(Self, GetErrorText(Res, ParsedTitle, True, False, False));
-      FNoFreeSpaceErrorShown := True;
+      if (Res = crDirDoesNotExist) and (not FDirDoesNotExistErrorShown) then
+      begin
+        FOnShowErrorMessage(Self, GetErrorText(Res, ParsedTitle, True, False, False));
+        FDirDoesNotExistErrorShown := True;
+      end;
+      if (Res = crNoFreeSpace) and (not FNoFreeSpaceErrorShown) then
+      begin
+        FOnShowErrorMessage(Self, GetErrorText(Res, ParsedTitle, True, False, False));
+        FNoFreeSpaceErrorShown := True;
+      end;
     end;
     Exit;
   end;
