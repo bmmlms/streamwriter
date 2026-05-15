@@ -84,10 +84,28 @@ var
   DirectoryExistsOld: function(const Directory: RawByteString; FollowLink: Boolean): Boolean;
 
 function DrawTextExWNew(DC: HDC; lpchText: LPWSTR; cchText: Integer; var p4: TRect; dwDTFormat: UINT; DTParams: PDrawTextParams): Integer; stdcall;
+const
+  // That char must be the same as in MPageControl
+  EndSpace: Char = ' ';
+var
+  IsSpaceAtEnd: Boolean;
 begin
-  // That char must be the same as in MPageControl, hack is somehow required for proper tabpage captions when caption contains '&'
-  if EndsText(' ', lpchText) then
-    dwDTFormat := dwDTFormat and not (1 shl DT_EXTERNALLEADING);
+  // Hack is somehow required for proper tabpage captions when caption contains '&'
+  IsSpaceAtEnd := False;
+  if (lpchText <> nil) then
+  begin
+    if (cchText = -1) then
+    begin
+      if (lpchText[0] <> #0) and EndsText(EndSpace, lpchText) then
+        IsSpaceAtEnd := True;
+    end
+    else if (cchText > 0) and (lpchText[cchText - 1] = EndSpace) then
+      IsSpaceAtEnd := True;
+  end;
+
+  if IsSpaceAtEnd then
+    dwDTFormat := dwDTFormat and not DT_EXTERNALLEADING;
+
   Result := DrawTextExWOld(DC, lpchText, cchText, p4, dwDTFormat, DTParams);
 end;
 
