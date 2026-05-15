@@ -148,65 +148,67 @@ begin
     TWin32WSStatusBar.DoUpdate(StatusBar);
 
     DC := BeginPaint(Window, @ps);
-
-    LCanvas := TCanvas.Create;
     try
-      LCanvas.Handle := DC;
-      LCanvas.Brush.Color := GetSysColor(COLOR_MENUHILIGHT);
-      LCanvas.FillRect(ps.rcPaint);
+      LCanvas := TCanvas.Create;
+      try
+        LCanvas.Handle := DC;
+        LCanvas.Brush.Color := GetSysColor(COLOR_MENUHILIGHT);
+        LCanvas.FillRect(ps.rcPaint);
 
-      X := 1;
-      LCanvas.Font.Color := GetSysColor(COLOR_BTNTEXT);
-      LCanvas.Pen.Color := GetSysColor(COLOR_GRAYTEXT);
-      if StatusBar.SimplePanel then
-        LCanvas.TextOut(X + 3, (StatusBar.Height - LCanvas.TextHeight('Ag')) div 2, StatusBar.SimpleText)
-      else
-        for Index := 0 to StatusBar.Panels.Count - 1 do
-        begin
-          APanel := StatusBar.Panels[Index];
-          if APanel.Width > 0 then
+        X := 1;
+        LCanvas.Font.Color := GetSysColor(COLOR_BTNTEXT);
+        LCanvas.Pen.Color := GetSysColor(COLOR_GRAYTEXT);
+        if StatusBar.SimplePanel then
+          LCanvas.TextOut(X + 3, (StatusBar.Height - LCanvas.TextHeight('Ag')) div 2, StatusBar.SimpleText)
+        else
+          for Index := 0 to StatusBar.Panels.Count - 1 do
           begin
-            if APanel.Style = psText then
-              LCanvas.TextOut(X + 1, (StatusBar.Height - LCanvas.TextHeight('Ag')) div 2, APanel.Text)
-            else
+            APanel := StatusBar.Panels[Index];
+            if APanel.Width > 0 then
             begin
-              FillChar(DrawItemStruct, SizeOf(DrawItemStruct), #0);
-              DrawItemStruct.rcItem.Left := X + 1;
-              DrawItemStruct.rcItem.Top := 0;
-              DrawItemStruct.rcItem.Width := APanel.Width - 3;
-              DrawItemStruct.rcItem.Height := StatusBar.Height;
-              DrawItemStruct.itemID := Index;
-              DrawItemStruct._hDC := LCanvas.Handle;
+              if APanel.Style = psText then
+                LCanvas.TextOut(X + 1, (StatusBar.Height - LCanvas.TextHeight('Ag')) div 2, APanel.Text)
+              else
+              begin
+                FillChar(DrawItemStruct, SizeOf(DrawItemStruct), #0);
+                DrawItemStruct.rcItem.Left := X + 1;
+                DrawItemStruct.rcItem.Top := 0;
+                DrawItemStruct.rcItem.Width := APanel.Width - 3;
+                DrawItemStruct.rcItem.Height := StatusBar.Height;
+                DrawItemStruct.itemID := Index;
+                DrawItemStruct._hDC := LCanvas.Handle;
 
-              DrawItemsMsg.Msg := LM_DRAWITEM;
-              DrawItemsMsg.Ctl := 0;
-              DrawItemsMsg.DrawItemStruct := @DrawItemStruct;
+                DrawItemsMsg.Msg := LM_DRAWITEM;
+                DrawItemsMsg.Ctl := 0;
+                DrawItemsMsg.DrawItemStruct := @DrawItemStruct;
 
-              StatusBar.Dispatch(DrawItemsMsg);
-            end;
+                StatusBar.Dispatch(DrawItemsMsg);
+              end;
 
-            if Index <> (StatusBar.Panels.Count - 1) then
-            begin
-              X += APanel.Width;
-              LCanvas.Line(x - 2, {ps.rcPaint.Top +} 3, x - 2, {ps.rcPaint.Bottom} StatusBar.Height - 3);
+              if Index <> (StatusBar.Panels.Count - 1) then
+              begin
+                X += APanel.Width;
+                LCanvas.Line(x - 2, {ps.rcPaint.Top +} 3, x - 2, {ps.rcPaint.Bottom} StatusBar.Height - 3);
+              end;
             end;
           end;
+        if StatusBar.SizeGrip then
+        begin
+          Rect := StatusBar.ClientRect;
+          Detail := ThemeServices.GetElementDetails(tsGripper);
+          GetThemePartSize(TWin32ThemeServices(ThemeServices).ThemeForPPI[teStatus, 0],
+            LCanvas.Handle, SP_GRIPPER, 0, @Rect, TS_DRAW, gripSize);
+          Rect.Left := Rect.Right - gripSize.cx;
+          Rect.Top := Rect.Bottom - gripSize.cy;
+          ThemeServices.DrawElement(LCanvas.Handle, Detail, Rect);
         end;
-      if StatusBar.SizeGrip then
-      begin
-        Rect := StatusBar.ClientRect;
-        Detail := ThemeServices.GetElementDetails(tsGripper);
-        GetThemePartSize(TWin32ThemeServices(ThemeServices).ThemeForPPI[teStatus, 0],
-          LCanvas.Handle, SP_GRIPPER, 0, @Rect, TS_DRAW, gripSize);
-        Rect.Left := Rect.Right - gripSize.cx;
-        Rect.Top := Rect.Bottom - gripSize.cy;
-        ThemeServices.DrawElement(LCanvas.Handle, Detail, Rect);
+      finally
+        LCanvas.Handle := 0;
+        LCanvas.Free;
       end;
     finally
-      LCanvas.Handle := 0;
-      LCanvas.Free;
+      EndPaint(Window, @ps);
     end;
-    EndPaint(Window, @ps);
     Result := 0;
   end else
     Result := DefSubclassProc(Window, Msg, WParam, LParam);
