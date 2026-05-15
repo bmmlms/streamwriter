@@ -77,7 +77,11 @@ begin
 
   MS := TMemoryStream.Create;
   try
-    MS.LoadFromFile(Filename);
+    try
+      MS.LoadFromFile(Filename);
+    except
+      Exit;
+    end;
 
     if (Ext = '.m3u') or (Ext = '.m3u8') then
       Result := ParsePlaylist(TFunctions.GetStringGuessEncoding(MS.Memory, MS.Size), ptM3U, '')
