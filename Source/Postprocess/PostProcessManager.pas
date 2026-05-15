@@ -75,18 +75,22 @@ var
 begin
   Result := False;
   Entry := TProcessingEntry.Create(Owner, nil, Data);
+  try
+    BuildProcessingList(Entry);
 
-  BuildProcessingList(Entry);
+    if not ProcessFile(Entry) then
+      Entry.Free
+    else
+    begin
+      Result := True;
 
-  if not ProcessFile(Entry) then
-    Entry.Free
-  else
-  begin
-    Result := True;
+      WriteLog(Entry.Owner, Format(_('Postprocessor "%s" starting'), [Entry.ActiveThread.PostProcessor.Name]), ltPostProcess, llDebug);
 
-    WriteLog(Entry.Owner, Format(_('Postprocessor "%s" starting'), [Entry.ActiveThread.PostProcessor.Name]), ltPostProcess, llDebug);
-
-    FProcessingList.Add(Entry);
+      FProcessingList.Add(Entry);
+    end;
+  except
+    Entry.Free;
+    raise;
   end;
 end;
 
