@@ -1978,9 +1978,15 @@ procedure TfrmStreamWriterMain.tabSavedCut(Entry: TStreamEntry; Track: TTrackInf
 var
   tabCut: TCutTab;
   AudioType: TAudioTypes;
+  Res: TCanEncodeResults;
 begin
   AudioType := FilenameToFormat(Track.Filename);
-  if AppGlobals.AddonManager.CanEncode(AudioType) <> ceOkay then
+  Res := AppGlobals.AddonManager.CanEncode(AudioType);
+
+  if not (Res in [ceOkay, ceAddonNeeded]) then
+    Exit;
+
+  if AppGlobals.AddonManager.CanEncode(AudioType) = ceAddonNeeded then
     if TFunctions.MsgBox(_('To cut the selected file the required encoder-addon needs to be installed. Do you want to download and install the required addon now?'), _('Question'),
       MB_ICONINFORMATION or MB_YESNO or MB_DEFBUTTON1) = IDYES then
     begin
