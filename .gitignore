@@ -1,3 +1,5 @@
 Source/*.res
 Addons/*/*.res
 Build/
+.idea/
+.junie/
