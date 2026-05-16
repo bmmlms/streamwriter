@@ -47,7 +47,7 @@ uses
   TypeDefs;
 
 type
-  // Vorsicht: Das hier bestimmt die Sortierreihenfolge im MainForm.
+  // Caution: This determines the sorting order in MainForm.
   TICEClientStates = (csConnecting, csConnected, csStopping, csStopped, csRetrying, csIOError);
 
   TMayConnectResults = (crOk, crNoFreeSpace, crNoBandwidth, crDirDoesNotExist);

@@ -985,7 +985,7 @@ begin
 
     csSearching:
     begin
-      // Marquee wieder zurücksetzen, dass es links anfängt...
+      // Reset marquee so it starts on the left...
       FProgressBar.Style := pbstNormal;
       FProgressBar.Style := pbstMarquee;
 

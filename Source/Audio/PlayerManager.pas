@@ -331,8 +331,7 @@ var
   P: TPlayer;
   IP: TICEClient;
 begin
-  // Wenn alles pausiert ist, den letzten pausierten wieder starten,
-  // ansonsten eben alle pausieren.
+  // If everything is paused, restart the last paused one, otherwise pause everything.
 
   if AllStoppedOrPaused then
   begin

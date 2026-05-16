@@ -180,7 +180,7 @@ end;
 
 procedure TICEThread.SetSettings(Settings: TStreamSettings; AutoRemove, StopAfterSong, Killed: Boolean; RecordTitle, ParsedRecordTitle: string; SongsSaved: Cardinal; StreamCustomName: string);
 begin
-  // Das hier wird nur gesynct aus dem Mainthread heraus aufgerufen.
+  // This is only called synchronized from the main thread.
   FTypedStream.Settings.Assign(Settings);
   FTypedStream.RecordTitle := RecordTitle;
   FTypedStream.ParsedRecordTitle := ParsedRecordTitle;
@@ -240,7 +240,7 @@ begin
         end;
         FPlayer.PushData(Pointer(PtrUInt(FPlayBuffer.Memory) + P.DataStart), FPlayBuffer.Size - P.DataStart);
       except
-        // Unbekannte Daten (kein MP3/AAC) - Ende.
+        // Unknown data (no MP3/AAC) - end.
         FPlayingStarted := False;
         FPlaying := False;
         WriteExtLog(_('Stream cannot be played because format is unknown'), ltGeneral, llError);
@@ -270,7 +270,7 @@ procedure TICEThread.StopPlayInternal;
 begin
   FPlaying := False;
   FPlayer.Stop;
-  DoStuff; // Das muss so, damit der Thread aufs Fadeout-Ende wartet!
+  DoStuff; // This is necessary so the thread waits for the fade-out to end!
 
   Sync(FOnStateChanged);
 end;
@@ -331,7 +331,7 @@ begin
       if (not FPaused) and (FPlaying and (not FPlayer.Playing)) then
         FPlayer.Play;
     except
-      // Unbekannte Daten (kein MP3/AAC) - Ende.
+      // Unknown data (no MP3/AAC) - end.
       FPlayingStarted := False;
       FPlaying := False;
       WriteLog(_('Stream cannot be played because format is unknown'), slError);
@@ -350,7 +350,7 @@ begin
 
     while FPlayBuffer.Size > MAX_BUFFER_SIZE do
     begin
-      // Puffer "rotieren"
+      // "Rotate" buffer
       RemoveTo := FPlayBuffer.GetFrame(65536, FPlayBuffer.Size);
       FPlayBuffer.RemoveRange(0, RemoveTo.DataStart - 1);
       //WriteDebug(Format('Playbuffer size after remove: %d bytes', [FPlayBuffer.Size]));
@@ -424,14 +424,14 @@ end;
 
 procedure TICEThread.DoEnded;
 begin
-  // Inherited kommt nach der 'Connection closed' Logausgabe, weil dann die Postprocessors schön an einem Stück im Log erscheinen.
-  // Wäre inherited ganz oben, würde vor dem 'Connection closed' im Log noch 'Postprocessor asdf started' stehen, was nervt.
+  // Inherited comes after the 'Connection closed' log output, so that the postprocessors appear nicely in one piece in the log.
+  // If inherited were at the very top, 'Postprocessor asdf started' would appear in the log before 'Connection closed', which is annoying.
   inherited;
 
   FPlaying := False;
   FPlayer.Stop;
 
-  // Noch schön ausfaden lassen
+  // Let it fade out nicely
   while FPlayer.Playing or FPlayer.Pausing or FPlayer.Stopping do
     Sleep(20);
 
@@ -443,6 +443,8 @@ begin
   begin
     FState := tsRetrying;
     Sync(FOnStateChanged);
+
+    WriteDebug('Retrying in %d seconds...').Format([FTypedStream.Settings.RetryDelay]));
 
     FTerminatedEvent.WaitFor(FTypedStream.Settings.RetryDelay * 1000);
   end;
@@ -518,7 +520,7 @@ begin
     StartPlayInternal;
     FPaused := False;
 
-    // Damit Pause-Button .Down := True wird
+    // So that the pause button becomes .Down := True
     Sync(FOnStateChanged);
   end;
 
@@ -537,6 +539,9 @@ end;
 procedure TICEThread.DoHeaderRemoved;
 begin
   inherited;
+
+  if FPlayBuffer <> nil then
+    FreeAndNil(FPlayBuffer);
 
   case FTypedStream.AudioType of
     atMPEG:

@@ -237,12 +237,12 @@ begin
     Inc(Counter);
   end;
 
-  // Das ist wichtig - wenn man Stille hinzufügt, ändert sich oben Avg nicht, Checksum bleibt gleich..
+  // This is important - if you add silence, Avg above doesn't change, checksum remains the same..
   FCheckSum := FCheckSum + Position;
 
   SetLength(FWaveArray, Counter);
 
-  // Bei weniger als 2 = Crash später
+  // With less than 2 = crash later
   if Counter < 10 then
     raise Exception.Create('WaveArray is too short');
 
@@ -314,7 +314,7 @@ begin
 
   EntryCount := 0;
   for i := 0 to High(WaveArray) do
-    if WaveArray[i].Sec * 1000 >= 100 then // 100ms absuchen
+    if WaveArray[i].Sec * 1000 >= 100 then // scan 100ms
     begin
       EntryCount := i;
       Break;
@@ -332,7 +332,7 @@ begin
 
     Avg := Avg div EntryCount;
 
-    // Stille ist es nur, wenn unter 5000
+    // It's only silence if below 5000
     if Avg < 3000 then
     begin
       MS.A := i;
@@ -344,8 +344,8 @@ begin
 
   Ret := -1;
 
-  // Die passende Stille aus dem Array suchen, je nachdem, ob wir von
-  // vorne, oder von hinten Suchen sollen
+  // Search for matching silence from array, depending on whether we should search from
+  // front or from back
   if SearchFirst then
   begin
     for i := 0 to High(MinSilence) do
@@ -366,8 +366,7 @@ begin
         MaxPeaks := MinSilence[i].Peak;
       end;
 
-  // Jetzt die gefundene Stille noch breiter ziehen, wenn die Bereiche
-  // davor/danach auch leise sind
+  // Now pull the found silence wider if the areas before/after are also quiet
   if Ret > -1 then
   begin
     for i := MinSilence[Ret].A downto FromEntry do

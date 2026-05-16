@@ -163,8 +163,8 @@ begin
         AG.AUDIOGenreW := FTag.FGenre;
         AG.AUDIOCommentW := FTag.FComment;
 
-        // Der Abschnitt hier fügt einen lokalisierten Kommentar hinzu, so dass der Windows-Explorer
-        // ihn in der Eigenschaften-Seite anzeigt ($0067 geht ab Windows Vista).
+        // This section adds a localized comment so that Windows Explorer
+        // shows it in the property page ($0067 works from Windows Vista).
         Ver.dwOSVersionInfoSize := SizeOf(Ver);
         if GetVersionEx(Ver) then
           if Ver.dwMajorVersion = 6 then

@@ -136,8 +136,8 @@ begin
     Exit;
   end;
 
-  // Der Player darf erst hier erstellen. Es müssen beim erstellen Daten da sein, deshalb geht es
-  // im Konstruktor nicht (es wird direkt BASSRead aufgerufen, wenn da nichts rauskommt ist ende!)
+  // The player must only be created here. Data must be present when creating, that's why it
+  // doesn't work in the constructor (BASSRead is called immediately, if nothing comes out it's over!)
   if FPlayer = 0 then
   begin
     Funcs.Close := BASSClose;
@@ -160,12 +160,12 @@ begin
     begin
       Level := BASSChannelGetLevel(FPlayer);
 
-      // Links
+      // Left
       FWaveDataStream.Write(LOWORD(Level));
-      // Rechts
+      // Right
       FWaveDataStream.Write(HIWORD(Level));
 
-      // Gleich sind wir am Ende. Also jetzt schon raus, um keine Infos über Daten unter 20ms Länge zu bekommen.
+      // We're almost at the end. So get out now to avoid getting info about data under 20ms in length.
       if BASSStreamGetFilePosition(FPlayer, 5) < 1 then
         Break;
     end;
