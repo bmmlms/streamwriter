@@ -406,7 +406,10 @@ end;
 
 function TWaveData.FGetZoomSize: Integer;
 begin
-  Result := ZoomEnd - ZoomStart;
+  if Length(FWaveArray) = 0 then
+    Exit(0);
+
+  Result := Max(1, ZoomEnd - ZoomStart);
 end;
 
 procedure TWaveData.FSetZoomStart(StartPos: Integer);
@@ -423,6 +426,9 @@ end;
 
 function TWaveData.FGetSecs: Double;
 begin
+  if Length(FWaveArray) = 0 then
+    Exit(0);
+
   Result := FWaveArray[High(FWaveArray)].Sec;
 end;
 
@@ -446,6 +452,10 @@ end;
 
 function TWaveData.TimeBetween(F, T: Integer): Double;
 begin
+  Result := 0;
+  if (Length(FWaveArray) = 0) or (F < 0) or (T < 0) or (F > High(FWaveArray)) or (T > High(FWaveArray)) then
+    Exit;
+
   Result := Math.Max(FWaveArray[F].Sec, FWaveArray[T].Sec) - Math.Min(FWaveArray[F].Sec, FWaveArray[T].Sec);
 end;
 
