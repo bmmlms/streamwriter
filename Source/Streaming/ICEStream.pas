@@ -200,6 +200,7 @@ type
 
     procedure FSetRecordTitle(Value: string);
     procedure FSetParsedRecordTitle(Value: string);
+    procedure FSetStreamCustomName(Value: string);
   protected
     function ParseHeaderField(const Name: string; const Value: PByte; const Len: Integer): string; override;
     procedure DoHeaderRemoved; override;
@@ -208,6 +209,7 @@ type
     constructor Create;
     destructor Destroy; override;
     procedure Process(Received: Cardinal); override;
+    function HandlePeerClose: Boolean; override;
 
     procedure StartRecording;
     procedure StopRecording;
@@ -228,7 +230,7 @@ type
     property ExtLogLevel: TLogLevel read FExtLogLevel;
 
     property StreamName: string read FStreamName;
-    property StreamCustomName: string read FStreamCustomName write FStreamCustomName;
+    property StreamCustomName: string read FStreamCustomName write FSetStreamCustomName;
     property StreamURL: string read FStreamURL;
     property AudioInfo: TAudioInfo read FAudioInfo;
     property Genre: string read FGenre;
@@ -432,12 +434,7 @@ begin
     RecvStream.Seek(CopySize, soFromCurrent);
 
   if Assigned(FOnChunkReceived) and (not FMonitoring) then
-  begin
-    GetMem(Buf, CopySize);
-    Move((Pointer(PtrUInt(RecvStream.Memory) + (RecvStream.Position - CopySize)))^, Buf^, CopySize);
-    FOnChunkReceived(Buf, CopySize);
-    FreeMem(Buf);
-  end;
+    FOnChunkReceived(Pointer(PtrUInt(RecvStream.Memory) + (RecvStream.Position - CopySize)), CopySize);
 end;
 
 procedure TICEStream.DoHeaderRemoved;
@@ -461,17 +458,17 @@ begin
   if ResponseCode <> 200 then
     raise Exception.Create(Format(_('Invalid responsecode (%d)'), [ResponseCode]));
 
-  if (LowerCase(ContentType) = 'audio/mpeg') or (LowerCase(ContentType) = 'audio/mp3') then
+  if (ContentType.ToLower = 'audio/mpeg') or (ContentType.ToLower = 'audio/mp3') then
     AudioContentType := atMPEG
-  else if (LowerCase(ContentType) = 'audio/aacp') or (LowerCase(ContentType) = 'audio/aac') then
+  else if (ContentType.ToLower = 'audio/aacp') or (ContentType.ToLower = 'audio/aac') then
     AudioContentType := atAAC;
 
-  IsIcy := HeaderType.Equals('icy') or FHeader.ContainsKey('icy-metaint') or FHeader.ContainsKey('icy-name') or FHeader.ContainsKey('icy-url');
+  IsIcy := (HeaderType = hhtICY) or (GetHeaderValue('icy-metaint') <> '') or (GetHeaderValue('icy-name') <> '') or (GetHeaderValue('icy-url') <> '');
 
   if IsIcy or (AudioContentType <> atNone) then
   begin
     WriteExtLog(_('Audio-data response detected'), ltGeneral, llDebug);
-    FHeaderType := 'icy';
+    FHeaderType := hhtICY;
 
     FStreamName := GetHeaderValue('icy-name');
     if FStreamCustomName = '' then
@@ -512,10 +509,15 @@ begin
       FOnTitleChanged(Self);
     if Assigned(FOnDisplayTitleChanged) then
       FOnDisplayTitleChanged(Self);
-  end else if HeaderType = 'http' then
+  end else if HeaderType = hhtHTTP then
     WriteExtLog(_('HTTP response detected'), ltGeneral, llDebug)
   else
     raise Exception.Create(_('Unknown header-type'));
+end;
+
+function TICEStream.HandlePeerClose: Boolean;
+begin
+  Result := (FAudioType = atNone) and inherited HandlePeerClose;
 end;
 
 procedure TICEStream.FreeAudioStream;
@@ -560,6 +562,14 @@ begin
   FParsedRecordTitle := Value;
   if Value <> FParsedRecordTitle then
     WriteExtLog(Format(_('Recording "%s"'), [Value]), ltGeneral, llInfo);
+end;
+
+procedure TICEStream.FSetStreamCustomName(Value: string);
+begin
+  if Value <> '' then
+    FStreamCustomName := Value
+  else
+    FStreamCustomName := FStreamName;
 end;
 
 function TICEStream.ParseHeaderField(const Name: string; const Value: PByte; const Len: Integer): string;
@@ -1316,8 +1326,8 @@ begin
   if (S <> '') and (Pattern <> '') then
   begin
     R := TRegExpr.Create(Pattern);
-    R.ModifierI := True;
     try
+      R.ModifierI := True;
       try
         if R.Exec(S) then
         begin
@@ -1367,7 +1377,7 @@ begin
   if not HeaderRemoved then
     Exit;
 
-  if HeaderType = 'icy' then
+  if HeaderType = hhtICY then
   begin
     if (HeaderRemoved) and (RecvStream.Size > 8192) then
     begin
@@ -1391,7 +1401,7 @@ begin
 
       ProcessData(Received);
     end;
-  end else if HeaderType = 'http' then
+  end else if HeaderType = hhtHTTP then
   begin
     if (Size > 512000) or (RecvStream.Size > 512000) then
       raise Exception.Create(_('Too many bytes in HTTP-response'));
@@ -1416,7 +1426,8 @@ var
   i: Integer;
 begin
   for i := 0 to Count - 1 do
-    Items[i].Free;
+    if Assigned(Items[i]) then
+      Items[i].Free;
   inherited;
 end;
 
@@ -1675,7 +1686,7 @@ begin
   begin
     E := ExtractFileExt(Filename);
     F := TFunctions.RemoveFileExt(Filename);
-    
+
     // Calculate available space for the filename (without path and extension)
     // MAX_PATH - 2 (Limit) - Length(FSaveDir) - 1 (for the path separator) - Length(E)
     // ConcatPaths takes care of the separator.

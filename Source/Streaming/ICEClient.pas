@@ -33,6 +33,7 @@ uses
   Functions,
   Generics.Collections,
   HomeCommunication,
+  HTTPStream,
   ICEStream,
   ICEThread,
   LanguageObjects,
@@ -277,21 +278,30 @@ begin
   Players.AddPlayer(Self);
 
   FDebugLog := TLog.Create;
+  try
+    FEntry := TStreamEntry.Create;
+    try
+      FEntry.Settings.Assign(AppGlobals.Data.StreamSettings);
 
-  FEntry := TStreamEntry.Create;
-  FEntry.Settings.Assign(AppGlobals.Data.StreamSettings);
-
-  FStopped := False;
-  FKilled := False;
-  FState := csStopped;
-  FTitle := '';
-  FDisplayTitle := '';
-  FSpeed := 0;
-  FContentType := '';
-  FFilename := '';
-  FRedirectedURL := '';
-  FURLsIndex := -1;
-  FRetries := 0;
+      FStopped := False;
+      FKilled := False;
+      FState := csStopped;
+      FTitle := '';
+      FDisplayTitle := '';
+      FSpeed := 0;
+      FContentType := '';
+      FFilename := '';
+      FRedirectedURL := '';
+      FURLsIndex := -1;
+      FRetries := 0;
+    except
+      FEntry.Free;
+      raise;
+    end;
+  except
+    FDebugLog.Free;
+    raise;
+  end;
 end;
 
 procedure TICEClient.Kill;
@@ -679,7 +689,7 @@ begin
       Exit;
     end;
 
-    if FICEThread.RecvStream.HeaderType = 'http' then
+    if FICEThread.RecvStream.HeaderType = hhtHTTP then
     begin
       if ParsePlaylist then
       begin
@@ -690,14 +700,7 @@ begin
         if Assigned(FOnURLsReceived) then
           FOnURLsReceived(Self);
       end else
-      begin
-        if FICEThread.RecvStream.ResponseCode = 404 then
-          raise Exception.Create(_('HTTP error 404, document not found'))
-        else if IntToStr(FICEThread.RecvStream.ResponseCode)[1] <> '2' then
-          raise Exception.Create(Format(_('HTTP error %d'), [FICEThread.RecvStream.ResponseCode]))
-        else
-          raise Exception.Create(_('Response was HTTP but without supported playlist or redirect'));
-      end;
+        raise Exception.Create(_('Response was HTTP but without supported playlist or redirect'));
     end else
     begin
       // Am Ende noch die Bytes die nicht mitgeteilt wurden durchreichen
@@ -843,7 +846,7 @@ end;
 
 procedure TICEClient.ThreadSpeedChanged(Sender: TSocketThread);
 begin
-  if FICEThread.RecvStream.HeaderType = 'icy' then
+  if FICEThread.RecvStream.HeaderType = hhtICY then
   begin
     FEntry.BytesReceived := FEntry.BytesReceived + FICEThread.Speed;
     FSpeed := FICEThread.Speed;
@@ -1086,26 +1089,23 @@ end;
 function TURLList.Add(const S: string): Integer;
 var
   i: Integer;
-  Host: string = '';
+  Res: TParseURLRes;
   S2: string;
 begin
   Result := -1;
-  try
-    S2 := s;
-    if not TFunctions.ParseURL(S2).Success then
-      Exit;
-  except
-    Exit;
-  end;
-
-  if Length(Host) <= 3 then
+  Res := TFunctions.ParseURL(S);
+  if not Res.Success then
     Exit;
 
+  if Length(Res.Host) <= 3 then
+    Exit;
+
+  S2 := Res.URL;
   for i := 0 to Count - 1 do
     if LowerCase(S2) = LowerCase(Self[i]) then
       Exit;
 
-  Result := inherited;
+  Result := inherited Add(S2);
 end;
 
 { TDebugLog }

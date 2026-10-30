@@ -33,6 +33,7 @@ uses
   StreamHelper,
   Functions,
   HTTPThread,
+  HTTPStream,
   ICEPlayer,
   ICEStream,
   LanguageObjects,
@@ -415,17 +416,16 @@ end;
 procedure TICEThread.DoDisconnected;
 begin
   inherited;
-
-  WriteLog(_('Connection closed'), slInfo);
-
-  if not Terminated then
-    Sleep(100);
 end;
 
 procedure TICEThread.DoEnded;
 begin
   // Inherited comes after the 'Connection closed' log output, so that the postprocessors appear nicely in one piece in the log.
   // If inherited were at the very top, 'Postprocessor asdf started' would appear in the log before 'Connection closed', which is annoying.
+
+  if not FError then
+    WriteLog(_('Connection closed'), slInfo);
+
   inherited;
 
   FPlaying := False;
@@ -439,15 +439,16 @@ begin
     if Assigned(FOnRecordingStopped) then
       Sync(FOnRecordingStopped);
 
-  if FError then
+  if FError and (FTypedStream.RedirURL = '') then
   begin
     FState := tsRetrying;
     Sync(FOnStateChanged);
 
-    WriteDebug('Retrying in %d seconds...').Format([FTypedStream.Settings.RetryDelay]));
+    WriteLog('Retrying in %d seconds...'.Format([FTypedStream.Settings.RetryDelay]), slDebug);
 
     FTerminatedEvent.WaitFor(FTypedStream.Settings.RetryDelay * 1000);
-  end;
+  end else if not Terminated then
+    Sleep(100);
 end;
 
 procedure TICEThread.DoException(E: Exception);
@@ -556,7 +557,7 @@ begin
   FLastMilliSecondsConnected := GetTickCount64;
   FMilliSecondsConnected := 0;
 
-  if (FTypedStream.HeaderType = 'icy') and (FTypedStream.StreamName <> '') then
+  if (FTypedStream.HeaderType = hhtICY) and (FTypedStream.StreamName <> '') then
   begin
     Sync(FOnRefreshInfo);
     Sync(FOnAddRecent);
