@@ -65,8 +65,6 @@ uses
   Windows;
 
 type
-  TPeakEvent = procedure(P, AI, L, R: Integer) of object;
-  TWavBufArray = array of SmallInt;
   TCutStates = (csReady, csLoading, csWorking, csDecoding, csEncoding, csConvertorError,
     csLoadError, csCutError);
 
@@ -79,10 +77,14 @@ type
     FFilePath: string;
     FTempFile: string;
     FProcessOutput: AnsiString;
+    FProgressBuffer: AnsiString;
+    FProgress: Integer;
 
+    FOnProgress: TNotifyEvent;
     FOnSuccess: TNotifyEvent;
     FOnError: TNotifyEvent;
 
+    procedure SyncProgress;
     procedure SyncSuccess;
     procedure SyncError;
 
@@ -91,11 +93,12 @@ type
     procedure Execute; override;
   public
     constructor Create(CommandLine, WorkingDir, FilePath, TempFile: string);
-    destructor Destroy; override;
 
     property TempFile: string read FTempFile;
     property ProcessOutput: AnsiString read FProcessOutput;
+    property Progress: Integer read FProgress;
 
+    property OnProgress: TNotifyEvent read FOnProgress write FOnProgress;
     property OnSuccess: TNotifyEvent read FOnSuccess write FOnSuccess;
     property OnError: TNotifyEvent read FOnError write FOnError;
   end;
@@ -104,6 +107,8 @@ type
   private
     FFilename: string;
     FWaveData: TWaveData;
+    FWaveDataOwned: Boolean;
+    FLastProgress: Integer;
 
     FOnScanProgress: TNotifyEvent;
     FOnEndScan: TNotifyEvent;
@@ -119,7 +124,9 @@ type
   public
     constructor Create(Filename: string);
     destructor Destroy; override;
+    function TakeWaveData: TWaveData;
 
+    property WaveData: TWaveData read FWaveData;
     property OnScanProgress: TNotifyEvent read FOnScanProgress write FOnScanProgress;
     property OnEndScan: TNotifyEvent read FOnEndScan write FOnEndScan;
     property OnScanError: TNotifyEvent read FOnScanError write FOnScanError;
@@ -130,6 +137,7 @@ type
     FInFilename, FOutFilename: string;
     FS, FE: Int64;
     FProgress: Integer;
+    FLastProgress: Integer;
 
     FOnSaveProgress: TNotifyEvent;
     FOnEndSave: TNotifyEvent;
@@ -144,7 +152,6 @@ type
     procedure Execute; override;
   public
     constructor Create(InFilename, OutFilename: string; S, E: Int64);
-    destructor Destroy; override;
 
     property OutFilename: string read FOutFilename;
     property Progress: Integer read FProgress;
@@ -156,8 +163,6 @@ type
 
   TMouseMode = (mmDown, mmMove, mmUp);
   TControlMode = (cmNone, cmView, cmScroll);
-
-  PMouseButton = ^TMouseButton;
 
   TCutPaintBox = class(TCustomControl)
   const
@@ -184,8 +189,10 @@ type
     procedure BuildBuffer;
     procedure BuildDrawBuffer;
 
+    function ClampIndex(Value: Integer): Integer;
+    procedure ClampZoomRange(var StartPos, EndPos: Integer);
     procedure SetLine(X: Integer; Button: TMouseButton; Mode: TMouseMode);
-    procedure HandleScrollBar(X: Integer; Y: Integer; Button: PMouseButton; Mode: TMouseMode);
+    procedure HandleScrollBar(X: Integer; Y: Integer; Mode: TMouseMode);
     function GetControlMode(Y: Integer): TControlMode;
     function PixelsToArray(X: Integer): Integer;
     function GetPlayerPos: Integer;
@@ -207,23 +214,23 @@ type
   TUndoStep = class
   private
     FFilename: string;
-    FStartLine: Cardinal;
-    FEndLine: Cardinal;
-    FEffectStartLine: Cardinal;
-    FEffectEndLine: Cardinal;
-    FPlayLine: Cardinal;
+    FStartLine: Integer;
+    FEndLine: Integer;
+    FEffectStartLine: Integer;
+    FEffectEndLine: Integer;
+    FPlayLine: Integer;
   public
     constructor Create(Filename: string; StartLine, EndLine, EffectStartLine, EffectEndLine, PlayLine: Integer);
 
     property Filename: string read FFilename;
-    property StartLine: Cardinal read FStartLine;
-    property EndLine: Cardinal read FEndLine;
-    property EffectStartLine: Cardinal read FEffectStartLine;
-    property EffectEndLine: Cardinal read FEffectEndLine;
-    property PlayLine: Cardinal read FPlayLine;
+    property StartLine: Integer read FStartLine;
+    property EndLine: Integer read FEndLine;
+    property EffectStartLine: Integer read FEffectStartLine;
+    property EffectEndLine: Integer read FEffectEndLine;
+    property PlayLine: Integer read FPlayLine;
   end;
 
-  TUndoList = class(TList<TUndoStep>);
+  TUndoList = class(TObjectList<TUndoStep>);
 
   TLineMode = (lmEdit, lmPlay, lmEffectsMarker);
 
@@ -240,16 +247,17 @@ type
     FLineMode: TLineMode;
     FProgressBarLoad: TProgressBar;
     FUndoList: TUndoList;
-    FID: Integer;
     FUndoStep: TUndoStep;
     FLastCheckSum: Cardinal;
     FSaving: Boolean;
+    FShuttingDown: Boolean;
+    FProcessSucceeded: Boolean;
+    FSaveCutSucceeded: Boolean;
+    FConvertorFileInfo: TAudioInfo;
 
     FPlayer: TPlayer;
     FOriginalFilename: string;
     FWorkingFilename: string;
-    FFilesize: Int64;
-    FSaveSecs: Cardinal;
 
     FBitrateType: TBitrates;
     FQuality: TVBRQualities;
@@ -265,6 +273,17 @@ type
 
     procedure StartProcessing(CmdLine: string);
     procedure AddUndo;
+    procedure ClearUndoList(DeleteFiles: Boolean);
+    procedure ShutdownThreads;
+    procedure ThreadCleanupAsync(Data: PtrInt);
+    procedure FileConvertorFinishAsync(Data: PtrInt);
+    procedure FileConvertorSavedAsync(Data: PtrInt);
+    procedure SaveCutThreadEndSaveAsync(Data: PtrInt);
+    procedure SaveCutThreadErrorAsync(Data: PtrInt);
+    procedure StateChangedAsync(Data: PtrInt);
+    procedure UpdateProgressBar(Percent: Integer);
+    procedure SetLoadError;
+    function HasWaveData: Boolean;
 
     procedure ThreadScanProgress(Sender: TObject);
     procedure ThreadEndScan(Sender: TObject);
@@ -273,6 +292,7 @@ type
 
     procedure ProcessThreadSuccess(Sender: TObject);
     procedure ProcessThreadError(Sender: TObject);
+    procedure ProcessThreadProgress(Sender: TObject);
     procedure ProcessThreadTerminate(Sender: TObject);
 
     procedure SaveCutThreadProgress(Sender: TObject);
@@ -281,17 +301,16 @@ type
     procedure SaveCutThreadTerminate(Sender: TObject);
 
     procedure PlayerEndReached(Sender: TObject);
+    procedure PlayerEndReachedAsync(Data: PtrInt);
     procedure PlayerPlay(Sender: TObject);
     procedure PlayerPause(Sender: TObject);
     procedure PlayerStop(Sender: TObject);
-
-    procedure MsgRefresh(var Msg: TMessage); message WM_USER + 1234;
 
     procedure DropTargetDrop(Sender: TObject; ShiftState: TShiftState; APoint: TPoint; var Effect: Integer);
 
     procedure MessageReceived(Msg: TMessageBase);
 
-    procedure CreateConvertor;
+    function CreateConvertor: Boolean;
 
     procedure FileConvertorProgress(Sender: TObject);
     procedure FileConvertorFinish(Sender: TObject);
@@ -340,7 +359,6 @@ type
     property UndoList: TUndoList read FUndoList;
     property Player: TPlayer read FPlayer;
     property LineMode: TLineMode read FLineMode write FLineMode;
-    property Filesize: Int64 read FFilesize;
     property OnStateChanged: TNotifyEvent read FOnStateChanged write FOnStateChanged;
     property OnCutFile: TCutFileEvent read FOnCutFile write FOnCutFile;
   end;
@@ -355,16 +373,28 @@ uses
 constructor TScanThread.Create(Filename: string);
 begin
   inherited Create(True);
-  FreeOnTerminate := True;
+  FreeOnTerminate := False;
   FFilename := Filename;
   FWaveData := TWaveData.Create;
+  FWaveDataOwned := True;
+  FLastProgress := -1;
   FWaveData.OnProgress := WaveDataScanProgress;
 end;
 
 destructor TScanThread.Destroy;
 begin
-
+  if FWaveDataOwned then
+    FreeAndNil(FWaveData);
   inherited;
+end;
+
+function TScanThread.TakeWaveData: TWaveData;
+begin
+  Result := FWaveData;
+  if Result <> nil then
+    Result.OnProgress := nil;
+  FWaveData := nil;
+  FWaveDataOwned := False;
 end;
 
 procedure TScanThread.Execute;
@@ -374,11 +404,9 @@ begin
     Synchronize(SyncEndScan);
   except
     FreeAndNil(FWaveData);
+    FWaveDataOwned := False;
     Synchronize(SyncScanError);
   end;
-
-  if Terminated then
-    FWaveData.Free;
 end;
 
 procedure TScanThread.SyncEndScan;
@@ -407,6 +435,12 @@ end;
 
 procedure TScanThread.WaveDataScanProgress(Sender: TObject);
 begin
+  if FWaveData = nil then
+    Exit;
+  if FWaveData.Progress = FLastProgress then
+    Exit;
+
+  FLastProgress := FWaveData.Progress;
   Synchronize(SyncScanProgress);
 end;
 
@@ -416,7 +450,6 @@ constructor TCutView.Create(AOwner: TComponent);
 begin
   inherited;
 
-  FID := Random(1000);
   BevelOuter := bvNone;
 
   FPB := TCutPaintBox.Create(Self);
@@ -439,65 +472,37 @@ begin
   FDropTarget.Register(Self);
   FDropTarget.OnDrop := DropTargetDrop;
 
-  FUndoList := TUndoList.Create;
+  FUndoList := TUndoList.Create(True);
   FFileTagger := TFileTagger.Create;
 
   MsgBus.AddSubscriber(MessageReceived);
 end;
 
-procedure TCutView.CreateConvertor;
+function TCutView.CreateConvertor: Boolean;
 begin
+  Result := False;
+  if FShuttingDown or (FFileConvertorThread <> nil) then
+    Exit;
+
   FFileConvertorThread := TPostProcessConvertThread.Create(nil, AppGlobals.Data.StreamSettings.PostProcessors[0]);
+  FFileConvertorThread.FreeOnTerminate := False;
   FFileConvertorThread.OnProgress := FileConvertorProgress;
   FFileConvertorThread.OnFinish := FileConvertorFinish;
   FFileConvertorThread.OnError := FileConvertorError;
   FFileConvertorThread.OnTerminate := FileConvertorTerminate;
+  Result := True;
 end;
 
 destructor TCutView.Destroy;
-var
-  i: Integer;
 begin
-  FFileTagger.Free;
-
-  if FFileConvertorThread <> nil then
-  begin
-    FFileConvertorThread.OnProgress := nil;
-    FFileConvertorThread.OnFinish := nil;
-    FFileConvertorThread.OnError := nil;
-    FFileConvertorThread.Terminate;
-  end;
-
+  FShuttingDown := True;
+  FDropTarget.OnDrop := nil;
+  // The DropTarget library lacks FreeNotification, so unregister while this control is intact.
+  FreeAndNil(FDropTarget);
   MsgBus.RemoveSubscriber(MessageReceived);
 
-  if FScanThread <> nil then
-  begin
-    FScanThread.OnScanProgress := nil;
-    FScanThread.OnEndScan := nil;
-    FScanThread.OnScanError := nil;
-    FScanThread.Terminate;
-  end;
-
-  if FProcessThread <> nil then
-  begin
-    FProcessThread.OnSuccess := nil;
-    FProcessThread.OnError := nil;
-    FProcessThread.Terminate;
-  end;
-
-  if FSaveCutThread <> nil then
-  begin
-    FSaveCutThread.OnSaveProgress := nil;
-    FSaveCutThread.OnEndSave := nil;
-    FSaveCutThread.OnSaveError := nil;
-    FSaveCutThread.Terminate;
-  end;
-
-  while (FFileConvertorThread <> nil) or (FScanThread <> nil) or (FProcessThread <> nil) do
-  begin
-    Sleep(100);
-    Application.ProcessMessages;
-  end;
+  ShutdownThreads;
+  FFileTagger.Free;
 
   if FWaveData <> nil then
     FreeAndNil(FWaveData);
@@ -505,29 +510,124 @@ begin
   if FPlayer <> nil then
     FreeAndNil(FPlayer);
 
-  for i := 0 to FUndoList.Count - 1 do
+  if FUndoStep <> nil then
   begin
-    SysUtils.DeleteFile(FUndoList[i].Filename);
-    FUndoList[i].Free;
+    SysUtils.DeleteFile(FUndoStep.Filename);
+    FreeAndNil(FUndoStep);
   end;
+  ClearUndoList(True);
   FUndoList.Free;
   SysUtils.DeleteFile(FWorkingFilename);
 
   inherited;
 end;
 
+procedure TCutView.ShutdownThreads;
+var
+  FileConvertorThread: TPostProcessConvertThread;
+  ScanThread: TScanThread;
+  ProcessThread: TProcessThread;
+  SaveCutThread: TSaveCutThread;
+  ProcessTempFile, SaveCutTempFile: string;
+begin
+  Application.RemoveAsyncCalls(Self);
+
+  FileConvertorThread := FFileConvertorThread;
+  ScanThread := FScanThread;
+  ProcessThread := FProcessThread;
+  SaveCutThread := FSaveCutThread;
+  ProcessTempFile := '';
+  SaveCutTempFile := '';
+
+  if ProcessThread <> nil then
+    ProcessTempFile := ProcessThread.TempFile;
+  if SaveCutThread <> nil then
+    SaveCutTempFile := SaveCutThread.OutFilename;
+
+  if FileConvertorThread <> nil then
+  begin
+    FileConvertorThread.OnProgress := nil;
+    FileConvertorThread.OnFinish := nil;
+    FileConvertorThread.OnError := nil;
+    FileConvertorThread.OnTerminate := nil;
+    FileConvertorThread.Terminate;
+  end;
+
+  if ScanThread <> nil then
+  begin
+    ScanThread.OnScanProgress := nil;
+    ScanThread.OnEndScan := nil;
+    ScanThread.OnScanError := nil;
+    ScanThread.OnTerminate := nil;
+    ScanThread.Terminate;
+  end;
+
+  if ProcessThread <> nil then
+  begin
+    ProcessThread.OnSuccess := nil;
+    ProcessThread.OnError := nil;
+    ProcessThread.OnTerminate := nil;
+    ProcessThread.Terminate;
+  end;
+
+  if SaveCutThread <> nil then
+  begin
+    SaveCutThread.OnSaveProgress := nil;
+    SaveCutThread.OnEndSave := nil;
+    SaveCutThread.OnSaveError := nil;
+    SaveCutThread.OnTerminate := nil;
+    SaveCutThread.Terminate;
+  end;
+
+  if FileConvertorThread <> nil then
+  begin
+    FileConvertorThread.WaitFor;
+    FileConvertorThread.Free;
+  end;
+  if ScanThread <> nil then
+  begin
+    ScanThread.WaitFor;
+    ScanThread.Free;
+  end;
+  if ProcessThread <> nil then
+  begin
+    ProcessThread.WaitFor;
+    ProcessThread.Free;
+  end;
+  if SaveCutThread <> nil then
+  begin
+    SaveCutThread.WaitFor;
+    SaveCutThread.Free;
+  end;
+
+  if ProcessTempFile <> '' then
+    SysUtils.DeleteFile(ProcessTempFile);
+  if SaveCutTempFile <> '' then
+    SysUtils.DeleteFile(SaveCutTempFile);
+
+  FFileConvertorThread := nil;
+  FScanThread := nil;
+  FProcessThread := nil;
+  FSaveCutThread := nil;
+end;
+
 procedure TCutView.DropTargetDrop(Sender: TObject; ShiftState: TShiftState; APoint: TPoint; var Effect: Integer);
 var
   i: Integer;
 begin
+  if FShuttingDown or (FDropTarget = nil) or not Assigned(FOnCutFile) or not (Parent is TCutTab) then
+    Exit;
+
   for i := 0 to FDropTarget.Files.Count - 1 do
     if FilenameToFormat(FDropTarget.Files[i]) <> atNone then
-      if Assigned(FOnCutFile) then
-        FOnCutFile(TCutTab(Self.Parent), FDropTarget.Files[i]);
+      FOnCutFile(TCutTab(Parent), FDropTarget.Files[i]);
 end;
 
 procedure TCutView.FileConvertorError(Sender: TObject);
 begin
+  if FShuttingDown then
+    Exit;
+
   FState := csConvertorError;
 
   FProgressBarLoad.Visible := False;
@@ -538,38 +638,114 @@ begin
 end;
 
 procedure TCutView.FileConvertorFinish(Sender: TObject);
-var
-  i: Integer;
 begin
+  if FShuttingDown then
+    Exit;
+
+  FConvertorFileInfo := TPostProcessConvertThread(Sender).FileInfo;
+  Application.QueueAsyncCall(Self.FileConvertorFinishAsync, 0);
+end;
+
+procedure TCutView.FileConvertorFinishAsync(Data: PtrInt);
+begin
+  if FShuttingDown then
+    Exit;
+
   if FState = csEncoding then
   begin
     FFileTagger.Write(Language.CurrentLanguage.LCID, FOriginalFilename);
 
-    for i := 0 to FUndoList.Count - 1 do
-    begin
-      SysUtils.DeleteFile(FUndoList[i].Filename);
-      FUndoList[i].Free;
-    end;
-    FUndoList.Clear;
+    ClearUndoList(True);
 
-    if Assigned(TCutTab(Owner).OnSaved) then
-      if FFileConvertorThread.FileInfo.Success then
-        TCutTab(Owner).OnSaved(Owner, FFileConvertorThread.FileInfo);
+    if FConvertorFileInfo.Success then
+      Application.QueueAsyncCall(Self.FileConvertorSavedAsync, 0);
   end;
 
   LoadFile(FWorkingFilename, True, False);
 end;
 
+procedure TCutView.FileConvertorSavedAsync(Data: PtrInt);
+begin
+  if FShuttingDown then
+    Exit;
+
+  if Assigned(TCutTab(Owner).OnSaved) then
+    TCutTab(Owner).OnSaved(Owner, FConvertorFileInfo);
+end;
+
 procedure TCutView.FileConvertorProgress(Sender: TObject);
 begin
-  if FFileConvertorThread.Progress < 100 then
-    FProgressBarLoad.Position := FFileConvertorThread.Progress + 1;
-  FProgressBarLoad.Position := FFileConvertorThread.Progress;
+  if FShuttingDown then
+    Exit;
+
+  UpdateProgressBar(TPostProcessConvertThread(Sender).Progress);
 end;
 
 procedure TCutView.FileConvertorTerminate(Sender: TObject);
 begin
-  FFileConvertorThread := nil;
+  if not FShuttingDown then
+    Application.QueueAsyncCall(Self.ThreadCleanupAsync, PtrInt(Sender));
+end;
+
+procedure TCutView.ThreadCleanupAsync(Data: PtrInt);
+var
+  Thread: TThread;
+  IsFileConvertor, IsScan, IsProcess, IsSaveCut: Boolean;
+  SaveCutOutputFilename: string;
+begin
+  if FShuttingDown then
+    Exit;
+
+  Thread := TThread(Pointer(Data));
+  if Thread = nil then
+    Exit;
+
+  Thread.WaitFor;
+
+  IsFileConvertor := Thread = FFileConvertorThread;
+  IsScan := Thread = FScanThread;
+  IsProcess := Thread = FProcessThread;
+  IsSaveCut := Thread = FSaveCutThread;
+  SaveCutOutputFilename := '';
+  if IsSaveCut and not FSaveCutSucceeded then
+    SaveCutOutputFilename := TSaveCutThread(Thread).OutFilename;
+
+  if IsFileConvertor then
+    FFileConvertorThread := nil;
+  if IsScan then
+  begin
+    FScanThread := nil;
+    if not Application.Terminated then
+    begin
+      FProgressBarLoad.Visible := False;
+      if FUndoStep <> nil then
+        FreeAndNil(FUndoStep);
+    end;
+  end;
+  if IsProcess then
+    FProcessThread := nil;
+  if IsSaveCut then
+  begin
+    FSaveCutThread := nil;
+    if FScanThread = nil then
+      FProgressBarLoad.Visible := False;
+  end;
+
+  Thread.Free;
+
+  if SaveCutOutputFilename <> '' then
+    SysUtils.DeleteFile(SaveCutOutputFilename);
+
+  if IsProcess and not FShuttingDown then
+    if FProcessSucceeded then
+    begin
+      FState := csReady;
+      LoadFile(FWorkingFilename, True, False);
+    end else
+    begin
+      TFunctions.MsgBox(_('An error occured while processing the file.'), _('Error'), MB_ICONERROR);
+      LoadFile(FWorkingFilename, True, False);
+    end;
 end;
 
 function TCutView.GetUndoFilename: string;
@@ -598,7 +774,8 @@ procedure TCutView.LoadFile(Filename: string; IsConverted, LoadTrackData: Boolea
 var
   Info: TAudioInfo;
 begin
-  if (FScanThread <> nil) or (FProcessThread <> nil) then
+  if FShuttingDown or (FScanThread <> nil) or (FProcessThread <> nil) or
+    (not IsConverted and (FFileConvertorThread <> nil)) then
     Exit;
 
   if IsConverted then
@@ -614,11 +791,18 @@ begin
     FPlayer.OnStop := PlayerStop;
     Players.AddPlayer(FPlayer);
 
+    if not Bass.DeviceAvailable then
+    begin
+      FreeAndNil(FPlayer);
+      SetLoadError;
+      Exit;
+    end;
+
     try
-      if Bass.DeviceAvailable then
-        FPlayer.Filename := Filename;
+      FPlayer.Filename := Filename;
     except
-      ThreadScanError(Self);
+      FreeAndNil(FPlayer);
+      SetLoadError;
       Exit;
     end;
 
@@ -660,19 +844,18 @@ begin
         end;
       end else
       begin
-        ThreadScanError(Self);
-        Exit;
-      end;
+          SetLoadError;
+          Exit;
+        end;
     end;
+
+    if not CreateConvertor then
+      Exit;
 
     FOriginalFilename := Filename;
     FWorkingFilename := GetUndoFilename;
 
-    FState := csLoading;
-
     FState := csDecoding;
-
-    CreateConvertor;
 
     FProgressBarLoad.Position := 0;
     FProgressBarLoad.Visible := True;
@@ -689,19 +872,8 @@ end;
 procedure TCutView.MessageReceived(Msg: TMessageBase);
 begin
   if Msg is TFileModifyMsg then
-    if Assigned(FPlayer) and (LowerCase(FPlayer.Filename) = LowerCase(TFileModifyMsg(Msg).Filename)) then
+    if Assigned(FPlayer) and (UTF8CompareText(FPlayer.Filename, TFileModifyMsg(Msg).Filename) = 0) then
       FPlayer.Stop(False);
-end;
-
-procedure TCutView.MsgRefresh(var Msg: TMessage);
-begin
-  if Assigned(FOnStateChanged) then
-    FOnStateChanged(Self);
-
-  FPB.FPlayLine := 0;
-
-  FPB.BuildDrawBuffer;
-  FPB.Paint;
 end;
 
 procedure TCutView.Cut;
@@ -725,9 +897,10 @@ begin
   FState := csWorking;
   FPB.BuildBuffer;
   FPB.BuildDrawBuffer;
-  FPB.Paint;
+  FPB.Invalidate;
 
   FSaveCutThread := TSaveCutThread.Create(FWorkingFilename, GetUndoFilename, S, E);
+  FSaveCutSucceeded := False;
   FSaveCutThread.OnSaveProgress := SaveCutThreadProgress;
   FSaveCutThread.OnEndSave := SaveCutThreadEndSave;
   FSaveCutThread.OnSaveError := SaveCutThreadError;
@@ -766,10 +939,14 @@ begin
 
   FPB.BuildBuffer;
   FPB.BuildDrawBuffer;
-  FPB.Paint;
+  FPB.Invalidate;
 
-  FUndoStep := UndoStep;
-  FUndoList.Remove(UndoStep);
+  if FUndoStep <> nil then
+  begin
+    SysUtils.DeleteFile(FUndoStep.Filename);
+    FreeAndNil(FUndoStep);
+  end;
+  FUndoStep := FUndoList.Extract(UndoStep);
 
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
@@ -795,7 +972,7 @@ begin
 
   FPB.BuildBuffer;
   FPB.BuildDrawBuffer;
-  FPB.Paint;
+  FPB.Invalidate;
 
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
@@ -812,7 +989,7 @@ begin
 
   FPB.BuildBuffer;
   FPB.BuildDrawBuffer;
-  FPB.Paint;
+  FPB.Invalidate;
 
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
@@ -822,12 +999,14 @@ procedure TCutView.Save;
 var
   EncoderSettings: TEncoderSettings;
 begin
+  if FShuttingDown or (FFileConvertorThread <> nil) or not CanSave then
+    Exit;
+
   FSaving := True;
 
   if FPlayer <> nil then
     FreeAndNil(FPlayer);
 
-  FSaveSecs := Trunc(FWaveData.Secs);
   FreeAndNil(FWaveData);
 
   // Wiedergabe ggf. anhalten
@@ -835,7 +1014,8 @@ begin
 
   FFileTagger.Read(FOriginalFilename);
 
-  CreateConvertor;
+  if not CreateConvertor then
+    Exit;
 
   EncoderSettings := TEncoderSettings.Create(FilenameToFormat(FOriginalFilename), FBitrateType, FQuality);
   EncoderSettings.CBRBitrate := FBitrate;
@@ -852,7 +1032,7 @@ begin
 
   FPB.BuildBuffer;
   FPB.BuildDrawBuffer;
-  FPB.Paint;
+  FPB.Invalidate;
 
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
@@ -860,18 +1040,37 @@ end;
 
 procedure TCutView.SaveCutThreadEndSave(Sender: TObject);
 begin
-  LoadFile(FSaveCutThread.FOutFilename, True, False);
+  if FShuttingDown then
+    Exit;
 
-  FWorkingFilename := FSaveCutThread.FOutFilename;
+  FSaveCutSucceeded := True;
+  FWorkingFilename := TSaveCutThread(Sender).OutFilename;
+  Application.QueueAsyncCall(Self.SaveCutThreadEndSaveAsync, 0);
+end;
 
-  if Assigned(FOnStateChanged) then
-    FOnStateChanged(Self);
+procedure TCutView.SaveCutThreadEndSaveAsync(Data: PtrInt);
+begin
+  if FShuttingDown then
+    Exit;
+
+  LoadFile(FWorkingFilename, True, False);
 end;
 
 procedure TCutView.SaveCutThreadError(Sender: TObject);
+begin
+  if not FShuttingDown then
+  begin
+    FSaveCutSucceeded := False;
+    Application.QueueAsyncCall(Self.SaveCutThreadErrorAsync, 0);
+  end;
+end;
+
+procedure TCutView.SaveCutThreadErrorAsync(Data: PtrInt);
 var
   DriveLetter: string;
 begin
+  if FShuttingDown then
+    Exit;
   FSaving := False;
 
   FProgressBarLoad.Visible := False;
@@ -881,36 +1080,65 @@ begin
   FPB.BuildDrawBuffer;
   FPB.Repaint;
 
-  if Assigned(FOnStateChanged) then
-    FOnStateChanged(Self);
-
   DriveLetter := '';
   if UTF8LengthFast(AppGlobals.TempDir) > 3 then
   begin
-    DriveLetter := Copy(AppGlobals.TempDir, 0, 2);
+    DriveLetter := Copy(AppGlobals.TempDir, 1, 2);
     TFunctions.MsgBox(Format(_('The temporary cut-file could not be saved. Make sure there is enough free diskspace on drive %s.'), [DriveLetter]), _('Error'), MB_ICONERROR);
   end;
+
+  if Assigned(FOnStateChanged) then
+    Application.QueueAsyncCall(Self.StateChangedAsync, 0);
+end;
+
+procedure TCutView.StateChangedAsync(Data: PtrInt);
+begin
+  if not FShuttingDown and Assigned(FOnStateChanged) then
+    FOnStateChanged(Self);
+end;
+
+procedure TCutView.UpdateProgressBar(Percent: Integer);
+begin
+  if FProgressBarLoad = nil then
+    Exit;
+
+  if Percent < FProgressBarLoad.Min then
+    Percent := FProgressBarLoad.Min
+  else if Percent > FProgressBarLoad.Max then
+    Percent := FProgressBarLoad.Max;
+
+  FProgressBarLoad.Position := Percent;
+end;
+
+function TCutView.HasWaveData: Boolean;
+begin
+  Result := False;
+  if FWaveData = nil then
+    Exit;
+  Result := Length(FWaveData.WaveArray) > 0;
 end;
 
 procedure TCutView.SaveCutThreadProgress(Sender: TObject);
 begin
-  if FSaveCutThread.Progress < 100 then
-    FProgressBarLoad.Position := FSaveCutThread.Progress + 1;
-  FProgressBarLoad.Position := FSaveCutThread.Progress;
+  if FShuttingDown then
+    Exit;
+
+  UpdateProgressBar(TSaveCutThread(Sender).Progress);
 end;
 
 procedure TCutView.SaveCutThreadTerminate(Sender: TObject);
 begin
-  FProgressBarLoad.Visible := False;
-
-  FSaveCutThread := nil;
+  if not FShuttingDown then
+    Application.QueueAsyncCall(Self.ThreadCleanupAsync, PtrInt(Sender));
 end;
 
 procedure TCutView.SetPosition(Start: Boolean);
 var
   Paused: Boolean;
 begin
-  if (FWaveData = nil) or (Length(FWaveData.WaveArray) < 2) then
+  if not HasWaveData then
+    Exit;
+  if Length(FWaveData.WaveArray) < 2 then
     Exit;
 
   if FWaveData.ZoomSize < Length(FWaveData.WaveArray) - 1 then
@@ -978,54 +1206,85 @@ end;
 
 procedure TCutView.PlayerEndReached(Sender: TObject);
 begin
+  if FShuttingDown or (FPlayer = nil) or (Sender <> FPlayer) then
+    Exit;
+
+  FPB.FTimer.Enabled := False;
   FPlayer.Stop(False);
   FPlayer.PositionByte := 0;
 
-  PostMessage(Handle, WM_USER + 1234, 0, 0);
+  Application.QueueAsyncCall(Self.PlayerEndReachedAsync, 0);
+end;
+
+procedure TCutView.PlayerEndReachedAsync(Data: PtrInt);
+begin
+  if FShuttingDown then
+    Exit;
+
+  FPB.FPlayLine := 0;
+  FPB.BuildDrawBuffer;
+  FPB.Invalidate;
+
+  if Assigned(FOnStateChanged) then
+    FOnStateChanged(Self);
 end;
 
 procedure TCutView.PlayerPause(Sender: TObject);
 begin
+  if FShuttingDown then
+    Exit;
+  FPB.FTimer.Enabled := False;
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
 end;
 
 procedure TCutView.PlayerPlay(Sender: TObject);
 begin
+  if FShuttingDown then
+    Exit;
+  FPB.FTimer.Enabled := True;
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
 end;
 
 procedure TCutView.PlayerStop(Sender: TObject);
 begin
+  if FShuttingDown then
+    Exit;
+  FPB.FTimer.Enabled := False;
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
 end;
 
 procedure TCutView.ProcessThreadError(Sender: TObject);
 begin
-  FProcessThread := nil;
-  TFunctions.MsgBox(_('An error occured while processing the file.'), _('Error'), MB_ICONERROR);
+  if FShuttingDown then
+    Exit;
 
-  LoadFile(FWorkingFilename, True, False);
+  FProcessSucceeded := False;
 end;
 
 procedure TCutView.ProcessThreadSuccess(Sender: TObject);
 begin
-  FWorkingFilename := TProcessThread(Sender).FTempFile;
+  if FShuttingDown then
+    Exit;
 
-  FProcessThread := nil;
-  FState := csReady;
+  FWorkingFilename := TProcessThread(Sender).TempFile;
+  FProcessSucceeded := True;
+end;
 
-  LoadFile(FWorkingFilename, True, False);
+procedure TCutView.ProcessThreadProgress(Sender: TObject);
+begin
+  if FShuttingDown then
+    Exit;
 
-  if Assigned(FOnStateChanged) then
-    FOnStateChanged(Self);
+  UpdateProgressBar(TProcessThread(Sender).Progress);
 end;
 
 procedure TCutView.ProcessThreadTerminate(Sender: TObject);
 begin
-  FProcessThread := nil;
+  if not FShuttingDown then
+    Application.QueueAsyncCall(Self.ThreadCleanupAsync, PtrInt(Sender));
 end;
 
 procedure TCutView.StartProcessing(CmdLine: string);
@@ -1033,6 +1292,7 @@ var
   TempFile: string;
 begin
   AddUndo;
+  FProcessSucceeded := False;
 
   if FPlayer <> nil then
     FreeAndNil(FPlayer);
@@ -1045,11 +1305,14 @@ begin
   CmdLine := StringReplace(CmdLine, '[[TEMPFILE]]', TempFile, [rfReplaceAll]);
 
   FState := csWorking;
+  FProgressBarLoad.Position := 0;
+  FProgressBarLoad.Visible := True;
   FPB.BuildBuffer;
   FPB.BuildDrawBuffer;
-  FPB.Paint;
+  FPB.Invalidate;
 
   FProcessThread := TProcessThread.Create(CmdLine, ExtractFilePath(AppGlobals.AddonManager.Find(TAddonSoX).ModuleFilePath), FWorkingFilename, TempFile);
+  FProcessThread.OnProgress := ProcessThreadProgress;
   FProcessThread.OnSuccess := ProcessThreadSuccess;
   FProcessThread.OnError := ProcessThreadError;
   FProcessThread.OnTerminate := ProcessThreadTerminate;
@@ -1068,7 +1331,7 @@ begin
     FPlayer.Pause;
 
   FPB.BuildDrawBuffer;
-  FPB.Paint;
+  FPB.Invalidate;
 
   if Assigned(FOnStateChanged) then
     FOnStateChanged(Self);
@@ -1079,6 +1342,10 @@ var
   CmdLine: string;
   FadeTo, FadeStart: Integer;
 begin
+  if not HasWaveData then
+    Exit;
+  if Length(FWaveData.WaveArray) < 2 then
+    Exit;
   if not CheckSoX then
     Exit;
 
@@ -1106,11 +1373,29 @@ begin
   FUndoList.Add(TUndoStep.Create(FWorkingFilename, FPB.FStartLine, FPB.FEndLine, FPB.FEffectStartLine, FPB.FEffectEndLine, FPB.FPlayLine));
 end;
 
+procedure TCutView.ClearUndoList(DeleteFiles: Boolean);
+var
+  i: Integer;
+begin
+  if FUndoList = nil then
+    Exit;
+
+  if DeleteFiles then
+    for i := 0 to FUndoList.Count - 1 do
+      SysUtils.DeleteFile(FUndoList[i].Filename);
+
+  FUndoList.Clear;
+end;
+
 procedure TCutView.ApplyEffects;
 var
   CmdLine: string;
   F: TfrmConfigureSoX;
 begin
+  if not HasWaveData then
+    Exit;
+  if Length(FWaveData.WaveArray) < 2 then
+    Exit;
   if not CheckSoX then
     Exit;
 
@@ -1160,7 +1445,9 @@ end;
 
 procedure TCutView.AutoCut(MaxPeaks: Integer; MinDuration: Cardinal);
 begin
-  if FWaveData = nil then
+  if not HasWaveData then
+    Exit;
+  if Length(FWaveData.WaveArray) < 2 then
     Exit;
 
   FWaveData.ClearSilence;
@@ -1174,26 +1461,48 @@ end;
 
 function TCutView.CanCut: Boolean;
 begin
-  Result := (FWaveData <> nil) and (FPB.FEndLine - FPB.FStartLine > 0) and (FWaveData.TimeBetween(FPB.FStartLine, FPB.FEndLine) >= 0.5) and ((FPB.FStartLine > 0) or (FPB.FEndLine < High(FWaveData.WaveArray)));
+  Result := False;
+  if not HasWaveData then
+    Exit;
+  if Length(FWaveData.WaveArray) < 2 then
+    Exit;
+
+  Result := (FPB.FEndLine - FPB.FStartLine > 0) and
+    (FWaveData.TimeBetween(FPB.FStartLine, FPB.FEndLine) >= 0.5) and
+    ((FPB.FStartLine > 0) or (FPB.FEndLine < High(FWaveData.WaveArray)));
 end;
 
 function TCutView.CanEffectsMarker: Boolean;
 begin
-  Result := (FWaveData <> nil);
+  Result := False;
+  if not HasWaveData then
+    Exit;
+  Result := Length(FWaveData.WaveArray) > 1;
 end;
 
 function TCutView.CanUndo: Boolean;
 begin
-  Result := (FWaveData <> nil) and (FUndoList.Count > 0);
+  Result := False;
+  if not HasWaveData then
+    Exit;
+  Result := (Length(FWaveData.WaveArray) > 1) and (FUndoList.Count > 0);
 end;
 
 function TCutView.CanPlay: Boolean;
 begin
-  Result := (FPlayer <> nil) and (FWaveData <> nil) and (not FPlayer.Playing);
+  Result := False;
+  if (FPlayer = nil) or not HasWaveData then
+    Exit;
+  Result := (Length(FWaveData.WaveArray) > 1) and (not FPlayer.Playing);
 end;
 
 function TCutView.CanStop: Boolean;
 begin
+  Result := False;
+  if not HasWaveData then
+    Exit;
+  if Length(FWaveData.WaveArray) < 2 then
+    Exit;
   Result := (FPlayer <> nil) and FPlayer.Playing;
 end;
 
@@ -1201,8 +1510,11 @@ function TCutView.CanApplyFadeIn: Boolean;
 var
   Tolerance: Integer;
 begin
-  if FWaveData = nil then
-    Exit(False);
+  Result := False;
+  if not HasWaveData then
+    Exit;
+  if (Length(FWaveData.WaveArray) < 2) or (FPB.ClientWidth <= 0) then
+    Exit;
 
   Tolerance := Trunc((FWaveData.ZoomSize div FPB.ClientWidth) * 3.5) + 4;
   Result := (FWaveData.TimeBetween(FPB.FEffectStartLine, FPB.FEffectEndLine) >= 0.5) and ((FPB.FEffectStartLine <= Tolerance) or (FPB.FEffectEndLine <= Tolerance));
@@ -1212,8 +1524,11 @@ function TCutView.CanApplyFadeOut: Boolean;
 var
   Tolerance: Integer;
 begin
-  if FWaveData = nil then
-    Exit(False);
+  Result := False;
+  if not HasWaveData then
+    Exit;
+  if (Length(FWaveData.WaveArray) < 2) or (FPB.ClientWidth <= 0) then
+    Exit;
 
   Tolerance := Trunc((FWaveData.ZoomSize div FPB.ClientWidth) * 3.5) + 4;
   Result := (FWaveData.TimeBetween(FPB.FEffectStartLine, FPB.FEffectEndLine) >= 0.5) and ((FPB.FEffectStartLine >= Length(FWaveData.WaveArray) - Tolerance) or (FPB.FEffectEndLine >= Length(FWaveData.WaveArray) - Tolerance));
@@ -1221,32 +1536,52 @@ end;
 
 function TCutView.CanApplyEffects: Boolean;
 begin
-  Result := (FWaveData <> nil);
+  Result := False;
+  if not HasWaveData then
+    Exit;
+  Result := Length(FWaveData.WaveArray) > 1;
 end;
 
 function TCutView.CanAutoCut: Boolean;
 begin
-  Result := FWaveData <> nil;
+  Result := False;
+  if not HasWaveData then
+    Exit;
+  Result := Length(FWaveData.WaveArray) > 1;
 end;
 
 function TCutView.CanSave: Boolean;
 begin
-  Result := (FWaveData <> nil) and (FLastCheckSum <> FWaveData.CheckSum);
+  Result := False;
+  if not HasWaveData then
+    Exit;
+  Result := (Length(FWaveData.WaveArray) > 1) and (FLastCheckSum <> FWaveData.CheckSum);
 end;
 
 function TCutView.CanSetLine: Boolean;
 begin
-  Result := FWaveData <> nil;
+  Result := False;
+  if not HasWaveData then
+    Exit;
+  Result := Length(FWaveData.WaveArray) > 1;
 end;
 
 function TCutView.CanZoomIn: Boolean;
 begin
-  Result := (FWaveData <> nil) and (FWaveData.TimeBetween(FPB.FEffectStartLine, FPB.FEffectEndLine) >= 0.5);
+  Result := False;
+  if not HasWaveData then
+    Exit;
+  Result := (Length(FWaveData.WaveArray) > 1) and
+    (FWaveData.TimeBetween(FPB.FEffectStartLine, FPB.FEffectEndLine) >= 0.5);
 end;
 
 function TCutView.CanZoomOut: Boolean;
 begin
-  Result := (FWaveData <> nil) and ((FWaveData.ZoomStart > -1) or (FWaveData.ZoomEnd > -1)) and ((FWaveData.ZoomStart <> 0) or (FWaveData.ZoomEnd <> High(FWaveData.WaveArray)));
+  Result := False;
+  if not HasWaveData then
+    Exit;
+  Result := (Length(FWaveData.WaveArray) > 1) and
+    ((FWaveData.ZoomStart <> 0) or (FWaveData.ZoomEnd <> High(FWaveData.WaveArray)));
 end;
 
 function TCutView.CheckSoX: Boolean;
@@ -1263,11 +1598,18 @@ end;
 
 procedure TCutView.ThreadEndScan(Sender: TObject);
 begin
+  if FShuttingDown then
+    Exit;
   FProgressBarLoad.Visible := False;
 
   if FWaveData <> nil then
-    FWaveData.Free;
-  FWaveData := FScanThread.FWaveData;
+    FreeAndNil(FWaveData);
+  FWaveData := TScanThread(Sender).TakeWaveData;
+  if not HasWaveData then
+  begin
+    SetLoadError;
+    Exit;
+  end;
 
   if (FSaving) or (FUndoList.Count = 0) then
     FLastCheckSum := FWaveData.CheckSum;
@@ -1275,34 +1617,76 @@ begin
 
   if FUndoStep <> nil then
   begin
-    FPB.FStartLine := FUndoStep.StartLine;
-    FPB.FEndLine := FUndoStep.EndLine;
-    FPB.FEffectStartLine := FUndoStep.EffectStartLine;
-    FPB.FEffectEndLine := FUndoStep.EffectEndLine;
-    FPB.FPlayLine := FUndoStep.PlayLine;
+    FPB.FStartLine := FPB.ClampIndex(FUndoStep.StartLine);
+    FPB.FEndLine := FPB.ClampIndex(FUndoStep.EndLine);
+    if FUndoStep.EffectStartLine < 0 then
+      FPB.FEffectStartLine := -1
+    else
+      FPB.FEffectStartLine := FPB.ClampIndex(FUndoStep.EffectStartLine);
+    if FUndoStep.EffectEndLine < 0 then
+      FPB.FEffectEndLine := -1
+    else
+      FPB.FEffectEndLine := FPB.ClampIndex(FUndoStep.EffectEndLine);
+    FPB.FPlayLine := FPB.ClampIndex(FUndoStep.PlayLine);
   end else
   begin
     FPB.FStartLine := 0;
     FPB.FEndLine := High(FWaveData.WaveArray);
+    FPB.FEffectStartLine := -1;
+    FPB.FEffectEndLine := -1;
     FPB.FPlayLine := 0;
   end;
 
-  FScanThread := nil;
+  if Length(FWaveData.WaveArray) > 1 then
+  begin
+    if FPB.FStartLine >= FPB.FEndLine then
+    begin
+      FPB.FEndLine := Min(High(FWaveData.WaveArray), FPB.FStartLine + 1);
+      if FPB.FStartLine >= FPB.FEndLine then
+        FPB.FStartLine := Max(0, FPB.FEndLine - 1);
+    end;
+  end else
+  begin
+    FPB.FStartLine := 0;
+    FPB.FEndLine := 0;
+  end;
+  FPB.FPlayingIndex := Cardinal(FPB.ClampIndex(FPB.FPlayLine));
 
   FState := csReady;
 
-  if Assigned(FOnStateChanged) then
-    FOnStateChanged(Self);
+  FPB.BuildBuffer;
+  FPB.BuildDrawBuffer;
+  FPB.Invalidate;
 
-  FPB.Resize;
-  FPB.Paint;
-  FPB.Repaint;
+  if Assigned(FOnStateChanged) then
+    Application.QueueAsyncCall(Self.StateChangedAsync, 0);
 end;
 
 procedure TCutView.ThreadScanError(Sender: TObject);
 begin
-  FSaving := False;
+  SetLoadError;
+end;
 
+procedure TCutView.ThreadScanProgress(Sender: TObject);
+begin
+  if FShuttingDown or (TScanThread(Sender).WaveData = nil) then
+    Exit;
+
+  UpdateProgressBar(TScanThread(Sender).WaveData.Progress);
+end;
+
+procedure TCutView.ThreadTerminate(Sender: TObject);
+begin
+  if not FShuttingDown then
+    Application.QueueAsyncCall(Self.ThreadCleanupAsync, PtrInt(Sender));
+end;
+
+procedure TCutView.SetLoadError;
+begin
+  if FShuttingDown then
+    Exit;
+
+  FSaving := False;
   FProgressBarLoad.Visible := False;
   FState := csLoadError;
 
@@ -1311,30 +1695,72 @@ begin
   FPB.Repaint;
 end;
 
-procedure TCutView.ThreadScanProgress(Sender: TObject);
+{ TCutPaintBox }
+
+function TCutPaintBox.ClampIndex(Value: Integer): Integer;
+var
+  MaxIndex: Integer;
 begin
-  if FScanThread.FWaveData.Progress < 100 then
-    FProgressBarLoad.Position := FScanThread.FWaveData.Progress + 1;
-  FProgressBarLoad.Position := FScanThread.FWaveData.Progress;
+  Result := 0;
+  if FCutView = nil then
+    Exit;
+  if not FCutView.HasWaveData then
+    Exit;
+
+  MaxIndex := High(FCutView.FWaveData.WaveArray);
+  if Value < 0 then
+    Result := 0
+  else if Value > MaxIndex then
+    Result := MaxIndex
+  else
+    Result := Value;
 end;
 
-procedure TCutView.ThreadTerminate(Sender: TObject);
+procedure TCutPaintBox.ClampZoomRange(var StartPos, EndPos: Integer);
+var
+  MaxIndex, MinimumRange, Swap: Integer;
 begin
-  FScanThread := nil;
-
-  if not Application.Terminated then
+  if FCutView = nil then
   begin
-    if FProgressBarLoad.Visible then
-      FProgressBarLoad.Visible := False;
+    StartPos := 0;
+    EndPos := -1;
+    Exit;
+  end;
+  if not FCutView.HasWaveData then
+  begin
+    StartPos := 0;
+    EndPos := -1;
+    Exit;
+  end;
 
-    if FUndoStep <> nil then
-      FreeAndNil(FUndoStep);
+  MaxIndex := High(FCutView.FWaveData.WaveArray);
+  StartPos := ClampIndex(StartPos);
+  EndPos := ClampIndex(EndPos);
+  if StartPos > EndPos then
+  begin
+    Swap := StartPos;
+    StartPos := EndPos;
+    EndPos := Swap;
+  end;
+
+  MinimumRange := Min(MinimumDisplayedSampleCount, MaxIndex);
+  if EndPos - StartPos < MinimumRange then
+  begin
+    EndPos := Min(MaxIndex, StartPos + MinimumRange);
+    StartPos := Max(0, EndPos - MinimumRange);
   end;
 end;
 
-{ TCutPaintBox }
-
 procedure TCutPaintBox.BuildBuffer;
+
+  procedure DrawPeakEnd(X, Y: Integer);
+  begin
+    if (X < 0) or (X >= FWaveBuf.Width) or (Y < 0) or (Y >= FWaveBuf.Height) then
+      Exit;
+
+    FWaveBuf.Canvas.Brush.Color := FPeakEndColor;
+    FWaveBuf.Canvas.FillRect(Classes.Rect(X, Y, X + 1, Y + 1));
+  end;
 
   procedure DrawTransparentBox(StartIdx: Integer; EndIdx: Integer; BrushColor: TColor; PenColor: TColor = clNone);
   var
@@ -1360,8 +1786,9 @@ procedure TCutPaintBox.BuildBuffer;
 
   procedure DrawScrollBar(Color: TColor);
   var
-    StartX, StartY, EndX: Integer;
+    StartX, StartY, EndX, MaxIndex: Integer;
   begin
+    MaxIndex := Max(1, High(FCutView.FWaveData.WaveArray));
     with FWaveBuf.Canvas do
     begin
       // Draw Outline
@@ -1374,8 +1801,8 @@ procedure TCutPaintBox.BuildBuffer;
       LineTo(1, StartY);
 
       // Draw Bar
-      StartX := Trunc((FCutView.FWaveData.ZoomStart * (FWaveBuf.Width - 6)) / High(FCutView.FWaveData.WaveArray)) + 3;
-      EndX := Trunc((FCutView.FWaveData.ZoomEnd * (FWaveBuf.Width - 6)) / High(FCutView.FWaveData.WaveArray)) + 3;
+      StartX := Trunc((Int64(FCutView.FWaveData.ZoomStart) * (FWaveBuf.Width - 6)) / MaxIndex) + 3;
+      EndX := Trunc((Int64(FCutView.FWaveData.ZoomEnd) * (FWaveBuf.Width - 6)) / MaxIndex) + 3;
       if StartX = EndX then
         EndX := StartX + 1;
 
@@ -1385,7 +1812,7 @@ procedure TCutPaintBox.BuildBuffer;
   end;
 
 var
-  i, V, VNext: Integer;
+  i, V, VNext, ZoomRangeSize: Integer;
   V2: Double;
   Last: Integer;
   LBuf, RBuf: Cardinal;
@@ -1396,6 +1823,11 @@ var
   CS, CE: Integer;
   TextWrite: string = '';
 begin
+  if (FWaveBuf = nil) or (FWaveBuf.Width <= 6) or (FWaveBuf.Height < 2) then
+    Exit;
+  if FCutView = nil then
+    Exit;
+
   FWaveBuf.Canvas.Brush.Color := FBackgroundColor;
   FWaveBuf.Canvas.FillRect(Classes.Rect(0, 0, FWaveBuf.Width, FWaveBuf.Height));
 
@@ -1423,14 +1855,11 @@ begin
   begin
     FWaveBuf.Canvas.Font.Color := clWhite;
     SetBkMode(FWaveBuf.Canvas.Handle, TRANSPARENT);
-    FWaveBuf.Canvas.TextOut(FWaveBuf.Width div 2 - Canvas.GetTextWidth(TextWrite) div 2, FWaveBuf.Height div 2 - Canvas.GetTextHeight(TextWrite) - Scale96ToFont(PROGRESSBAR_HEIGHT) div 2 - FSpacing, TextWrite);
+    FWaveBuf.Canvas.TextOut(FWaveBuf.Width div 2 - FWaveBuf.Canvas.GetTextWidth(TextWrite) div 2, FWaveBuf.Height div 2 - FWaveBuf.Canvas.GetTextHeight(TextWrite) - Scale96ToFont(PROGRESSBAR_HEIGHT) div 2 - FSpacing, TextWrite);
     Exit;
   end;
 
-  if (FCutView = nil) or (FCutView.FWaveData = nil) then
-    Exit;
-
-  if Length(FCutView.FWaveData.WaveArray) = 0 then
+  if not FCutView.HasWaveData then
     Exit;
 
   HT := (FWaveBuf.Height div 2) - FScrollbarHeight - 1;
@@ -1444,17 +1873,24 @@ begin
   begin
     if FZoomStartLine <= -1 then
     begin
-      FCutView.FWaveData.ZoomStart := 0;
-      FCutView.FWaveData.ZoomEnd := High(FCutView.FWaveData.WaveArray);
-    end else
-    begin
-      FCutView.FWaveData.ZoomStart := FZoomStartLine;
-      FCutView.FWaveData.ZoomEnd := FZoomEndLine;
-      FZoomStartLine := -1;
-      FZoomEndLine := -1;
+      FZoomStartLine := 0;
+      FZoomEndLine := High(FCutView.FWaveData.WaveArray);
     end;
+
+    ClampZoomRange(FZoomStartLine, FZoomEndLine);
+    FCutView.FWaveData.ZoomStart := FZoomStartLine;
+    FCutView.FWaveData.ZoomEnd := FZoomEndLine;
+    FZoomStartLine := -1;
+    FZoomEndLine := -1;
     FDoZoom := False;
   end;
+
+  ArrayFrom := FCutView.FWaveData.ZoomStart;
+  ArrayTo := FCutView.FWaveData.ZoomEnd;
+  ClampZoomRange(ArrayFrom, ArrayTo);
+  FCutView.FWaveData.ZoomStart := ArrayFrom;
+  FCutView.FWaveData.ZoomEnd := ArrayTo;
+  ZoomRangeSize := Max(1, ArrayTo - ArrayFrom);
 
   for i := 0 to FCutView.FWaveData.Silence.Count - 1 do
   begin
@@ -1472,15 +1908,12 @@ begin
     FWaveBuf.Canvas.FillRect(Classes.Rect(L1, HT + 1, L2, FWaveBuf.Height - FScrollbarHeight - FEdge));
   end;
 
-  ArrayFrom := FCutView.FWaveData.ZoomStart;
-  ArrayTo := FCutView.FWaveData.ZoomEnd;
-
   V2 := (1 / 1) * FWaveBuf.Width;
 
   for i := ArrayFrom to ArrayTo do
   begin
-    V := Integer(Trunc(((i - ArrayFrom) / (ArrayTo - ArrayFrom)) * V2));
-    VNext := Integer(Trunc(((i - ArrayFrom + 1) / (ArrayTo - ArrayFrom)) * V2));
+    V := Integer(Trunc(((i - ArrayFrom) / ZoomRangeSize) * V2));
+    VNext := Integer(Trunc(((i - ArrayFrom + 1) / ZoomRangeSize) * V2));
 
     if V = Last then
     begin
@@ -1504,14 +1937,14 @@ begin
     begin
       FWaveBuf.Canvas.MoveTo(V, HT - 1);
       FWaveBuf.Canvas.LineTo(V, HT - 1 - Trunc((LBuf / 33000) * HT));
-      FWaveBuf.Canvas.Pixels[V, HT - 1 - Trunc((LBuf / 33000) * HT)] := FPeakEndColor;
+      DrawPeakEnd(V, HT - 1 - Trunc((LBuf / 33000) * HT));
       FWaveBuf.Canvas.MoveTo(V, HT + 1);
       FWaveBuf.Canvas.LineTo(V, HT + 1 + Trunc((RBuf / 33000) * HT));
-      FWaveBuf.Canvas.Pixels[V, HT + 1 + Trunc((RBuf / 33000) * HT)] := FPeakEndColor;
+      DrawPeakEnd(V, HT + 1 + Trunc((RBuf / 33000) * HT));
     end else
     begin
       FWaveBuf.Canvas.FillRect(Classes.Rect(V, HT, VNext - 1, HT - Trunc((LBuf / 33000) * HT)));
-      FWaveBuf.Canvas.FillRect(Classes.Rect(V, HT + 1, VNext - 1, HT + 1 + Trunc((LBuf / 33000) * HT)));
+      FWaveBuf.Canvas.FillRect(Classes.Rect(V, HT + 1, VNext - 1, HT + 1 + Trunc((RBuf / 33000) * HT)));
     end;
 
     RBuf := 0;
@@ -1531,10 +1964,10 @@ begin
 
     FWaveBuf.Canvas.MoveTo(Last, HT - 1);
     FWaveBuf.Canvas.LineTo(Last, HT - 1 - Trunc((LBuf / 33000) * HT));
-    FWaveBuf.Canvas.Pixels[Last, HT - 1 - Trunc((LBuf / 33000) * HT)] := FPeakEndColor;
+    DrawPeakEnd(Last, HT - 1 - Trunc((LBuf / 33000) * HT));
     FWaveBuf.Canvas.MoveTo(Last, HT + 1);
     FWaveBuf.Canvas.LineTo(Last, HT + 1 + Trunc((RBuf / 33000) * HT));
-    FWaveBuf.Canvas.Pixels[Last, HT + 1 + Trunc((RBuf / 33000) * HT)] := FPeakEndColor;
+    DrawPeakEnd(Last, HT + 1 + Trunc((RBuf / 33000) * HT));
   end;
 
   FWaveBuf.Canvas.Pen.Color := ColorAdjustLuma(FPeakColor, -20, False);
@@ -1552,6 +1985,7 @@ procedure TCutPaintBox.BuildDrawBuffer;
   var
     L: Integer;
   begin
+    ArrayIdx := ClampIndex(ArrayIdx);
     L := Trunc(((ArrayIdx - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FDrawBuf.Width);
 
     FDrawBuf.Canvas.Pen.Color := Color;
@@ -1563,6 +1997,7 @@ procedure TCutPaintBox.BuildDrawBuffer;
     L, TextWidth: Integer;
     SecText: string;
   begin
+    ArrayIdx := ClampIndex(ArrayIdx);
     L := Trunc(((ArrayIdx - FCutView.FWaveData.ZoomStart) / FCutView.FWaveData.ZoomSize) * FDrawBuf.Width);
     SecText := BuildTime(FCutView.FWaveData.WaveArray[ArrayIdx].Sec, True);
     TextWidth := FDrawBuf.Canvas.GetTextWidth(SecText);
@@ -1573,28 +2008,32 @@ procedure TCutPaintBox.BuildDrawBuffer;
   end;
 
 begin
-  FDrawBuf.Free;
-  FDrawBuf := Graphics.TBitmap.Create;
-  FDrawBuf.Width := FWaveBuf.Width;
-  FDrawBuf.Height := FWaveBuf.Height;
+  if (FWaveBuf = nil) or (FDrawBuf = nil) then
+    Exit;
+
+  FDrawBuf.SetSize(FWaveBuf.Width, FWaveBuf.Height);
 
   FDrawBuf.Canvas.Draw(0, 0, FWaveBuf);
 
-  if (FCutView.FWaveData <> nil) and (not (FCutView.FState in [csWorking, csDecoding, csEncoding, csConvertorError])) then
-  begin
-    DrawLine(FStartLine, FStartColor);
-    DrawLine(FEndLine, FEndColor);
-    DrawLine(FPlayLine, FPlayColor);
+  if FCutView = nil then
+    Exit;
+  if not FCutView.HasWaveData then
+    Exit;
+  if FCutView.FState in [csWorking, csDecoding, csEncoding, csConvertorError] then
+    Exit;
 
-    FDrawBuf.Canvas.Font.Color := clWhite;
-    SetBkMode(FDrawBuf.Canvas.Handle, TRANSPARENT);
+  DrawLine(FStartLine, FStartColor);
+  DrawLine(FEndLine, FEndColor);
+  DrawLine(FPlayLine, FPlayColor);
 
-    FDrawBuf.Canvas.TextOut(FSpacing, FSpacing, BuildTime(FCutView.FWaveData.Secs, True) + ' - ' + TFunctions.RemoveFileExt(ExtractFileName(FCutView.FOriginalFilename)));
+  FDrawBuf.Canvas.Font.Color := clWhite;
+  SetBkMode(FDrawBuf.Canvas.Handle, TRANSPARENT);
 
-    DrawLineText(FPlayLine, FSpacing * 2 + FDrawBuf.Canvas.GetTextHeight('Ay'));
-    DrawLineText(FStartLine, FSpacing * 3 + FDrawBuf.Canvas.GetTextHeight('Ay') * 2);
-    DrawLineText(FEndLine, FSpacing * 4 + FDrawBuf.Canvas.GetTextHeight('Ay') * 3);
-  end;
+  FDrawBuf.Canvas.TextOut(FSpacing, FSpacing, BuildTime(FCutView.FWaveData.Secs, True) + ' - ' + TFunctions.RemoveFileExt(ExtractFileName(FCutView.FOriginalFilename)));
+
+  DrawLineText(FPlayLine, FSpacing * 2 + FDrawBuf.Canvas.GetTextHeight('Ay'));
+  DrawLineText(FStartLine, FSpacing * 3 + FDrawBuf.Canvas.GetTextHeight('Ay') * 2);
+  DrawLineText(FEndLine, FSpacing * 4 + FDrawBuf.Canvas.GetTextHeight('Ay') * 3);
 end;
 
 constructor TCutPaintBox.Create(AOwner: TComponent);
@@ -1625,14 +2064,15 @@ begin
 
   FTimer := TTimer.Create(Self);
   FTimer.Interval := 50;
+  FTimer.Enabled := False;
   FTimer.OnTimer := TimerTimer;
 end;
 
 destructor TCutPaintBox.Destroy;
 begin
+  FTimer.Enabled := False;
   FWaveBuf.Free;
   FDrawBuf.Free;
-  FTimer.Enabled := False;
   inherited;
 end;
 
@@ -1642,7 +2082,9 @@ begin
 
   Self.SetFocus;
 
-  if FCutView.FWaveData = nil then
+  if FCutView = nil then
+    Exit;
+  if not FCutView.CanSetLine then
     Exit;
 
   if Button = mbLeft then
@@ -1658,7 +2100,7 @@ begin
         SetLine(X, Button, mmDown);
     cmScroll:
       if Button = mbLeft then
-        HandleScrollBar(X, Y, @Button, mmDown);
+        HandleScrollBar(X, Y, mmDown);
   end;
 end;
 
@@ -1672,34 +2114,30 @@ end;
 
 procedure TCutPaintBox.MouseMove(Shift: TShiftState; X, Y: Integer);
 var
-  Button: PMouseButton;
-  ButtonData: TMouseButton;
+  Button: TMouseButton;
 begin
   inherited;
 
-  if FCutView.FWaveData = nil then
+  if FCutView = nil then
+    Exit;
+  if not FCutView.CanSetLine then
     Exit;
 
   if (X <> FMouseOldX) or (Y <> FMouseOldY) then
   begin
+    Button := mbLeft;
     if ssLeft in Shift then
-    begin
-      ButtonData := mbLeft;
-      Button := @ButtonData;
-    end else if ssRight in Shift then
-    begin
-      ButtonData := mbRight;
-      Button := @ButtonData;
-    end else
-      Button := nil;
+      Button := mbLeft
+    else if ssRight in Shift then
+      Button := mbRight;
 
     case FControlMode of
       cmView:
         if (ssLeft in Shift) or (ssRight in Shift) then
-          SetLine(X, Button^, mmMove);
+          SetLine(X, Button, mmMove);
       cmScroll:
         if ssLeft in Shift then
-          HandleScrollBar(X, Y, Button, mmMove);
+          HandleScrollBar(X, Y, mmMove);
     end;
 
     FMouseOldX := X;
@@ -1714,7 +2152,7 @@ begin
   if FControlMode = cmView then
     SetLine(X, Button, mmUp);
 
-  ReleaseCapture;
+  SetCaptureControl(nil);
   FControlMode := cmNone;
 end;
 
@@ -1732,10 +2170,7 @@ begin
   if FWaveBuf = nil then
     Exit;
 
-  FWaveBuf.Free;
-  FWaveBuf := Graphics.TBitmap.Create;
-  FWaveBuf.Width := ClientWidth;
-  FWaveBuf.Height := ClientHeight;
+  FWaveBuf.SetSize(ClientWidth, ClientHeight);
 
   BuildBuffer;
   BuildDrawBuffer;
@@ -1743,12 +2178,19 @@ end;
 
 function TCutPaintBox.PixelsToArray(X: Integer): Integer;
 begin
-  Result := FCutView.FWaveData.ZoomStart + Ceil((X / FWaveBuf.Width) * FCutView.FWaveData.ZoomSize);
+  Result := 0;
+  if FCutView = nil then
+    Exit;
+  if not FCutView.HasWaveData then
+    Exit;
+  if FWaveBuf = nil then
+    Exit;
+  if FWaveBuf.Width <= 0 then
+    Exit;
 
-  if Result > FCutView.FWaveData.ZoomEnd then
-    Result := FCutView.FWaveData.ZoomEnd;
-  if Result < FCutView.FWaveData.ZoomStart then
-    Result := FCutView.FWaveData.ZoomStart;
+  Result := FCutView.FWaveData.ZoomStart + Ceil((X / FWaveBuf.Width) * FCutView.FWaveData.ZoomSize);
+  Result := ClampIndex(Result);
+  Result := Max(FCutView.FWaveData.ZoomStart, Min(Result, FCutView.FWaveData.ZoomEnd));
 end;
 
 function TCutPaintBox.GetPlayerPos: Integer;
@@ -1756,11 +2198,19 @@ var
   i: Integer;
   SearchFrom, BytePos: Int64;
 begin
-  Result := 0;
+  Result := -1;
+  if FCutView = nil then
+    Exit;
+  if (FCutView.FPlayer = nil) or not FCutView.HasWaveData then
+    Exit;
+
+  if FPlayingIndex > Cardinal(High(FCutView.FWaveData.WaveArray)) then
+    FPlayingIndex := Cardinal(High(FCutView.FWaveData.WaveArray));
+
   BytePos := FCutView.FPlayer.PositionByte;
 
   SearchFrom := 0;
-  if BytePos > FCutView.FWaveData.WaveArray[FPlayingIndex].Pos then
+  if BytePos > FCutView.FWaveData.WaveArray[Integer(FPlayingIndex)].Pos then
     SearchFrom := FPlayingIndex;
 
   for i := SearchFrom to High(FCutView.FWaveData.WaveArray) - 1 do
@@ -1769,12 +2219,22 @@ begin
       Result := i;
       Break;
     end;
+
+  if Result < 0 then
+    Result := High(FCutView.FWaveData.WaveArray);
 end;
 
 procedure TCutPaintBox.SetLine(X: Integer; Button: TMouseButton; Mode: TMouseMode);
 var
   ArrayPos: Integer;
 begin
+  if FCutView = nil then
+    Exit;
+  if not FCutView.HasWaveData then
+    Exit;
+  if Length(FCutView.FWaveData.WaveArray) < 2 then
+    Exit;
+
   ArrayPos := PixelsToArray(X);
 
   if ArrayPos < FCutView.FWaveData.ZoomStart then
@@ -1788,16 +2248,18 @@ begin
       begin
         FStartLine := ArrayPos;
         if FStartLine >= FCutView.FWaveData.ZoomEnd then
-          FStartLine := FCutView.FWaveData.ZoomEnd - 1;
+          FStartLine := Max(FCutView.FWaveData.ZoomStart, FCutView.FWaveData.ZoomEnd - 1);
         if FEndLine <= FStartLine then
-          FEndLine := FStartLine + 1;
+          FEndLine := Min(High(FCutView.FWaveData.WaveArray), FStartLine + 1);
+        if FEndLine <= FStartLine then
+          FStartLine := Max(0, FEndLine - 1);
       end else if (Button = mbRight) and (Mode <> mmUp) then
       begin
         FEndLine := ArrayPos;
         if FEndLine <= FCutView.FWaveData.ZoomStart then
-          FEndLine := FCutView.FWaveData.ZoomStart + 1;
+          FEndLine := Min(High(FCutView.FWaveData.WaveArray), FCutView.FWaveData.ZoomStart + 1);
         if FStartLine >= FEndLine then
-          FStartLine := FEndLine - 1;
+          FStartLine := Max(0, FEndLine - 1);
       end;
     lmPlay:
     begin
@@ -1836,18 +2298,35 @@ begin
     end;
   end;
 
-  if Assigned(FCutView.FOnStateChanged) then
-    FCutView.FOnStateChanged(FCutView);
+  FStartLine := ClampIndex(FStartLine);
+  FEndLine := ClampIndex(FEndLine);
+  FPlayLine := ClampIndex(FPlayLine);
+  if FEffectStartLine >= 0 then
+    FEffectStartLine := ClampIndex(FEffectStartLine);
+  if FEffectEndLine >= 0 then
+    FEffectEndLine := ClampIndex(FEffectEndLine);
 
   BuildDrawBuffer;
-  Paint;
+  Invalidate;
+
+  if Assigned(FCutView.FOnStateChanged) then
+    Application.QueueAsyncCall(FCutView.StateChangedAsync, 0);
 end;
 
-procedure TCutPaintBox.HandleScrollBar(X: Integer; Y: Integer; Button: PMouseButton; Mode: TMouseMode);
+procedure TCutPaintBox.HandleScrollBar(X: Integer; Y: Integer; Mode: TMouseMode);
 var
   StartX, EndX, DiffX: Integer;
 begin
-  DiffX := Trunc(((X - FMouseMoveStartX) * High(FCutView.FWaveData.WaveArray)) / (FWaveBuf.Width - 6));
+  if FCutView = nil then
+    Exit;
+  if not FCutView.HasWaveData then
+    Exit;
+  if Length(FCutView.FWaveData.WaveArray) < 2 then
+    Exit;
+  if (FWaveBuf = nil) or (FWaveBuf.Width <= 6) then
+    Exit;
+
+  DiffX := Trunc((Int64(X - FMouseMoveStartX) * High(FCutView.FWaveData.WaveArray)) / (FWaveBuf.Width - 6));
   StartX := FCutView.FWaveData.ZoomStart + DiffX;
   EndX := FCutView.FWaveData.ZoomEnd + DiffX;
   if StartX < 0 then
@@ -1860,27 +2339,44 @@ begin
     EndX := High(FCutView.FWaveData.WaveArray);
     StartX := EndX - FCutView.FWaveData.ZoomSize;
   end;
+  ClampZoomRange(StartX, EndX);
   FZoomStartLine := StartX;
   FZoomEndLine := EndX;
   FMouseMoveStartX := X;
   FDoZoom := True;
   BuildBuffer;
   BuildDrawBuffer;
-  Paint;
+  Invalidate;
 end;
 
 procedure TCutPaintBox.TimerTimer(Sender: TObject);
+var
+  PlayingPos: Integer;
 begin
   if csDestroying in ComponentState then
     Exit;
+  if FCutView = nil then
+    Exit;
+  if FCutView.FShuttingDown then
+    Exit;
+  if not FCutView.HasWaveData then
+    Exit;
+  if Length(FCutView.FWaveData.WaveArray) < 2 then
+    Exit;
+  if FCutView.FPlayer = nil then
+    Exit;
 
-  if (FCutView.FWaveData <> nil) and (FCutView.FPlayer <> nil) and FCutView.FPlayer.Playing and (not FCutView.FPlayer.Paused) then
+  if FCutView.FPlayer.Playing and (not FCutView.FPlayer.Paused) then
   begin
-    FPlayingIndex := GetPlayerPos;
+    PlayingPos := GetPlayerPos;
+    if PlayingPos < 0 then
+      Exit;
+
+    FPlayingIndex := Cardinal(PlayingPos);
     FPlayLine := FPlayingIndex;
 
     BuildDrawBuffer;
-    Paint;
+    Invalidate;
   end;
 end;
 
@@ -1894,17 +2390,11 @@ end;
 constructor TProcessThread.Create(CommandLine, WorkingDir, FilePath, TempFile: string);
 begin
   inherited Create(True);
-  FreeOnTerminate := True;
+  FreeOnTerminate := False;
   FCommandLine := CommandLine;
   FWorkingDir := WorkingDir;
   FFilePath := FilePath;
   FTempFile := TempFile;
-end;
-
-destructor TProcessThread.Destroy;
-begin
-
-  inherited;
 end;
 
 procedure TProcessThread.Execute;
@@ -1914,8 +2404,6 @@ var
   Failed: Boolean;
   EC: DWORD;
 begin
-  inherited;
-
   Failed := True;
 
   case TFunctions.RunProcess(FCommandLine, FWorkingDir, 300000, FProcessOutput, EC, @Self.Terminated, True, ReadCallbackSoX) of
@@ -1924,6 +2412,9 @@ begin
       begin
         LoopStarted := GetTickCount64;
         while Failed do
+        begin
+          if Terminated then
+            Break;
           try
             FS := TFileStream.Create(TempFile, fmOpenRead or fmShareExclusive);
             try
@@ -1937,6 +2428,7 @@ begin
             if GetTickCount64 > LoopStarted + 5000 then
               Break;
           end;
+        end;
       end;
     rpFail, rpTerminated, rpTimeout: ;
   end;
@@ -1945,21 +2437,61 @@ begin
     SysUtils.DeleteFile(TempFile);
 
   if Failed then
-    SyncError
+    Synchronize(SyncError)
   else
-    SyncSuccess;
+    Synchronize(SyncSuccess);
 end;
 
 procedure TProcessThread.ReadCallbackSoX(Data: AnsiString);
+var
+  PercentPos, NumberStart, Index, ProgressValue: Integer;
 begin
+  FProgressBuffer := FProgressBuffer + Data;
+  PercentPos := Pos('%', FProgressBuffer);
+  while PercentPos > 0 do
+  begin
+    NumberStart := PercentPos - 1;
+    while (NumberStart > 0) and (FProgressBuffer[NumberStart] in ['0'..'9', '.', ',']) do
+      Dec(NumberStart);
 
+    ProgressValue := 0;
+    Index := NumberStart + 1;
+    while (Index < PercentPos) and (FProgressBuffer[Index] in ['0'..'9']) do
+    begin
+      ProgressValue := Min(100, ProgressValue * 10 + Ord(FProgressBuffer[Index]) - Ord('0'));
+      Inc(Index);
+    end;
+
+    if Index > NumberStart + 1 then
+    begin
+      if ProgressValue <> FProgress then
+      begin
+        FProgress := ProgressValue;
+        Synchronize(SyncProgress);
+      end;
+    end;
+
+    Delete(FProgressBuffer, 1, PercentPos);
+    PercentPos := Pos('%', FProgressBuffer);
+  end;
+
+  if Length(FProgressBuffer) > 256 then
+    Delete(FProgressBuffer, 1, Length(FProgressBuffer) - 256);
+end;
+
+procedure TProcessThread.SyncProgress;
+begin
+  if Terminated then
+    Exit;
+  if Assigned(FOnProgress) then
+    FOnProgress(Self);
 end;
 
 procedure TProcessThread.SyncError;
 begin
   if Terminated then
     Exit;
-  if Assigned(FOnSuccess) then
+  if Assigned(FOnError) then
     FOnError(Self);
 end;
 
@@ -1967,7 +2499,7 @@ procedure TProcessThread.SyncSuccess;
 begin
   if Terminated then
     Exit;
-  if Assigned(FOnError) then
+  if Assigned(FOnSuccess) then
     FOnSuccess(Self);
 end;
 
@@ -1989,26 +2521,19 @@ constructor TSaveCutThread.Create(InFilename, OutFilename: string; S, E: Int64);
 begin
   inherited Create(True);
 
-  FreeOnTerminate := True;
+  FreeOnTerminate := False;
 
   FInFilename := InFilename;
   FOutFilename := OutFilename;
   FS := S;
   FE := E;
-end;
-
-destructor TSaveCutThread.Destroy;
-begin
-
-  inherited;
+  FLastProgress := -1;
 end;
 
 procedure TSaveCutThread.Execute;
 var
   C: TFileConvertor;
 begin
-  inherited;
-
   C := TFileConvertor.Create;
   C.OnProgress := FileConvertorProgress;
   try
@@ -2023,8 +2548,12 @@ end;
 
 procedure TSaveCutThread.FileConvertorProgress(Sender: TObject; Percent: Integer);
 begin
-  FProgress := Percent;
-  Synchronize(SyncSaveCutProgress);
+  if FLastProgress <> Percent then
+  begin
+    FLastProgress := Percent;
+    FProgress := Percent;
+    Synchronize(SyncSaveCutProgress);
+  end;
 end;
 
 procedure TSaveCutThread.SyncSaveCutEnd;
