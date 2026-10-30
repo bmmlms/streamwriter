@@ -2,14 +2,14 @@ object frmConfigureSetTags: TfrmConfigureSetTags
   Left = 0
   Height = 377
   Top = 0
-  Width = 291
+  Width = 340
   AutoSize = True
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   BorderWidth = 4
   Caption = 'frmConfigureSetTags'
   ClientHeight = 377
-  ClientWidth = 291
+  ClientWidth = 340
   Color = clBtnFace
   Icon.Data = {
     7E04000000000100010010100000010020006804000016000000280000001000
@@ -52,51 +52,43 @@ object frmConfigureSetTags: TfrmConfigureSetTags
   }
   KeyPreview = True
   Position = poOwnerFormCenter
+  LCLVersion = '4.6.0.0'
   object lblPattern: TLabel
     Left = 4
     Height = 39
     Top = 4
-    Width = 283
+    Width = 332
     Align = alTop
     BorderSpacing.Bottom = 8
-    Caption = 'Valid variables: %artist%, %title%, %album%, %genre%, %streamtitle%, %streamname%, %day%, %month%, %year%, %hour%, %minute%, %second%'
+    Caption = 'Valid variables: %artist%, %title%, %album%, %genre%, %streamtitle%, %streamname%, %day%, %dayofweek%, %month%, %year%, %hour%, %minute%, %second%'
     Font.Height = -11
     ParentColor = False
     ParentFont = False
     WordWrap = True
   end
-  object btnResetAlbumPattern: TMSpeedButton
-    Left = 258
-    Height = 21
-    Hint = 'Reset pattern to default'
-    Top = 4
-    Width = 25
-    Anchors = [akTop, akRight]
-    Flat = True
-    OnClick = btnResetPatternClick
-  end
   object pnlNav: TPanel
     Left = 4
     Height = 34
     Top = 339
-    Width = 283
+    Width = 332
     Align = alBottom
     AutoSize = True
     BorderSpacing.Top = 8
     BevelOuter = bvNone
     ClientHeight = 34
-    ClientWidth = 283
+    ClientWidth = 332
+    ParentBackground = False
     TabOrder = 0
     object Bevel2: TBevel
       Left = 0
       Height = 4
       Top = 0
-      Width = 283
+      Width = 332
       Align = alTop
       Shape = bsTopLine
     end
     object btnOK: TBitBtn
-      Left = 183
+      Left = 232
       Height = 30
       Top = 4
       Width = 100
@@ -105,22 +97,22 @@ object frmConfigureSetTags: TfrmConfigureSetTags
       Caption = '&OK'
       Constraints.MinHeight = 30
       Constraints.MinWidth = 100
-      OnClick = btnOKClick
       TabOrder = 0
+      OnClick = btnOKClick
     end
   end
   object txtArtist: TMLabeledEditButton
     Left = 4
     Height = 41
     Top = 51
-    Width = 283
+    Width = 332
     Align = alTop
     BorderSpacing.Bottom = 4
     Caption = 'Artist:'
     Control.Left = 0
     Control.Height = 23
     Control.Top = 18
-    Control.Width = 283
+    Control.Width = 332
     Control.Align = alClient
     Control.ButtonHint = 'Reset pattern to default'
     Control.ButtonWidth = 23
@@ -129,22 +121,22 @@ object frmConfigureSetTags: TfrmConfigureSetTags
     Control.ImageIndex = 2
     Control.MaxLength = 0
     Control.NumGlyphs = 1
-    Control.OnButtonClick = btnResetPatternClick
     Control.PasswordChar = #0
     Control.TabOrder = 0
+    Control.OnButtonClick = btnResetPatternClick
   end
   object txtTitle: TMLabeledEditButton
     Left = 4
     Height = 41
     Top = 96
-    Width = 283
+    Width = 332
     Align = alTop
     BorderSpacing.Bottom = 4
     Caption = 'Title:'
     Control.Left = 0
     Control.Height = 23
     Control.Top = 18
-    Control.Width = 283
+    Control.Width = 332
     Control.Align = alClient
     Control.ButtonHint = 'Reset pattern to default'
     Control.ButtonWidth = 23
@@ -153,22 +145,22 @@ object frmConfigureSetTags: TfrmConfigureSetTags
     Control.ImageIndex = 2
     Control.MaxLength = 0
     Control.NumGlyphs = 1
-    Control.OnButtonClick = btnResetPatternClick
     Control.PasswordChar = #0
     Control.TabOrder = 0
+    Control.OnButtonClick = btnResetPatternClick
   end
   object txtAlbum: TMLabeledEditButton
     Left = 4
     Height = 41
     Top = 141
-    Width = 283
+    Width = 332
     Align = alTop
     BorderSpacing.Bottom = 4
     Caption = 'Album:'
     Control.Left = 0
     Control.Height = 23
     Control.Top = 18
-    Control.Width = 283
+    Control.Width = 332
     Control.Align = alClient
     Control.ButtonHint = 'Reset pattern to default'
     Control.ButtonWidth = 23
@@ -177,22 +169,22 @@ object frmConfigureSetTags: TfrmConfigureSetTags
     Control.ImageIndex = 2
     Control.MaxLength = 0
     Control.NumGlyphs = 1
-    Control.OnButtonClick = btnResetPatternClick
     Control.PasswordChar = #0
     Control.TabOrder = 0
+    Control.OnButtonClick = btnResetPatternClick
   end
   object txtGenre: TMLabeledEditButton
     Left = 4
     Height = 41
     Top = 186
-    Width = 283
+    Width = 332
     Align = alTop
     BorderSpacing.Bottom = 4
     Caption = 'Genre:'
     Control.Left = 0
     Control.Height = 23
     Control.Top = 18
-    Control.Width = 283
+    Control.Width = 332
     Control.Align = alClient
     Control.ButtonHint = 'Reset pattern to default'
     Control.ButtonWidth = 23
@@ -201,39 +193,42 @@ object frmConfigureSetTags: TfrmConfigureSetTags
     Control.ImageIndex = 2
     Control.MaxLength = 0
     Control.NumGlyphs = 1
-    Control.OnButtonClick = btnResetPatternClick
     Control.PasswordChar = #0
     Control.TabOrder = 0
+    Control.OnButtonClick = btnResetPatternClick
   end
   object Panel1: TPanel
     Left = 4
     Height = 100
     Top = 231
-    Width = 283
+    Width = 332
     Align = alClient
     AutoSize = True
     BevelOuter = bvNone
     ClientHeight = 100
-    ClientWidth = 283
+    ClientWidth = 332
     Constraints.MinHeight = 100
+    ParentBackground = False
     TabOrder = 5
     object Label1: TLabel
       Left = 0
       Height = 15
       Top = 0
-      Width = 283
+      Width = 332
       Align = alTop
       Caption = 'Comment:'
       ParentColor = False
     end
     object btnResetCommentPattern: TMSpeedButton
-      Left = 260
+      Left = 309
       Height = 23
       Hint = 'Reset pattern to default'
       Top = 15
       Width = 23
       Align = alRight
       Constraints.MaxHeight = 23
+      Constraints.MinHeight = 23
+      Constraints.MinWidth = 23
       Flat = True
       Images = modSharedData.imgImages
       ImageIndex = 2
@@ -243,11 +238,11 @@ object frmConfigureSetTags: TfrmConfigureSetTags
       Left = 0
       Height = 85
       Top = 15
-      Width = 256
+      Width = 305
       Align = alClient
       BorderSpacing.Right = 4
-      OnKeyPress = txtCommentKeyPress
       TabOrder = 0
+      OnKeyPress = txtCommentKeyPress
     end
   end
 end

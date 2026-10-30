@@ -52,7 +52,6 @@ type
     txtArtist: TMLabeledEditButton;
     txtTitle: TMLabeledEditButton;
     lblPattern: TLabel;
-    btnResetAlbumPattern: TMSpeedButton;
     pnlNav: TPanel;
     Bevel2: TBevel;
     btnOK: TBitBtn;

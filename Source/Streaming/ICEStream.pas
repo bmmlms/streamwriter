@@ -1521,11 +1521,11 @@ begin
 
   case TitleState of
     tsAuto:
-      Patterns := 'artist|title|album|genre|streamtitle|streamname|day|month|year|hour|minute|second';
+      Patterns := 'artist|title|album|genre|streamtitle|streamname|day|month|year|hour|minute|second|dayofweek';
     tsStream:
-      Patterns := 'streamname|day|month|year|hour|minute|second';
+      Patterns := 'streamname|day|month|year|hour|minute|second|dayofweek';
     else
-      Patterns := 'artist|title|album|genre|streamtitle|number|streamname|day|month|year|hour|minute|second';
+      Patterns := 'artist|title|album|genre|streamtitle|number|streamname|day|month|year|hour|minute|second|dayofweek';
   end;
 
   FFilename := InfoToFilename(Artist, Title, Album, Genre, StreamTitle, TitleState, Patterns);
@@ -1566,7 +1566,7 @@ begin
     if Trim(Name) = '' then
       Name := _('Unknown stream');
 
-    Name := InfoToFilename('', '', '', '', '', tsStream, 'streamname|day|month|year|hour|minute|second');
+    Name := InfoToFilename('', '', '', '', '', tsStream, 'streamname|day|month|year|hour|minute|second|dayofweek');
     FilePath := ConcatPaths([FSaveDir, GetValidFilename(Name + FormatToFiletype(AudioType))]);
 
     if FileExists(FilePath) then
@@ -1645,6 +1645,8 @@ begin
         Arr[i].Replace := Format('%.*d', [FSettings.FilePatternDecimals, FSongsSaved])
       else if Arr[i].C = 'day' then
         Arr[i].Replace := FormatDateTime('dd', Now)
+      else if Arr[i].C = 'dayofweek' then
+        Arr[i].Replace := GetDayOfWeekName(Now)
       else if Arr[i].C = 'month' then
         Arr[i].Replace := FormatDateTime('mm', Now)
       else if Arr[i].C = 'year' then

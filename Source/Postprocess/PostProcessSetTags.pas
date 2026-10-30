@@ -99,7 +99,7 @@ begin
 
   FResult := arFail;
 
-  SetLength(Arr, 12);
+  SetLength(Arr, 13);
   Arr[0].C := 'artist';
   Arr[0].Replace := FData.Artist;
   Arr[1].C := 'title';
@@ -124,6 +124,8 @@ begin
   Arr[10].Replace := FormatDateTime('nn', Now);
   Arr[11].C := 'second';
   Arr[11].Replace := FormatDateTime('ss', Now);
+  Arr[12].C := 'dayofweek';
+  Arr[12].Replace := GetDayOfWeekName(Now);
 
   FileTagger := TFileTagger.Create;
   try

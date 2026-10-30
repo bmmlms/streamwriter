@@ -413,8 +413,8 @@ type
 const
   WARNING_STREAMRECORDING = 'When changing this option for a stream which is recording, stop and start recording again for the new setting to become active.';
 
-  LABEL_TRACKPATTERN = 'Valid variables for saved tracks: %artist%, %title%, %album%, %genre%, %streamtitle%, %streamname%, %number%, %day%, %month%, %year%, %hour%, %minute%, %second%';
-  LABEL_STREAMPATTERN = 'Valid variables for saved streams: %streamname%, %day%, %month%, %year%, %hour%, %minute%, %second%';
+  LABEL_TRACKPATTERN = 'Valid variables for saved tracks: %artist%, %title%, %album%, %genre%, %streamtitle%, %streamname%, %number%, %day%, %dayofweek%, %month%, %year%, %hour%, %minute%, %second%';
+  LABEL_STREAMPATTERN = 'Valid variables for saved streams: %streamname%, %day%, %dayofweek%, %month%, %year%, %hour%, %minute%, %second%';
   LABEL_PATTERNSEPARATOR = 'Backslashes can be used to seperate directories.';
 
 implementation
@@ -1312,7 +1312,7 @@ begin
   else
     lblFilePattern.Caption := _(LABEL_TRACKPATTERN) + #13#10 + _(LABEL_STREAMPATTERN) + #13#10 + _(LABEL_PATTERNSEPARATOR);
 
-  lblAppParams.Caption := _('Valid variables: %filename%, %artist%, %title%, %album%, %genre%, %streamtitle%, %streamname%, %number%, %day%, %month%, %year%, %hour%, %minute%, %second%'#13#10 +
+  lblAppParams.Caption := _('Valid variables: %filename%, %artist%, %title%, %album%, %genre%, %streamtitle%, %streamname%, %number%, %day%, %dayofweek%, %month%, %year%, %hour%, %minute%, %second%'#13#10 +
     'Every parameter should be quoted using ".');
 
   if lstPostProcess.Selected <> nil then
@@ -1369,6 +1369,8 @@ begin
         Arr[i].Replace := Format('%.*d', [txtFilePatternDecimals.Control.Value, 78])
       else if Arr[i].C = 'day' then
         Arr[i].Replace := FormatDateTime('dd', Now)
+      else if Arr[i].C = 'dayofweek' then
+        Arr[i].Replace := GetDayOfWeekName(Now)
       else if Arr[i].C = 'month' then
         Arr[i].Replace := FormatDateTime('mm', Now)
       else if Arr[i].C = 'year' then
@@ -1965,11 +1967,11 @@ begin
     RemoveGray(FActivePreviewField);
 
     if Sender = txtAutomaticFilePattern.Control then
-      txtPreview.Control.Text := ValidatePattern(FActivePreviewField.Text, 'artist|title|album|genre|streamtitle|streamname|day|month|year|hour|minute|second')
+      txtPreview.Control.Text := ValidatePattern(FActivePreviewField.Text, 'artist|title|album|genre|streamtitle|streamname|day|month|year|hour|minute|second|dayofweek')
     else if Sender = txtStreamFilePattern.Control then
-      txtPreview.Control.Text := ValidatePattern(FActivePreviewField.Text, 'streamname|day|month|year|hour|minute|second')
+      txtPreview.Control.Text := ValidatePattern(FActivePreviewField.Text, 'streamname|day|month|year|hour|minute|second|dayofweek')
     else
-      txtPreview.Control.Text := ValidatePattern(FActivePreviewField.Text, 'artist|title|album|genre|streamtitle|number|streamname|day|month|year|hour|minute|second');
+      txtPreview.Control.Text := ValidatePattern(FActivePreviewField.Text, 'artist|title|album|genre|streamtitle|number|streamname|day|month|year|hour|minute|second|dayofweek');
 
     if Trim(TFunctions.RemoveFileExt(txtPreview.Control.Text)) = '' then
       txtPreview.Control.Text := '';
@@ -2010,11 +2012,11 @@ begin
   FActivePreviewField := TEditButton(Sender);
 
   if Sender = txtAutomaticFilePattern.Control then
-    txtPreview.Control.Text := ValidatePattern(FActivePreviewField.Text, 'artist|title|album|genre|streamtitle|streamname|day|month|year|hour|minute|second')
+    txtPreview.Control.Text := ValidatePattern(FActivePreviewField.Text, 'artist|title|album|genre|streamtitle|streamname|day|month|year|hour|minute|second|dayofweek')
   else if Sender = txtStreamFilePattern.Control then
-    txtPreview.Control.Text := ValidatePattern(FActivePreviewField.Text, 'streamname|day|month|year|hour|minute|second')
+    txtPreview.Control.Text := ValidatePattern(FActivePreviewField.Text, 'streamname|day|month|year|hour|minute|second|dayofweek')
   else
-    txtPreview.Control.Text := ValidatePattern(FActivePreviewField.Text, 'artist|title|album|genre|streamtitle|number|streamname|day|month|year|hour|minute|second');
+    txtPreview.Control.Text := ValidatePattern(FActivePreviewField.Text, 'artist|title|album|genre|streamtitle|number|streamname|day|month|year|hour|minute|second|dayofweek');
 
   if Trim(TFunctions.RemoveFileExt(txtPreview.Control.Text)) = '' then
     txtPreview.Control.Text := '';
@@ -2529,7 +2531,7 @@ begin
   if not inherited then
     Exit;
 
-  if ControlVisible(txtFilePattern) and (Trim(TFunctions.RemoveFileExt(ValidatePattern(txtFilePattern.Control.Text, 'artist|title|album|genre|streamtitle|number|streamname|day|month|year|hour|minute|second'))) = '') then
+  if ControlVisible(txtFilePattern) and (Trim(TFunctions.RemoveFileExt(ValidatePattern(txtFilePattern.Control.Text, 'artist|title|album|genre|streamtitle|number|streamname|day|month|year|hour|minute|second|dayofweek'))) = '') then
   begin
     TFunctions.MsgBox(_('Please enter a valid pattern for filenames of completely recorded tracks so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtFilePattern.Parent)));
@@ -2537,7 +2539,7 @@ begin
     Exit;
   end;
 
-  if ControlVisible(txtIncompleteFilePattern) and (Trim(TFunctions.RemoveFileExt(ValidatePattern(txtIncompleteFilePattern.Control.Text, 'artist|title|album|genre|streamtitle|number|streamname|day|month|year|hour|minute|second'))) =
+  if ControlVisible(txtIncompleteFilePattern) and (Trim(TFunctions.RemoveFileExt(ValidatePattern(txtIncompleteFilePattern.Control.Text, 'artist|title|album|genre|streamtitle|number|streamname|day|month|year|hour|minute|second|dayofweek'))) =
     '') then
   begin
     TFunctions.MsgBox(_('Please enter a valid pattern for filenames of incompletely recorded tracks so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
@@ -2546,7 +2548,7 @@ begin
     Exit;
   end;
 
-  if ControlVisible(txtAutomaticFilePattern) and (Trim(TFunctions.RemoveFileExt(ValidatePattern(txtAutomaticFilePattern.Control.Text, 'artist|title|album|genre|streamtitle|streamname|day|month|year|hour|minute|second'))) = '') then
+  if ControlVisible(txtAutomaticFilePattern) and (Trim(TFunctions.RemoveFileExt(ValidatePattern(txtAutomaticFilePattern.Control.Text, 'artist|title|album|genre|streamtitle|streamname|day|month|year|hour|minute|second|dayofweek'))) = '') then
   begin
     TFunctions.MsgBox(_('Please enter a valid pattern for filenames of automatically recorded tracks so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtAutomaticFilePattern.Parent)));
@@ -2554,7 +2556,7 @@ begin
     Exit;
   end;
 
-  if ControlVisible(txtStreamFilePattern) and (Trim(TFunctions.RemoveFileExt(ValidatePattern(txtStreamFilePattern.Control.Text, 'streamname|day|month|year|hour|minute|second'))) = '') then
+  if ControlVisible(txtStreamFilePattern) and (Trim(TFunctions.RemoveFileExt(ValidatePattern(txtStreamFilePattern.Control.Text, 'streamname|day|month|year|hour|minute|second|dayofweek'))) = '') then
   begin
     TFunctions.MsgBox(_('Please enter a valid pattern for filenames of stream files so that a preview is shown.'), _('Info'), MB_ICONINFORMATION);
     SetPage(FPageList.Find(TPanel(txtStreamFilePattern.Parent)));

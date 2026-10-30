@@ -27,6 +27,7 @@ uses
   Classes,
   ComCtrls,
   Constants,
+  DateUtils,
   Functions,
   Generics.Collections,
   Generics.Defaults,
@@ -40,6 +41,7 @@ function GetAutoTuneInMinKbps(AudioType: TAudioTypes; Idx: Integer): Cardinal;
 function FixPatternFilename(Filename: string): string;
 function SecureSWURLToInsecure(URL: string): string;
 function ConvertPattern(OldPattern: string): string;
+function GetDayOfWeekName(const DateTime: TDateTime): string;
 function GetBestRegEx(Title: string; RegExps: TStringList): string;
 function CheckRegExp(var RegExp: string; List: TListView; Item: TListItem): Boolean;
 function GetGradientColor(const FromColor, ToColor: TColor; const Factor: Double): TColor;
@@ -156,6 +158,24 @@ begin
   end;
 
   Result := TFunctions.PatternReplace(OldPattern, Arr);
+end;
+
+function GetDayOfWeekName(const DateTime: TDateTime): string;
+var
+  WD: Integer;
+begin
+  WD := DayOfTheWeek(DateTime);
+  case WD of
+    1: Result := _('monday');
+    2: Result := _('tuesday');
+    3: Result := _('wednesday');
+    4: Result := _('thursday');
+    5: Result := _('friday');
+    6: Result := _('saturday');
+    7: Result := _('sunday');
+    else
+      Result := _('sunday');
+  end;
 end;
 
 function CompareRegExDatas(constref L, R: TRegExData): Integer;

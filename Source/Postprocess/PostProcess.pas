@@ -307,7 +307,7 @@ begin
   if (FExe.Trim = '') or (not FileExists(FExe)) then
     Exit;
 
-  SetLength(Arr, 14);
+  SetLength(Arr, 15);
   Arr[0].C := 'artist';
   Arr[0].Replace := FData.Artist;
   Arr[1].C := 'title';
@@ -339,6 +339,8 @@ begin
     Arr[12].Replace := FData.Filename;
   Arr[13].C := 'genre';
   Arr[13].Replace := FData.Genre;
+  Arr[14].C := 'dayofweek';
+  Arr[14].Replace := GetDayOfWeekName(Now);
 
   Replaced := TFunctions.PatternReplaceNew(FParams, Arr);
   if Trim(Replaced) <> '' then

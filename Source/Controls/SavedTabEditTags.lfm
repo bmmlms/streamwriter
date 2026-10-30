@@ -2,7 +2,7 @@ object frmEditTags: TfrmEditTags
   Left = 0
   Height = 396
   Top = 0
-  Width = 250
+  Width = 310
   AutoSize = True
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
@@ -10,34 +10,36 @@ object frmEditTags: TfrmEditTags
   Caption = 'Edit tags and data'
   ChildSizing.VerticalSpacing = 4
   ClientHeight = 396
-  ClientWidth = 250
+  ClientWidth = 310
   Color = clBtnFace
   Constraints.MinWidth = 250
   KeyPreview = True
   Position = poOwnerFormCenter
   ShowHint = True
+  LCLVersion = '4.6.0.0'
   object pnlNav: TPanel
     Left = 4
     Height = 34
     Top = 358
-    Width = 242
+    Width = 302
     Align = alBottom
     AutoSize = True
     BorderSpacing.Top = 8
     BevelOuter = bvNone
     ClientHeight = 34
-    ClientWidth = 242
+    ClientWidth = 302
+    ParentBackground = False
     TabOrder = 1
     object Bevel2: TBevel
       Left = 0
       Height = 4
       Top = 0
-      Width = 242
+      Width = 302
       Align = alTop
       Shape = bsTopLine
     end
     object btnClose: TBitBtn
-      Left = 142
+      Left = 202
       Height = 30
       Top = 4
       Width = 100
@@ -45,34 +47,35 @@ object frmEditTags: TfrmEditTags
       Caption = '&Save'
       Constraints.MinHeight = 30
       Constraints.MinWidth = 100
-      OnClick = btnCloseClick
       TabOrder = 0
+      OnClick = btnCloseClick
     end
   end
   object grpData: TGroupBox
     Left = 4
     Height = 69
     Top = 281
-    Width = 242
+    Width = 302
     Align = alBottom
     AutoSize = True
     Caption = ' Data '
     ChildSizing.LeftRightSpacing = 4
     ChildSizing.TopBottomSpacing = 4
     ClientHeight = 49
-    ClientWidth = 238
+    ClientWidth = 298
+    ParentBackground = False
     TabOrder = 0
     object txtStreamname: TMLabeledEdit
       Left = 4
       Height = 41
       Top = 4
-      Width = 230
+      Width = 290
       Align = alClient
       Caption = 'Streamname:'
       Control.Left = 0
       Control.Height = 23
       Control.Top = 18
-      Control.Width = 230
+      Control.Width = 290
       Control.Align = alClient
       Control.TabOrder = 0
     end
@@ -81,20 +84,21 @@ object frmEditTags: TfrmEditTags
     Left = 4
     Height = 273
     Top = 4
-    Width = 242
+    Width = 302
     Align = alClient
     AutoSize = True
     Caption = ' Tags '
     ChildSizing.LeftRightSpacing = 4
     ChildSizing.TopBottomSpacing = 4
     ClientHeight = 253
-    ClientWidth = 238
+    ClientWidth = 298
+    ParentBackground = False
     TabOrder = 2
     object Label1: TLabel
       Left = 4
       Height = 15
       Top = 184
-      Width = 230
+      Width = 290
       Align = alTop
       BorderSpacing.Top = 4
       Caption = 'Comment:'
@@ -104,7 +108,7 @@ object frmEditTags: TfrmEditTags
       Left = 4
       Height = 50
       Top = 199
-      Width = 230
+      Width = 290
       Align = alClient
       Constraints.MinHeight = 50
       ScrollBars = ssVertical
@@ -114,14 +118,14 @@ object frmEditTags: TfrmEditTags
       Left = 4
       Height = 41
       Top = 94
-      Width = 230
+      Width = 290
       Align = alTop
       BorderSpacing.Top = 4
       Caption = 'Genre:'
       Control.Left = 0
       Control.Height = 23
       Control.Top = 18
-      Control.Width = 230
+      Control.Width = 290
       Control.Align = alClient
       Control.TabOrder = 0
     end
@@ -129,14 +133,14 @@ object frmEditTags: TfrmEditTags
       Left = 4
       Height = 41
       Top = 139
-      Width = 230
+      Width = 290
       Align = alTop
       BorderSpacing.Top = 4
       Caption = 'Album:'
       Control.Left = 0
       Control.Height = 23
       Control.Top = 18
-      Control.Width = 230
+      Control.Width = 290
       Control.Align = alClient
       Control.TabOrder = 0
     end
@@ -144,14 +148,14 @@ object frmEditTags: TfrmEditTags
       Left = 4
       Height = 41
       Top = 49
-      Width = 230
+      Width = 290
       Align = alTop
       BorderSpacing.Top = 4
       Caption = 'Title:'
       Control.Left = 0
       Control.Height = 23
       Control.Top = 18
-      Control.Width = 230
+      Control.Width = 290
       Control.Align = alClient
       Control.TabOrder = 0
     end
@@ -159,13 +163,13 @@ object frmEditTags: TfrmEditTags
       Left = 4
       Height = 41
       Top = 4
-      Width = 230
+      Width = 290
       Align = alTop
       Caption = 'Artist:'
       Control.Left = 0
       Control.Height = 23
       Control.Top = 18
-      Control.Width = 230
+      Control.Width = 290
       Control.Align = alClient
       Control.TabOrder = 0
     end
