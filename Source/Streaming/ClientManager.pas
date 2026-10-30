@@ -105,7 +105,7 @@ type
     procedure ClientStop(Sender: TObject);
 
     procedure SchedulerLog(Text, Data: string);
-    procedure SchedulerSchedule(IsStart: Boolean; Schedule: TSchedule);
+    procedure SchedulerSchedule(IsStart: Boolean; Schedule, OriginalSchedule: TSchedule);
 
     procedure HomeCommTitleChanged(Sender: TObject; ID: Cardinal; Name, Title, ParsedTitle, CurrentURL: string; RegExes: TStringList; AudioType: TAudioTypes; Kbps: Cardinal; ServerHash, ServerArtistHash: Cardinal);
     procedure HomeCommMonitorStreamsReceived(Sender: TObject; StreamIDs: TIntArray);
@@ -243,7 +243,6 @@ var
   i, n: Integer;
   Lst: TList<TSchedule>;
 begin
-  Scheduler.SetSchedules(nil);
   Lst := TList<TSchedule>.Create;
   try
     for i := 0 to FClients.Count - 1 do
@@ -264,9 +263,9 @@ begin
     if Assigned(FOnClientRemoved) then
       FOnClientRemoved(Client);
     FClients.Remove(Client);
+    RefreshScheduler;
     Client.Free;
   end;
-  RefreshScheduler;
 end;
 
 procedure TClientManager.RemoveMonitorClient(Client: TICEClient);
@@ -285,7 +284,7 @@ begin
   MsgBus.SendMessage(TLogMsg.Create(nil, lsGeneral, ltSchedule, llDebug, _('Scheduler'), Text));
 end;
 
-procedure TClientManager.SchedulerSchedule(IsStart: Boolean; Schedule: TSchedule);
+procedure TClientManager.SchedulerSchedule(IsStart: Boolean; Schedule, OriginalSchedule: TSchedule);
 var
   i, n: Integer;
   Client: TICEClient;
@@ -293,12 +292,16 @@ var
 begin
   Client := nil;
   for i := 0 to FClients.Count - 1 do
+  begin
     for n := 0 to FClients[i].Entry.Schedules.Count - 1 do
-      if FClients[i].Entry.Schedules[n] = Schedule then
+      if FClients[i].Entry.Schedules[n] = OriginalSchedule then
       begin
         Client := FClients[i];
         Break;
       end;
+    if Client <> nil then
+      Break;
+  end;
 
   if Client = nil then
     Exit;
@@ -315,34 +318,40 @@ begin
       if Res <> crOk then
       begin
         Client.WriteLog(GetErrorText(Res, Client.Entry.CustomName, False, True, True), ltSchedule, llWarning);
-        FOnShowErrorMessage(Client, GetErrorText(Res, Client.Entry.CustomName, False, True, False));
+        if Assigned(FOnShowErrorMessage) then
+          FOnShowErrorMessage(Client, GetErrorText(Res, Client.Entry.CustomName, False, True, False));
       end else
       begin
         Client.ScheduledRecording := True;
         Client.WriteLog(Format(_('Scheduled recording ends at %s'), [TimeToStr(Schedule.GetEndTime(Schedule.GetStartTime(False)))]), ltSchedule, llInfo);
       end;
     end;
-  end else if Client.ScheduledRecording then
+  end else
   begin
-    if Client.IsCurrentTimeInSchedule(Schedule) then
-      Client.WriteLog(_('Not stopping scheduled recording because another schedule is active'), ltSchedule, llInfo)// Another schedule "surrounds" the triggered schedule, so do nothing
-    else
+    if Client.ScheduledRecording then
     begin
-      Client.WriteLog(_('Stopping scheduled recording'), ltSchedule, llInfo);
-      Client.StopRecording;
+      if Client.IsCurrentTimeInSchedule(OriginalSchedule) then
+        Client.WriteLog(_('Not stopping scheduled recording because another schedule is active'), ltSchedule, llInfo)// Another schedule "surrounds" the triggered schedule, so do nothing
+      else
+      begin
+        Client.WriteLog(_('Stopping scheduled recording'), ltSchedule, llInfo);
+        Client.StopRecording;
+      end;
     end;
 
     if Schedule.AutoRemove then
     begin
-      Scheduler.SetSchedules(nil);
+      n := Client.Entry.Schedules.IndexOf(OriginalSchedule);
+      if n >= 0 then
+      begin
+        Client.Entry.Schedules.Delete(n);
+        OriginalSchedule.Free;
 
-      Client.Entry.Schedules.Remove(Schedule);
-      Schedule.Free;
+        if Assigned(FOnClientRefresh) then
+          FOnClientRefresh(Client);
 
-      if Assigned(FOnClientRefresh) then
-        FOnClientRefresh(Client);
-
-      RefreshScheduler;
+        RefreshScheduler;
+      end;
     end;
   end;
 end;
@@ -819,7 +828,8 @@ begin
     if Assigned(FOnClientRemoved) then
       FOnClientRemoved(Sender);
 
-    FClients.Remove(Client);
+    if FClients.Remove(Client) >= 0 then
+      RefreshScheduler;
     FMonitorClients.Remove(Client);
     Client.Free;
   end;

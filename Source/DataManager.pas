@@ -324,7 +324,8 @@ type
     class function Load(Stream: TStream; Version: Integer): TSchedule;
     procedure Save(Stream: TMemoryStream);
 
-    function GetStartTime(ModificationAllowed: Boolean): TDateTime;
+    function GetStartTime(ModificationAllowed: Boolean): TDateTime; overload;
+    function GetStartTime(ModificationAllowed: Boolean; const N: TDateTime): TDateTime; overload;
     function GetEndTime(ScheduleStarted: TDateTime): TDateTime;
 
     // When set this schedule is active
@@ -2023,29 +2024,53 @@ begin
 end;
 
 function TSchedule.GetStartTime(ModificationAllowed: Boolean): TDateTime;
+begin
+  Result := GetStartTime(ModificationAllowed, Now);
+end;
+
+function TSchedule.GetStartTime(ModificationAllowed: Boolean; const N: TDateTime): TDateTime;
 var
-  N: TDateTime;
+  TargetDay: Integer;
 begin
   Result := 0;
   if FActive then
   begin
-    N := Now;
     case FInterval of
       siDaily:
-        if ModificationAllowed and ((FStartHour < HourOf(N)) or ((FStartHour = HourOf(N)) and (FStartMinute < MinuteOf(N)))) then
-          Result := EncodeDateTime(YearOf(N), MonthOf(N), DayOf(IncDay(N)), FStartHour, FStartMinute, 0, 0)
-        else
-          Result := EncodeDateTime(YearOf(N), MonthOf(N), DayOf(N), FStartHour, FStartMinute, 0, 0);
-      siWeekly:
       begin
         Result := EncodeDateTime(YearOf(N), MonthOf(N), DayOf(N), FStartHour, FStartMinute, 0, 0);
-        if DayOfTheWeek(N) <= Integer(FDay) + 1 then
+        if ModificationAllowed then
         begin
-          Result := IncDay(Result, (Integer(FDay) + 1 - DayOfTheWeek(N)));
-          if ModificationAllowed and (Result < N) then
+          if (FStartHour < HourOf(N)) or ((FStartHour = HourOf(N)) and (FStartMinute < MinuteOf(N))) then
+            Result := IncDay(Result);
+        end else
+        begin
+          if ((FEndHour < FStartHour) or ((FEndHour = FStartHour) and (FEndMinute <= FStartMinute))) and
+             ((HourOf(N) < FEndHour) or ((HourOf(N) = FEndHour) and (MinuteOf(N) < FEndMinute))) then
+            Result := IncDay(Result, -1);
+        end;
+      end;
+      siWeekly:
+      begin
+        TargetDay := Integer(FDay) + 1;
+        Result := EncodeDateTime(YearOf(N), MonthOf(N), DayOf(N), FStartHour, FStartMinute, 0, 0);
+        Result := IncDay(Result, TargetDay - DayOfTheWeek(N));
+        if ModificationAllowed then
+        begin
+          if Result < N then
             Result := IncWeek(Result);
         end else
-          Result := IncDay(Result, 7 - DayOfTheWeek(N) + Integer(FDay) + 1);
+        begin
+          if ((FEndHour < FStartHour) or ((FEndHour = FStartHour) and (FEndMinute <= FStartMinute))) and
+             ((HourOf(N) < FEndHour) or ((HourOf(N) = FEndHour) and (MinuteOf(N) < FEndMinute))) then
+          begin
+            if ((DayOfTheWeek(N) = 1) and (FDay = sdSunday)) or (TargetDay = DayOfTheWeek(N) - 1) then
+            begin
+              Result := EncodeDateTime(YearOf(N), MonthOf(N), DayOf(N), FStartHour, FStartMinute, 0, 0);
+              Result := IncDay(Result, -1);
+            end;
+          end;
+        end;
       end;
       siNone:
         Result := EncodeDateTime(YearOf(FDate), MonthOf(FDate), DayOf(FDate), FStartHour, FStartMinute, 0, 0);

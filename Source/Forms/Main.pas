@@ -744,8 +744,8 @@ begin
 
     if T.Okay then
     begin
-      FClientManager.Scheduler.SetSchedules(nil);
-
+      for i := 0 to Clients[0].Entry.Schedules.Count - 1 do
+        Clients[0].Entry.Schedules[i].Free;
       Clients[0].Entry.Schedules.Clear;
       for i := 0 to T.Entry.Schedules.Count - 1 do
         Clients[0].Entry.Schedules.Add(T.Entry.Schedules[i].Copy);

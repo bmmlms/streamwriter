@@ -6,29 +6,28 @@ uses
   Classes,
   DataManager,
   DateUtils,
-  Generics.Collections,
-  Generics.Defaults,
-  Process,
   Functions,
+  Generics.Collections,
   Math,
   SysUtils,
   TypeDefs,
   Windows;
 
 type
-  TScheduleThreadEvent = procedure(IsStart: Boolean; ScheduleID: Integer) of object;
-  TScheduleEvent = procedure(IsStart: Boolean; Schedule: TSchedule) of object;
+  TScheduleEvent = procedure(IsStart: Boolean; Schedule, OriginalSchedule: TSchedule) of object;
 
   TSchedulerSchedule = class(TSchedule)
   private
-    FID: Cardinal;
+    // Reference to the original schedule owned by the main thread. Only used for comparison,
+    // never dereference it from the scheduler thread - it may be modified or freed at any time.
+    FSchedule: TSchedule;
     FIsStart: Boolean;
     FCalculatedStart: TDateTime;
     FCalculatedEnd: TDateTime;
   public
     constructor Create(Schedule: TSchedule);
 
-    property ID: Cardinal read FID write FID;
+    property Schedule: TSchedule read FSchedule write FSchedule;
     property IsStart: Boolean read FIsStart write FIsStart;
     property CalculatedStart: TDateTime read FCalculatedStart write FCalculatedStart;
     property CalculatedEnd: TDateTime read FCalculatedEnd write FCalculatedEnd;
@@ -39,26 +38,30 @@ type
   TSchedulerThread = class(TThread)
   private
     FSchedulesLock: TRTLCriticalSection;
+    // Non-owning references to schedule copies owned by TScheduler.
     FSchedules: TList<TSchedulerSchedule>;
+    FReloadGeneration: QWord;
+    FBatchGeneration: QWord;
 
     FReloadEvent: THandle;
     FTerminateEvent: THandle;
-    FReloadDoneEvent: THandle;
 
     FLogText: string;
 
-    FScheduleID: Integer;
+    FSchedule: TSchedule;
+    FOriginalSchedule: TSchedule;
     FIsStart: Boolean;
 
     FOnLog: TLogEvent;
-    FOnSchedule: TScheduleThreadEvent;
+    FOnSchedule: TScheduleEvent;
 
     procedure DoSyncLog(Text: string);
-    procedure DoSyncSchedule(const ScheduleID: Integer; const IsStart: Boolean);
+    procedure DoSyncSchedule(const Schedule, OriginalSchedule: TSchedule; const IsStart: Boolean);
 
     procedure SyncLog;
     procedure SyncSchedule;
 
+    function IsBatchCurrent: Boolean;
     function GetTimerTime(const Time: TDateTime): Int64;
   protected
     procedure Execute; override;
@@ -70,20 +73,24 @@ type
     procedure Reload(const ScheduleList: TList<TSchedulerSchedule>);
 
     property OnLog: TLogEvent read FOnLog write FOnLog;
-    property OnSchedule: TScheduleThreadEvent read FOnSchedule write FOnSchedule;
+    property OnSchedule: TScheduleEvent read FOnSchedule write FOnSchedule;
   end;
 
   TScheduler = class
   private
     FThread: TSchedulerThread;
-    FSchedules: TList<TSchedule>;
+    FStopped: Boolean;
+    // Owns the schedule copies referenced by FThread.
+    FSchedules: TList<TSchedulerSchedule>;
 
     FOnLog: TLogEvent;
     FOnSchedule: TScheduleEvent;
 
+    procedure ReloadThread;
     procedure ThreadLog(Text, Data: string);
-    procedure ThreadSchedule(IsStart: Boolean; ScheduleID: Integer);
+    procedure ThreadSchedule(IsStart: Boolean; Schedule, OriginalSchedule: TSchedule);
     procedure ThreadTerminate(Sender: TObject);
+    procedure ThreadTerminateQueued;
 
     function FGetActive: Boolean;
   public
@@ -110,17 +117,15 @@ begin
 
   FSchedules := TList<TSchedulerSchedule>.Create;
 
-  FreeOnTerminate := True;
+  FreeOnTerminate := False;
 
   InitCriticalSection(FSchedulesLock);
   FReloadEvent := CreateEvent(nil, True, False, nil);
   FTerminateEvent := CreateEvent(nil, True, False, nil);
-  FReloadDoneEvent := CreateEvent(nil, True, False, nil);
 end;
 
 destructor TSchedulerThread.Destroy;
 begin
-  CloseHandle(FReloadDoneEvent);
   CloseHandle(FTerminateEvent);
   CloseHandle(FReloadEvent);
   DoneCriticalSection(FSchedulesLock);
@@ -137,9 +142,10 @@ begin
   Synchronize(SyncLog);
 end;
 
-procedure TSchedulerThread.DoSyncSchedule(const ScheduleID: Integer; const IsStart: Boolean);
+procedure TSchedulerThread.DoSyncSchedule(const Schedule, OriginalSchedule: TSchedule; const IsStart: Boolean);
 begin
-  FScheduleID := ScheduleID;
+  FSchedule := Schedule;
+  FOriginalSchedule := OriginalSchedule;
   FIsStart := IsStart;
 
   Synchronize(SyncSchedule);
@@ -151,7 +157,9 @@ var
   Lowest, LowestWakeup: TDateTime;
   FoundSchedules, FoundLowestWakeup, StopEventsTriggered: Boolean;
   WakeTime: Int64;
-  S: TList<TSchedulerSchedule>;
+  StartTime: TDateTime;
+  StartSchedules, StopSchedules: TList<TSchedule>;
+  StartScheduleReferences, StopScheduleReferences: TList<TSchedule>;
   Timer, TimerWakeup: THandle;
   WaitHandles: TWOHandleArray;
   Res, ArrLen: Cardinal;
@@ -160,6 +168,7 @@ begin
   Timer := CreateWaitableTimer(nil, True, nil);
   if Timer = 0 then
   begin
+    DoSyncLog(Format('Unable to create scheduler timer: %s', [SysErrorMessage(GetLastError)]));
     Sleep(1000);
     Exit;
   end;
@@ -168,14 +177,29 @@ begin
   if TimerWakeup = 0 then
   begin
     CloseHandle(Timer);
+    DoSyncLog(Format('Unable to create scheduler wake timer: %s', [SysErrorMessage(GetLastError)]));
     Sleep(1000);
     Exit;
   end;
 
-  S := TList<TSchedulerSchedule>.Create;
+  StartSchedules := TList<TSchedule>.Create;
+  StopSchedules := TList<TSchedule>.Create;
+  StartScheduleReferences := TList<TSchedule>.Create;
+  StopScheduleReferences := TList<TSchedule>.Create;
   try
     while True do
     begin
+      CancelWaitableTimer(TimerWakeup);
+
+      for i := 0 to StartSchedules.Count - 1 do
+        StartSchedules[i].Free;
+      for i := 0 to StopSchedules.Count - 1 do
+        StopSchedules[i].Free;
+      StartSchedules.Clear;
+      StopSchedules.Clear;
+      StartScheduleReferences.Clear;
+      StopScheduleReferences.Clear;
+
       // Niedrigsten nächsten Zeitpunkt suchen
       FoundSchedules := False;
       Lowest := MaxDouble;
@@ -185,11 +209,12 @@ begin
       try
         for i := FSchedules.Count - 1 downto 0 do
         begin
-          // Wenn beide Punkte in der Vergangenheit liegen echte Zeiten neu berechnen.
+          StartTime := FSchedules[i].GetStartTime(False);
 
-          if (FSchedules[i].GetStartTime(False) < Now) and (FSchedules[i].GetEndTime(FSchedules[i].GetStartTime(False)) > Now) then
+          // Wenn beide Punkte in der Vergangenheit liegen echte Zeiten neu berechnen.
+          if (StartTime < Now) and (FSchedules[i].GetEndTime(StartTime) > Now) then
           begin
-            FSchedules[i].CalculatedStart := FSchedules[i].GetStartTime(False);
+            FSchedules[i].CalculatedStart := StartTime;
             FSchedules[i].CalculatedEnd := FSchedules[i].GetEndTime(FSchedules[i].CalculatedStart);
           end else if (FSchedules[i].CalculatedStart < Now) and (FSchedules[i].CalculatedEnd < Now) then
           begin
@@ -197,28 +222,52 @@ begin
             FSchedules[i].CalculatedEnd := FSchedules[i].GetEndTime(FSchedules[i].CalculatedStart);
           end;
 
-          if (FSchedules[i].CalculatedStart < LowestWakeup) and (FSchedules[i].CalculatedStart > Now) then
+          if (FSchedules[i].CalculatedStart > Now) then
           begin
-            LowestWakeup := FSchedules[i].CalculatedStart;
-            FoundLowestWakeup := True;
+            if FSchedules[i].CalculatedStart < LowestWakeup then
+            begin
+              LowestWakeup := FSchedules[i].CalculatedStart;
+              FoundLowestWakeup := True;
+            end;
+
+            if FSchedules[i].CalculatedStart < Lowest then
+            begin
+              Lowest := FSchedules[i].CalculatedStart;
+              FoundSchedules := True;
+            end;
           end;
 
-          if (FSchedules[i].CalculatedStart < Lowest) and (FSchedules[i].CalculatedStart > Now) then
-          begin
-            Lowest := FSchedules[i].CalculatedStart;
-            FoundSchedules := True;
-          end else if (FSchedules[i].CalculatedEnd < Lowest) and (FSchedules[i].CalculatedEnd > Now) then
+          if (FSchedules[i].CalculatedEnd < Lowest) and (FSchedules[i].CalculatedEnd > Now) then
           begin
             Lowest := FSchedules[i].CalculatedEnd;
             FoundSchedules := True;
           end;
         end;
+
+        if FoundSchedules then
+          // Alle Aktionen suchen, die zu dem niedrigsten Zeitpunkt ausgeführt werden müssen
+          for i := 0 to FSchedules.Count - 1 do
+          begin
+            FSchedules[i].IsStart := False;
+            if FSchedules[i].CalculatedStart = Lowest then
+              FSchedules[i].IsStart := True;
+            if (FSchedules[i].CalculatedStart = Lowest) or (FSchedules[i].CalculatedEnd = Lowest) then
+              if FSchedules[i].IsStart then
+              begin
+                StartSchedules.Add(FSchedules[i].Copy);
+                StartScheduleReferences.Add(FSchedules[i].Schedule);
+              end else
+              begin
+                StopSchedules.Add(FSchedules[i].Copy);
+                StopScheduleReferences.Add(FSchedules[i].Schedule);
+              end;
+          end;
+
+        FBatchGeneration := FReloadGeneration;
+        ResetEvent(FReloadEvent);
       finally
         LeaveCriticalSection(FSchedulesLock);
       end;
-
-      SetEvent(FReloadDoneEvent);
-      ResetEvent(FReloadDoneEvent);
 
       if not FoundSchedules then
       begin
@@ -230,12 +279,11 @@ begin
         Res := WaitForMultipleObjects(ArrLen, @WaitHandles, False, INFINITE);
         if Res <= WAIT_OBJECT_0 + ArrLen - 1 then
         begin
-          if Res - WAIT_OBJECT_0 = 0 then
-            ResetEvent(FReloadEvent)
-          else if Res - WAIT_OBJECT_0 = 1 then
+          if Res - WAIT_OBJECT_0 = 1 then
             Exit;
         end else if Res = WAIT_FAILED then
         begin
+          DoSyncLog(Format('Scheduler wait failed: %s', [SysErrorMessage(GetLastError)]));
           Sleep(1000);
           Exit;
         end;
@@ -243,26 +291,8 @@ begin
         Continue;
       end;
 
-      ResetEvent(FReloadEvent);
-
-      // Alle Aktionen suchen, die zu dem niedrigsten Zeitpunkt ausgeführt werden müssen
-      S.Clear;
-      EnterCriticalSection(FSchedulesLock);
-      try
-        for i := 0 to FSchedules.Count - 1 do
-        begin
-          FSchedules[i].IsStart := False;
-          if FSchedules[i].CalculatedStart = Lowest then
-            FSchedules[i].IsStart := True;
-          if (FSchedules[i].CalculatedStart = Lowest) or (FSchedules[i].CalculatedEnd = Lowest) then
-            S.Add(FSchedules[i]);
-        end;
-
-        if S.Count = 0 then
-          Continue;
-      finally
-        LeaveCriticalSection(FSchedulesLock);
-      end;
+      if (StartSchedules.Count = 0) and (StopSchedules.Count = 0) then
+        Continue;
 
       DoSyncLog(Format('It is %s, next action is at %s', [DateTimeToStr(Now), DateTimeToStr(Lowest)]));
 
@@ -271,6 +301,7 @@ begin
       WakeTime := GetTimerTime(Lowest);
       if WakeTime = 0 then
       begin
+        DoSyncLog('Unable to convert the next schedule time to a waitable timer value');
         Sleep(1000);
         Exit;
       end;
@@ -278,6 +309,7 @@ begin
       // Timer zum Start der Aufnahme
       if not SetWaitableTimer(Timer, WakeTime, 0, nil, nil, False) then
       begin
+        DoSyncLog(Format('Unable to set scheduler timer: %s', [SysErrorMessage(GetLastError)]));
         Sleep(1000);
         Exit;
       end;
@@ -288,11 +320,13 @@ begin
         WakeTime := GetTimerTime(IncSecond(LowestWakeup, -30));
         if WakeTime = 0 then
         begin
+          DoSyncLog('Unable to convert the wake-up time to a waitable timer value');
           Sleep(1000);
           Exit;
         end;
         if not SetWaitableTimer(TimerWakeup, WakeTime, 0, nil, nil, True) then
         begin
+          DoSyncLog(Format('Unable to set scheduler wake timer: %s', [SysErrorMessage(GetLastError)]));
           Sleep(1000);
           Exit;
         end;
@@ -302,56 +336,77 @@ begin
       //DoSyncLog(Format('Sleeping until %s (%ds)', [DateTimeToStr(Lowest), SecondsBetween(Now, Lowest)]));
 
       // Jetzt solange schlafen
-      WaitHandles[0] := Timer;
+      WaitHandles[0] := FTerminateEvent;
       WaitHandles[1] := FReloadEvent;
-      WaitHandles[2] := FTerminateEvent;
+      WaitHandles[2] := Timer;
       ArrLen := 3;
       Res := WaitForMultipleObjectsEx(ArrLen, @WaitHandles, False, INFINITE, False);
-      if Res <= WAIT_OBJECT_0 + ArrLen - 1 then
+      if Res = WAIT_OBJECT_0 then
+        Exit;
+      if Res = WAIT_OBJECT_0 + 1 then
+        Continue;
+      if Res = WAIT_FAILED then
       begin
-        if Res - WAIT_OBJECT_0 = 1 then
-        begin
-          ResetEvent(FReloadEvent);
-          Continue;
-        end else if Res - WAIT_OBJECT_0 = 2 then
-          Exit;
-      end else if Res = WAIT_FAILED then
+        DoSyncLog(Format('Scheduler wait failed: %s', [SysErrorMessage(GetLastError)]));
+        Sleep(1000);
+        Exit;
+      end;
+      if Res <> WAIT_OBJECT_0 + 2 then
       begin
+        DoSyncLog(Format('Scheduler wait returned unexpected result %d', [Res]));
         Sleep(1000);
         Exit;
       end;
 
       // Nun Aktionen ausführen
-      if WaitForSingleObject(Timer, 0) = WAIT_OBJECT_0 then
+      if Terminated then
+        Exit;
+      if Now < Lowest then
+        Continue;
+      if not IsBatchCurrent then
+        Continue;
+
+      StopEventsTriggered := StopSchedules.Count > 0;
+      for i := 0 to StopSchedules.Count - 1 do
       begin
-        StopEventsTriggered := False;
-        for i := 0 to S.Count - 1 do
-          if not s[i].IsStart then
-          begin
-            StopEventsTriggered := True;
-            DoSyncSchedule(S[i].ID, S[i].IsStart);
-          end;
+        DoSyncSchedule(StopSchedules[i], StopScheduleReferences[i], False);
+        if not IsBatchCurrent then
+          Break;
+      end;
 
-        // Etwas Zeit geben, falls eine Aufnahme gerade stoppt und gleich wieder gestartet werden soll.
-        // Das hier sollte helfen. Solange wir nur kurz schlafen (unter einer Minute) ist das okay.
-        // Keine schöne Lösung, aber sollte klappen...
-        if StopEventsTriggered then
-          Sleep(2000);
+      if not IsBatchCurrent then
+        Continue;
 
-        for i := 0 to S.Count - 1 do
-          if s[i].IsStart then
-            DoSyncSchedule(S[i].ID, S[i].IsStart);
+      // Etwas Zeit geben, falls eine Aufnahme gerade stoppt und gleich wieder gestartet werden soll.
+      // Das hier sollte helfen. Solange wir nur kurz schlafen (unter einer Minute) ist das okay.
+      // Keine schöne Lösung, aber sollte klappen...
+      if StopEventsTriggered then
+        Sleep(2000);
+
+      if not IsBatchCurrent then
+        Continue;
+
+      for i := 0 to StartSchedules.Count - 1 do
+      begin
+        DoSyncSchedule(StartSchedules[i], StartScheduleReferences[i], True);
+        if not IsBatchCurrent then
+          Break;
       end;
     end;
   finally
-    S.Free;
+    for i := 0 to StartSchedules.Count - 1 do
+      StartSchedules[i].Free;
+    for i := 0 to StopSchedules.Count - 1 do
+      StopSchedules[i].Free;
+    StartSchedules.Free;
+    StopSchedules.Free;
+    StartScheduleReferences.Free;
+    StopScheduleReferences.Free;
     CloseHandle(Timer);
     CloseHandle(TimerWakeup);
 
     EnterCriticalSection(FSchedulesLock);
     try
-      for i := 0 to FSchedules.Count - 1 do
-        FSchedules[i].Free;
       FSchedules.Clear;
     finally
       LeaveCriticalSection(FSchedulesLock);
@@ -364,6 +419,16 @@ begin
   inherited TerminatedSet;
 
   SetEvent(FTerminateEvent);
+end;
+
+function TSchedulerThread.IsBatchCurrent: Boolean;
+begin
+  EnterCriticalSection(FSchedulesLock);
+  try
+    Result := FBatchGeneration = FReloadGeneration;
+  finally
+    LeaveCriticalSection(FSchedulesLock);
+  end;
 end;
 
 function TSchedulerThread.GetTimerTime(const Time: TDateTime): Int64;
@@ -381,13 +446,12 @@ var
 begin
   EnterCriticalSection(FSchedulesLock);
   try
-    for i := 0 to FSchedules.Count - 1 do
-      FSchedules[i].Free;
     FSchedules.Clear;
 
     for i := 0 to ScheduleList.Count - 1 do
       FSchedules.Add(ScheduleList[i]);
 
+    Inc(FReloadGeneration);
     SetEvent(FReloadEvent);
   finally
     LeaveCriticalSection(FSchedulesLock);
@@ -402,8 +466,8 @@ end;
 
 procedure TSchedulerThread.SyncSchedule;
 begin
-  if Assigned(FOnSchedule) then
-    FOnSchedule(FIsStart, FScheduleID);
+  if IsBatchCurrent and Assigned(FOnSchedule) then
+    FOnSchedule(FIsStart, FSchedule, FOriginalSchedule);
 end;
 
 { TSchedulerSchedule }
@@ -413,6 +477,7 @@ begin
   inherited Create;
 
   Assign(Schedule);
+  FSchedule := Schedule;
 
   FCalculatedStart := 0;
   FCalculatedEnd := 0;
@@ -423,12 +488,16 @@ end;
 constructor TScheduler.Create;
 begin
   inherited;
-
-  FSchedules := TList<TSchedule>.Create;
+  FSchedules := TList<TSchedulerSchedule>.Create;
 end;
 
 destructor TScheduler.Destroy;
+var
+  i: Integer;
 begin
+  Stop;
+  for i := 0 to FSchedules.Count - 1 do
+    FSchedules[i].Free;
   FSchedules.Free;
 
   inherited;
@@ -443,60 +512,49 @@ procedure TScheduler.SetSchedules(ScheduleList: TList<TSchedule>);
 var
   i: Integer;
   L: TList<TSchedulerSchedule>;
+  OldSchedules: TList<TSchedulerSchedule>;
   S: TSchedulerSchedule;
 begin
-  if not Active then
-    Start;
-
-  FThread.OnSchedule := nil;
+  L := TList<TSchedulerSchedule>.Create;
   try
-    FSchedules.Clear;
-
-    if (ScheduleList = nil) and (FThread <> nil) and (not FThread.Terminated) then
+    if ScheduleList <> nil then
     begin
-      L := TList<TSchedulerSchedule>.Create;
-      try
-        FThread.Reload(L);
-
-        // Wait for the new data to be loaded...
-        WaitForSingleObject(FThread.FReloadDoneEvent, 500);
-      finally
-        L.Free;
-      end;
-      Exit;
+      for i := 0 to ScheduleList.Count - 1 do
+        if ScheduleList[i].Active then
+        begin
+          S := TSchedulerSchedule.Create(ScheduleList[i]);
+          L.Add(S);
+        end;
     end;
 
-    // If the thread is running create a list with copies of schedules for it to use.
-    // The real schedules are cached in this component, so it is really important
-    // to call this procedure whenever a schedule changes or is added/removed!
-    if (FThread <> nil) and (not FThread.Terminated) then
-    begin
-      L := TList<TSchedulerSchedule>.Create;
-      try
-        for i := 0 to ScheduleList.Count - 1 do
-          if ScheduleList[i].Active then
-          begin
-            FSchedules.Add(ScheduleList[i]);
-            S := TSchedulerSchedule.Create(ScheduleList[i]);
-            S.ID := FSchedules.Count - 1;
-            L.Add(S);
-          end;
-        FThread.Reload(L);
-
-        // Wait for the new data to be loaded...
-        WaitForSingleObject(FThread.FReloadDoneEvent, 500);
-      finally
-        // Don't free the items - the thread owns them now.
-        L.Free;
-      end;
-    end;
+    OldSchedules := FSchedules;
+    FSchedules := L;
+    L := nil;
   finally
-    FThread.OnSchedule := ThreadSchedule;
+    if L <> nil then
+    begin
+      for i := 0 to L.Count - 1 do
+        L[i].Free;
+      L.Free;
+    end;
+  end;
+
+  try
+    if (FThread = nil) and not FStopped then
+      Start
+    else if (FThread <> nil) and not FStopped and not FThread.Terminated then
+      ReloadThread;
+  finally
+    for i := 0 to OldSchedules.Count - 1 do
+      OldSchedules[i].Free;
+    OldSchedules.Free;
   end;
 end;
 
 procedure TScheduler.Start;
 begin
+  FStopped := False;
+
   if FThread <> nil then
     Exit;
 
@@ -504,13 +562,31 @@ begin
   FThread.OnLog := ThreadLog;
   FThread.OnSchedule := ThreadSchedule;
   FThread.OnTerminate := ThreadTerminate;
+  ReloadThread;
   FThread.Start;
+end;
+
+procedure TScheduler.ReloadThread;
+begin
+  if FStopped or (FThread = nil) or FThread.Terminated then
+    Exit;
+
+  FThread.Reload(FSchedules);
 end;
 
 procedure TScheduler.Stop;
 begin
-  if (FThread <> nil) and (not FThread.Terminated) then
+  FStopped := True;
+
+  if FThread <> nil then
+  begin
+    FThread.OnLog := nil;
+    FThread.OnSchedule := nil;
+    FThread.OnTerminate := nil;
     FThread.Terminate;
+    FThread.WaitFor;
+    FreeAndNil(FThread);
+  end;
 end;
 
 procedure TScheduler.ThreadLog(Text, Data: string);
@@ -519,23 +595,45 @@ begin
     FOnLog(Text, Data);
 end;
 
-procedure TScheduler.ThreadSchedule(IsStart: Boolean; ScheduleID: Integer);
+procedure TScheduler.ThreadSchedule(IsStart: Boolean; Schedule, OriginalSchedule: TSchedule);
 begin
   try
-    FOnSchedule(IsStart, FSchedules[ScheduleID]);
+    if Assigned(FOnSchedule) and (Schedule <> nil) then
+      FOnSchedule(IsStart, Schedule, OriginalSchedule);
   except
+    on E: Exception do
+      ThreadLog(Format('Exception while executing a scheduled action: %s: %s', [E.ClassName, E.Message]), '');
   end;
 end;
 
 procedure TScheduler.ThreadTerminate(Sender: TObject);
-var
-  Restart: Boolean;
 begin
-  Restart := not FThread.Terminated;
+  if FStopped or (Sender <> FThread) then
+    Exit;
 
+  TThread.ForceQueue(TThread(Sender), ThreadTerminateQueued);
+end;
+
+procedure TScheduler.ThreadTerminateQueued;
+var
+  Thread: TSchedulerThread;
+begin
+  if FStopped or (FThread = nil) then
+    Exit;
+
+  Thread := FThread;
+  Thread.WaitFor;
+  if FStopped then
+    Exit;
+
+  Thread.OnLog := nil;
+  Thread.OnSchedule := nil;
+  Thread.OnTerminate := nil;
   FThread := nil;
+  Thread.Free;
 
-  if Restart then
+  ThreadLog('Scheduler thread terminated unexpectedly, restarting', '');
+  if not FStopped then
     Start;
 end;
 
