@@ -196,8 +196,10 @@ type
     function GetControlMode(Y: Integer): TControlMode;
     function PixelsToArray(X: Integer): Integer;
     function GetPlayerPos: Integer;
+    procedure ZoomAtCursor(X, Y: Integer; Delta: Integer);
 
     procedure WMEraseBkgnd(var Message: TWMEraseBkgnd); message WM_ERASEBKGND;
+    procedure WMMouseWheel(var Msg: TWMMouseWheel); message WM_MOUSEWHEEL;
 
     procedure TimerTimer(Sender: TObject);
   protected
@@ -2383,6 +2385,94 @@ end;
 procedure TCutPaintBox.WMEraseBkgnd(var Message: TWMEraseBkgnd);
 begin
   Message.Result := 1;
+end;
+
+procedure TCutPaintBox.WMMouseWheel(var Msg: TWMMouseWheel);
+var
+  MousePos: TPoint;
+begin
+  MousePos := Mouse.CursorPos;
+  MousePos := ScreenToClient(MousePos);
+
+  ZoomAtCursor(MousePos.X, MousePos.Y, Msg.WheelDelta);
+end;
+
+procedure TCutPaintBox.ZoomAtCursor(X, Y: Integer; Delta: Integer);
+var
+  StartPos, EndPos, Range, NewRange, NewStart, NewEnd, CursorPos, MaxIndex: Integer;
+begin
+  if FCutView = nil then
+    Exit;
+  if not FCutView.HasWaveData then
+    Exit;
+  if Length(FCutView.FWaveData.WaveArray) < 2 then
+    Exit;
+  if (FWaveBuf = nil) or (FWaveBuf.Width <= 6) then
+    Exit;
+  if GetControlMode(Y) <> cmView then
+    Exit;
+
+  StartPos := FCutView.FWaveData.ZoomStart;
+  EndPos := FCutView.FWaveData.ZoomEnd;
+  Range := Max(1, EndPos - StartPos);
+  MaxIndex := High(FCutView.FWaveData.WaveArray);
+
+  CursorPos := PixelsToArray(X);
+
+  if Delta > 0 then
+  begin
+    // Zoom in - nothing to do if the current range is already minimal
+    if Range <= MinimumDisplayedSampleCount then
+      Exit;
+
+    NewRange := (Range + 1) div 2;
+    // Anchor the new window at the cursor. The multiplication keeps the
+    // calculation exact, so a zoom out undoes a zoom in without rounding drift.
+    NewStart := CursorPos - Trunc((Int64(CursorPos - StartPos) * NewRange) / Range);
+  end
+  else
+  begin
+    // Zoom out - nothing to do if the whole file is displayed already
+    if (StartPos = 0) and (EndPos = High(FCutView.FWaveData.WaveArray)) then
+      Exit;
+
+    NewRange := Range * 2;
+    if NewRange >= MaxIndex then
+    begin
+      NewStart := 0;
+      NewEnd := MaxIndex;
+    end
+    else
+    begin
+      NewStart := CursorPos - Trunc((Int64(CursorPos - StartPos) * NewRange) / Range);
+      NewEnd := NewStart + NewRange;
+    end;
+  end;
+
+  if Delta > 0 then
+    NewEnd := NewStart + NewRange;
+
+  if NewStart < 0 then
+    NewStart := 0;
+  NewEnd := NewStart + NewRange;
+  if NewEnd > MaxIndex then
+  begin
+    NewEnd := MaxIndex;
+    NewStart := Max(0, NewEnd - NewRange);
+  end;
+
+  ClampZoomRange(NewStart, NewEnd);
+
+  FZoomStartLine := NewStart;
+  FZoomEndLine := NewEnd;
+  FDoZoom := True;
+
+  BuildBuffer;
+  BuildDrawBuffer;
+  Invalidate;
+
+  if Assigned(FCutView.FOnStateChanged) then
+    FCutView.FOnStateChanged(FCutView);
 end;
 
 { TProcessThread }
